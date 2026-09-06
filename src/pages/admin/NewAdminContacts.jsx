@@ -1,88 +1,65 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import AdminLayout from '../../component/AdminLayout';
 import { FaSearch, FaEnvelope, FaEnvelopeOpen, FaTrash, FaTimes, FaUser, FaPhone, FaClock } from 'react-icons/fa';
+import { contactAPI } from '../../utils/api';
 
 function NewAdminContacts() {
-  const [messages, setMessages] = useState([
-    {
-      id: 1,
-      name: 'John Doe',
-      email: 'john@example.com',
-      phone: '+1234567890',
-      subject: 'Product Inquiry',
-      message: 'Hi, I would like to know more about the Wireless Headphones. Are they compatible with iPhone 15? Also, what is the battery life? Thank you!',
-      isRead: false,
-      createdAt: '2026-01-31 10:30 AM',
-      date: '2026-01-31'
-    },
-    {
-      id: 2,
-      name: 'Jane Smith',
-      email: 'jane@example.com',
-      phone: '+1234567891',
-      subject: 'Order Status',
-      message: 'Hello, I placed an order yesterday (Order #1002) and I haven\'t received any tracking information yet. Can you please help me with this?',
-      isRead: false,
-      createdAt: '2026-01-31 09:15 AM',
-      date: '2026-01-31'
-    },
-    {
-      id: 3,
-      name: 'Bob Johnson',
-      email: 'bob@example.com',
-      phone: '+1234567892',
-      subject: 'Return Request',
-      message: 'I received my order but the product is not as described. I would like to return it and get a refund. Please let me know the return process.',
-      isRead: true,
-      createdAt: '2026-01-30 03:45 PM',
-      date: '2026-01-30'
-    },
-    {
-      id: 4,
-      name: 'Alice Brown',
-      email: 'alice@example.com',
-      phone: '+1234567893',
-      subject: 'Bulk Order Inquiry',
-      message: 'We are interested in placing a bulk order for your Bluetooth Speakers. Can you provide wholesale pricing for 100+ units? Please contact me at your earliest convenience.',
-      isRead: true,
-      createdAt: '2026-01-30 11:20 AM',
-      date: '2026-01-30'
-    },
-    {
-      id: 5,
-      name: 'Charlie Wilson',
-      email: 'charlie@example.com',
-      phone: '+1234567894',
-      subject: 'Technical Support',
-      message: 'I\'m having trouble connecting my Smart Watch to my phone. I\'ve tried following the manual but it\'s not working. Can someone help me troubleshoot this issue?',
-      isRead: false,
-      createdAt: '2026-01-29 02:10 PM',
-      date: '2026-01-29'
-    },
-  ]);
-
+  const [messages, setMessages] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [selectedMessage, setSelectedMessage] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
 
-  const markAsRead = (id) => {
-    setMessages(messages.map(msg =>
-      msg.id === id ? { ...msg, isRead: true } : msg
-    ));
+  useEffect(() => {
+    fetchMessages();
+  }, []);
+
+  const fetchMessages = async () => {
+    try {
+      setLoading(true);
+      const response = await contactAPI.getAll();
+      const formatted = response.data.map(m => ({
+        ...m,
+        isRead: m.is_read,
+        createdAt: new Date(m.created_at).toLocaleString(),
+        date: new Date(m.created_at).toLocaleDateString()
+      }));
+      setMessages(formatted);
+    } catch (e) {
+      console.error('Failed to fetch messages', e);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const deleteMessage = (id) => {
+  const markAsRead = async (id) => {
+    try {
+      await contactAPI.markAsRead(id);
+      setMessages(messages.map(msg =>
+        msg.id === id ? { ...msg, isRead: true, is_read: true } : msg
+      ));
+    } catch (e) {
+      console.error('Failed to mark read', e);
+    }
+  };
+
+  const deleteMessage = async (id) => {
     if (window.confirm('Are you sure you want to delete this message?')) {
-      setMessages(messages.filter(msg => msg.id !== id));
-      if (selectedMessage && selectedMessage.id === id) {
-        setSelectedMessage(null);
+      try {
+        await contactAPI.delete(id);
+        setMessages(messages.filter(msg => msg.id !== id));
+        if (selectedMessage && selectedMessage.id === id) {
+          setSelectedMessage(null);
+        }
+      } catch (e) {
+        console.error('Failed to delete message', e);
       }
     }
   };
 
   const openMessage = (message) => {
     setSelectedMessage(message);
-    if (!message.isRead) {
+    if (!message.isRead && !message.is_read) {
       markAsRead(message.id);
     }
   };
@@ -233,7 +210,10 @@ function NewAdminContacts() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {filteredMessages.map((message) => (
+                {loading ? (
+                  <tr><td colSpan="6" className="text-center py-4">Loading...</td></tr>
+                ) : (
+                filteredMessages.map((message) => (
                   <tr
                     key={message.id}
                     className={`hover:bg-gray-50 transition cursor-pointer ${!message.isRead ? 'bg-blue-50' : ''}`}
@@ -287,7 +267,7 @@ function NewAdminContacts() {
                       </button>
                     </td>
                   </tr>
-                ))}
+                )))}
               </tbody>
             </table>
           </div>

@@ -1,10 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import axios from 'axios';
-import { initialUsers, USER_DATA_VERSION } from '../data/users';
+import { userAPI } from '../utils/api';
 
 const UserContext = createContext();
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
 
 export const UserProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -15,31 +12,7 @@ export const UserProvider = ({ children }) => {
 
   // Load user and sync database on mount
   useEffect(() => {
-    // 1. Sync local users database with localStorage
-    try {
-      const storedVersion = localStorage.getItem('userDataVersion');
-      const savedOfflineUsers = localStorage.getItem('offlineUsers');
-      
-      if (storedVersion !== USER_DATA_VERSION || !savedOfflineUsers) {
-        localStorage.setItem('offlineUsers', JSON.stringify(initialUsers));
-        localStorage.setItem('userDataVersion', USER_DATA_VERSION);
-      } else {
-        const parsed = JSON.parse(savedOfflineUsers);
-        const fileIds = new Set(initialUsers.map(u => u.id));
-        let merged = [...initialUsers];
-        
-        parsed.forEach(savedU => {
-          if (!fileIds.has(savedU.id)) {
-            merged.push(savedU);
-          }
-        });
-        localStorage.setItem('offlineUsers', JSON.stringify(merged));
-      }
-    } catch (e) {
-      console.error('Failed to sync users database:', e);
-    }
-
-    // 2. Load active session
+    // 1. Load active session
     const savedUser = localStorage.getItem('user');
     const token = localStorage.getItem('authToken');
     
@@ -74,23 +47,14 @@ export const UserProvider = ({ children }) => {
       setError(null);
 
       const token = localStorage.getItem('authToken');
-      if (!token) {
-        throw new Error('No authentication token found');
-      }
+      if (!token) throw new Error('No authentication token found');
 
-      // If we are currently offline, skip network request and use local data
       if (isOfflineMode) {
         const savedUser = localStorage.getItem('user');
-        if (savedUser) {
-          return { success: true, data: JSON.parse(savedUser), isOffline: true };
-        }
+        if (savedUser) return { success: true, data: JSON.parse(savedUser), isOffline: true };
       }
 
-      const response = await axios.get(`${API_BASE_URL}/api/v1/user/profile`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      const response = await userAPI.getProfile();
 
       setUser(response.data);
       localStorage.setItem('user', JSON.stringify(response.data));
@@ -102,9 +66,7 @@ export const UserProvider = ({ children }) => {
       if (isServerDown(err)) {
         setIsOfflineMode(true);
         const savedUser = localStorage.getItem('user');
-        if (savedUser) {
-          return { success: true, data: JSON.parse(savedUser), isOffline: true };
-        }
+        if (savedUser) return { success: true, data: JSON.parse(savedUser), isOffline: true };
       }
       setError(err.message);
       return { success: false, error: err.message };
@@ -119,37 +81,14 @@ export const UserProvider = ({ children }) => {
       setLoading(true);
       setError(null);
 
-      const token = localStorage.getItem('authToken');
-      if (!token) {
-        throw new Error('No authentication token found');
-      }
-
       if (isOfflineMode) {
-        // Offline Save Fallback
         const updatedUser = { ...user, ...profileData, isOffline: true };
         setUser(updatedUser);
         localStorage.setItem('user', JSON.stringify(updatedUser));
-        
-        // Update user in offlineUsers cache
-        const offlineUsers = JSON.parse(localStorage.getItem('offlineUsers') || '[]');
-        const updatedOfflineUsers = offlineUsers.map(u => 
-          (u.email === user.email || u.phone === user.phone) ? { ...u, ...profileData } : u
-        );
-        localStorage.setItem('offlineUsers', JSON.stringify(updatedOfflineUsers));
-
         return { success: true, data: updatedUser, isOffline: true };
       }
 
-      const response = await axios.put(
-        `${API_BASE_URL}/api/v1/user/profile`,
-        profileData,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        }
-      );
+      const response = await userAPI.updateProfile(profileData);
 
       setUser(response.data);
       localStorage.setItem('user', JSON.stringify(response.data));
@@ -175,11 +114,7 @@ export const UserProvider = ({ children }) => {
       setLoading(true);
       setError(null);
 
-      const response = await axios.post(
-        `${API_BASE_URL}/api/v1/auth/login`,
-        credentials
-      );
-
+      const response = await userAPI.login(credentials);
       const { user: userData, token } = response.data;
 
       setUser(userData);
@@ -187,53 +122,14 @@ export const UserProvider = ({ children }) => {
       setIsOfflineMode(false);
       localStorage.setItem('user', JSON.stringify(userData));
       localStorage.setItem('authToken', token);
+      
+      // Sync adminUser for admin panel APIs (assuming the same auth)
+      localStorage.setItem('adminUser', JSON.stringify({ ...userData, token }));
 
       return { success: true, data: userData };
     } catch (err) {
-      if (isServerDown(err)) {
-        // FALLBACK: Server is down, try offline authentication using stored data
-        const offlineUsers = JSON.parse(localStorage.getItem('offlineUsers') || '[]');
-        const matchingUser = offlineUsers.find(
-          u => u.phone === credentials.phone || u.email === credentials.email
-        );
-
-        if (matchingUser) {
-          // Verify simple password if stored offline, otherwise allow login for UX safety
-          if (!matchingUser.password || matchingUser.password === credentials.password) {
-            const offlineUserData = { ...matchingUser, isOffline: true };
-            setUser(offlineUserData);
-            setIsAuthenticated(true);
-            setIsOfflineMode(true);
-            localStorage.setItem('user', JSON.stringify(offlineUserData));
-            localStorage.setItem('authToken', `offline_token_${Date.now()}`);
-            return { success: true, data: offlineUserData, isOffline: true };
-          } else {
-            return { success: false, error: 'Invalid password (Offline verification failed)' };
-          }
-        } else {
-          // If no matching offline user found, auto-create a mock guest user to let the user enter
-          const fallbackUser = {
-            id: `offline_guest_${Date.now()}`,
-            name: credentials.name || 'Offline Guest',
-            phone: credentials.phone || '9999999999',
-            email: credentials.email || 'offline@eacyclic.com',
-            isOffline: true,
-          };
-          setUser(fallbackUser);
-          setIsAuthenticated(true);
-          setIsOfflineMode(true);
-          localStorage.setItem('user', JSON.stringify(fallbackUser));
-          localStorage.setItem('authToken', `offline_token_${Date.now()}`);
-          
-          // Save to offline users list
-          offlineUsers.push(fallbackUser);
-          localStorage.setItem('offlineUsers', JSON.stringify(offlineUsers));
-          
-          return { success: true, data: fallbackUser, isOffline: true };
-        }
-      }
-      setError(err.message);
-      return { success: false, error: err.message };
+      setError(err.response?.data?.error || err.message);
+      return { success: false, error: err.response?.data?.error || err.message };
     } finally {
       setLoading(false);
     }
@@ -245,11 +141,7 @@ export const UserProvider = ({ children }) => {
       setLoading(true);
       setError(null);
 
-      const response = await axios.post(
-        `${API_BASE_URL}/api/v1/auth/register`,
-        userData
-      );
-
+      const response = await userAPI.register(userData);
       const { user: newUser, token } = response.data;
 
       setUser(newUser);
@@ -260,49 +152,26 @@ export const UserProvider = ({ children }) => {
 
       return { success: true, data: newUser };
     } catch (err) {
-      if (isServerDown(err)) {
-        // FALLBACK: Server is down, save profile locally as offline user
-        const offlineUsers = JSON.parse(localStorage.getItem('offlineUsers') || '[]');
-        const exists = offlineUsers.some(
-          u => u.phone === userData.phone || u.email === userData.email
-        );
-
-        if (exists) {
-          return { success: false, error: 'Account already exists locally. Try logging in.' };
-        }
-
-        const newOfflineUser = {
-          ...userData,
-          id: `offline_user_${Date.now()}`,
-          isOffline: true
-        };
-
-        offlineUsers.push(newOfflineUser);
-        localStorage.setItem('offlineUsers', JSON.stringify(offlineUsers));
-
-        // Auto authenticate locally
-        setUser(newOfflineUser);
-        setIsAuthenticated(true);
-        setIsOfflineMode(true);
-        localStorage.setItem('user', JSON.stringify(newOfflineUser));
-        localStorage.setItem('authToken', `offline_token_${Date.now()}`);
-
-        return { success: true, data: newOfflineUser, isOffline: true };
-      }
-      setError(err.message);
-      return { success: false, error: err.message };
+      setError(err.response?.data?.error || err.message);
+      return { success: false, error: err.response?.data?.error || err.message };
     } finally {
       setLoading(false);
     }
   };
 
   // Logout user
-  const logout = () => {
+  const logout = async () => {
+    try {
+      await userAPI.logout();
+    } catch (e) {
+      console.error(e);
+    }
     setUser(null);
     setIsAuthenticated(false);
     setIsOfflineMode(false);
     localStorage.removeItem('user');
     localStorage.removeItem('authToken');
+    localStorage.removeItem('adminUser');
   };
 
   const value = {

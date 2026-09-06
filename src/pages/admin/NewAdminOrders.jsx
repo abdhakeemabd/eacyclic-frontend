@@ -1,66 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import AdminLayout from '../../component/AdminLayout';
 import { FaSearch, FaEye, FaTimes } from 'react-icons/fa';
+import { ordersAPI } from '../../utils/api';
 
 function NewAdminOrders() {
-  const [orders, setOrders] = useState([
-    { 
-      id: '1001', 
-      customer: 'John Doe', 
-      email: 'john@example.com',
-      phone: '+1234567890',
-      total: 299.99, 
-      status: 'delivered', 
-      date: '2026-01-30',
-      items: [
-        { name: 'Wireless Headphones', quantity: 1, price: 99.99 },
-        { name: 'Smart Watch', quantity: 1, price: 199.99 }
-      ],
-      address: '123 Main St, New York, NY 10001'
-    },
-    { 
-      id: '1002', 
-      customer: 'Jane Smith', 
-      email: 'jane@example.com',
-      phone: '+1234567891',
-      total: 159.50, 
-      status: 'shipped', 
-      date: '2026-01-30',
-      items: [
-        { name: 'Laptop Bag', quantity: 2, price: 49.99 },
-        { name: 'USB-C Cable', quantity: 3, price: 12.99 }
-      ],
-      address: '456 Oak Ave, Los Angeles, CA 90001'
-    },
-    { 
-      id: '1003', 
-      customer: 'Bob Johnson', 
-      email: 'bob@example.com',
-      phone: '+1234567892',
-      total: 499.00, 
-      status: 'processing', 
-      date: '2026-01-29',
-      items: [
-        { name: 'Bluetooth Speaker', quantity: 2, price: 79.99 }
-      ],
-      address: '789 Pine Rd, Chicago, IL 60601'
-    },
-    { 
-      id: '1004', 
-      customer: 'Alice Brown', 
-      email: 'alice@example.com',
-      phone: '+1234567893',
-      total: 89.99, 
-      status: 'pending', 
-      date: '2026-01-29',
-      items: [
-        { name: 'Phone Case', quantity: 1, price: 29.99 },
-        { name: 'Screen Protector', quantity: 2, price: 14.99 }
-      ],
-      address: '321 Elm St, Houston, TX 77001'
-    },
-  ]);
-
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -79,12 +24,48 @@ function NewAdminOrders() {
     return option ? option.color : 'bg-gray-100 text-gray-800';
   };
 
-  const updateOrderStatus = (orderId, newStatus) => {
-    setOrders(orders.map(order => 
-      order.id === orderId ? { ...order, status: newStatus } : order
-    ));
-    if (selectedOrder && selectedOrder.id === orderId) {
-      setSelectedOrder({ ...selectedOrder, status: newStatus });
+  useEffect(() => {
+    fetchOrders();
+  }, []);
+
+  const fetchOrders = async () => {
+    try {
+      setLoading(true);
+      const response = await ordersAPI.getAll();
+      const formattedOrders = response.data.map(o => ({
+        id: o.id.toString(),
+        customer: o.customer_name,
+        email: o.customer_email,
+        phone: o.customer_phone,
+        total: parseFloat(o.total),
+        status: o.status,
+        date: new Date(o.created_at).toLocaleDateString(),
+        items: (o.items || []).map(item => ({
+          name: item.product_name,
+          quantity: item.quantity,
+          price: parseFloat(item.price)
+        })),
+        address: o.shipping_address
+      }));
+      setOrders(formattedOrders);
+    } catch (e) {
+      console.error("Error fetching orders", e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateOrderStatus = async (orderId, newStatus) => {
+    try {
+      await ordersAPI.updateStatus(orderId, newStatus);
+      setOrders(orders.map(order => 
+        order.id === orderId ? { ...order, status: newStatus } : order
+      ));
+      if (selectedOrder && selectedOrder.id === orderId) {
+        setSelectedOrder({ ...selectedOrder, status: newStatus });
+      }
+    } catch (e) {
+      console.error("Failed to update status", e);
     }
   };
 
@@ -167,7 +148,10 @@ function NewAdminOrders() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {filteredOrders.map((order) => (
+                {loading ? (
+                  <tr><td colSpan="6" className="text-center py-4">Loading...</td></tr>
+                ) : (
+                filteredOrders.map((order) => (
                   <tr key={order.id} className="hover:bg-gray-50 transition">
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                       #{order.id}
@@ -181,7 +165,7 @@ function NewAdminOrders() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(order.status)}`}>
-                        {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                        {order.status ? order.status.charAt(0).toUpperCase() + order.status.slice(1) : ''}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -197,7 +181,7 @@ function NewAdminOrders() {
                       </button>
                     </td>
                   </tr>
-                ))}
+                )))}
               </tbody>
             </table>
           </div>

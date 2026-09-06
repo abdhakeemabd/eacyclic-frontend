@@ -46,18 +46,7 @@ function AdminDelivery() {
         console.warn('API fetch failed');
       }
       
-      let localOrders = [];
-      try {
-        localOrders = JSON.parse(localStorage.getItem('adminOrders') || '[]');
-      } catch (e) {
-        console.warn('Local fetch failed');
-      }
-
-      // Merge
-      const mergedMap = new Map();
-      allOrders.forEach(o => { if (o.id) mergedMap.set(o.id.toString(), o); });
-      localOrders.forEach(o => { if (o.id) mergedMap.set(o.id.toString(), o); });
-      const combinedOrders = Array.from(mergedMap.values());
+      const combinedOrders = allOrders;
 
       // Filter to only delivered or failed items
       const deliveryOrders = combinedOrders
@@ -92,11 +81,7 @@ function AdminDelivery() {
       fetchDeliveries();
     } catch (error) {
       console.error('Error updating delivery status:', error);
-      // Fallback
-      const localOrders = JSON.parse(localStorage.getItem('adminOrders') || '[]');
-      const updated = localOrders.map(o => o.id === deliveryId ? { ...o, status: newStatus === 'in_transit' ? 'shipped' : newStatus } : o);
-      localStorage.setItem('adminOrders', JSON.stringify(updated));
-      fetchDeliveries();
+
     }
   };
 

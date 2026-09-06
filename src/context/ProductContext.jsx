@@ -1,123 +1,127 @@
-import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
-import { products as initialProducts, PRODUCT_DATA_VERSION } from '../data/products';
-import axios from 'axios';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { productsAPI } from '../utils/api';
+import { products as initialProducts } from '../data/products';
 
 const ProductContext = createContext();
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
-
-const ADMIN_PRODUCTS_KEY = 'adminProducts';
-const VERSION_KEY = 'productDataVersion';
-
 export const ProductProvider = ({ children }) => {
   const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const initialLoadDone = useRef(false);
 
   // Helper for LIFO sorting (Newest ID First)
   const getSortedProducts = (productList) => {
     return [...productList].sort((a, b) => {
-      // Prioritize manually added products (long IDs) then sequential IDs
-      const valA = a.id.toString();
-      const valB = b.id.toString();
-      
-      // If one is manual and other is sequence, manual comes first (longer ID)
-      if (valA.length !== valB.length) {
-        return valB.length - valA.length;
-      }
-      
-      // If same length, sort numerically/alphabetically descending
-      return valB.localeCompare(valA, undefined, { numeric: true });
+      const dateA = new Date(a.created_at || 0);
+      const dateB = new Date(b.created_at || 0);
+      return dateB - dateA; // Sort by newest created_at first
     });
   };
 
-  // Sync Logic: Best method for keeping products.js as source of truth
-  const syncProducts = (savedProductsJson) => {
-    try {
-      const storedVersion = localStorage.getItem(VERSION_KEY);
-      const initialReversed = getSortedProducts(initialProducts);
-
-      // 1. If version mismatch, FORCE CLEAR everything and use only file data
-      if (storedVersion !== PRODUCT_DATA_VERSION) {
-        console.warn(`FORCE RESET: Version mismatch (${storedVersion} vs ${PRODUCT_DATA_VERSION}). Purging all old cache.`);
-        localStorage.removeItem(ADMIN_PRODUCTS_KEY);
-        localStorage.setItem(VERSION_KEY, PRODUCT_DATA_VERSION);
-        localStorage.setItem(ADMIN_PRODUCTS_KEY, JSON.stringify(initialReversed));
-        return initialReversed;
-      }
-
-      // 2. If no saved data, use file data
-      if (!savedProductsJson) {
-        localStorage.setItem(ADMIN_PRODUCTS_KEY, JSON.stringify(initialReversed));
-        return initialReversed;
-      }
-
-      // 3. Merging logic: Update existing, add new from file, keep user-added
-      const parsedProducts = JSON.parse(savedProductsJson);
-      const initialIds = new Set(initialProducts.map(p => p.id.toString()));
-      
-      // Start with latest data from products.js
-      let merged = [...initialProducts];
-      
-      // Keep only user-added products from storage (not in file)
-      // We identify these by their ID not being in the initialIds set
-      parsedProducts.forEach(savedP => {
-        if (!initialIds.has(savedP.id.toString())) {
-          merged.push(savedP);
-        }
-      });
-
-      const finalProducts = getSortedProducts(merged);
-      localStorage.setItem(ADMIN_PRODUCTS_KEY, JSON.stringify(finalProducts));
-      return finalProducts;
-
-    } catch (e) {
-      console.error('Failed to sync products:', e);
-      return getSortedProducts(initialProducts);
-    }
-  };
-
-  useEffect(() => {
-    const saved = localStorage.getItem(ADMIN_PRODUCTS_KEY);
-    const finalized = syncProducts(saved);
-    setProducts(finalized);
-    initialLoadDone.current = true;
-  }, [PRODUCT_DATA_VERSION, initialProducts]); // Re-run if version or content changes
-
-
-  // Save products to localStorage whenever they change
-  useEffect(() => {
-    if (initialLoadDone.current && products.length > 0) {
-      localStorage.setItem(ADMIN_PRODUCTS_KEY, JSON.stringify(products));
-      localStorage.setItem(VERSION_KEY, PRODUCT_DATA_VERSION);
-    }
-  }, [products]);
-
-  // Sync state between tabs
-  useEffect(() => {
-    const handleStorageChange = (e) => {
-      if (e.key === ADMIN_PRODUCTS_KEY && e.newValue) {
+  const seedDatabaseIfNeeded = async (existingProducts) => {
+    if (existingProducts.length === 0) {
+      console.log('Seeding database with initial products...');
+      const seededProducts = [];
+      for (const p of initialProducts) {
         try {
-          setProducts(JSON.parse(e.newValue));
-        } catch (err) {
-          console.error('Storage sync error:', err);
+          const payload = {
+            name: p.title || p.name || 'Unnamed Product',
+            description: p.description || p.content || '',
+            price: p.price || p.oldPrice || p.offerPrice ? parseFloat(p.offerPrice || p.price || p.oldPrice) : 0,
+            category: p.category || 'Uncategorized',
+            stock: p.count || p.stock || 10,
+            image_url: p.image_url || (p.gallery && p.gallery[0]) || p.image || '',
+            discount: p.offer ? parseFloat(p.offer.replace('%', '')) : 0
+          };
+          const res = await productsAPI.create(payload);
+          seededProducts.push(res.data);
+        } catch (e) {
+          console.error('Failed to seed product:', p.title, e);
         }
       }
-    };
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
-  }, []);
+      return seededProducts;
+    }
+    return existingProducts;
+  };
 
   const fetchProducts = async () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await axios.get(`${API_BASE_URL}/api/v1/products`);
-      setProducts(response.data);
-      localStorage.setItem('adminProducts', JSON.stringify(response.data));
-      return { success: true, data: response.data };
+      const response = await productsAPI.getAll();
+      
+      let fetchedProducts = response.data;
+      
+      // MIGRATION: Ensure all initialProducts are in the database
+      let newlySeeded = [];
+      for (const p of initialProducts) {
+         try {
+             const nameToMatch = p.title || p.name || 'Unnamed Product';
+             if (!fetchedProducts.find(fp => fp.name === nameToMatch)) {
+                 const payload = {
+                    name: nameToMatch,
+                    description: p.description || p.content || '',
+                    price: p.price || p.oldPrice || p.offerPrice ? parseFloat(p.offerPrice || p.price || p.oldPrice) : 0,
+                    category: p.category || 'Uncategorized',
+                    stock: p.count || p.stock || 10,
+                    image_url: p.image_url || (p.gallery && p.gallery[0]) || p.image || '',
+                    discount: p.offer ? parseFloat(typeof p.offer === 'string' ? p.offer.replace('%', '') : p.offer) : 0
+                 };
+                 // Fix: Ensure NaN doesn't break the API
+                 if (isNaN(payload.price)) payload.price = 0;
+                 if (isNaN(payload.discount)) payload.discount = 0;
+                 if (isNaN(payload.stock)) payload.stock = 0;
+                 
+                 const res = await productsAPI.create(payload);
+                 newlySeeded.push(res.data);
+             }
+         } catch (e) {
+             console.error("Seed error for product:", p.title || p.name, e);
+         }
+      }
+      if (newlySeeded.length > 0) {
+          fetchedProducts = [...fetchedProducts, ...newlySeeded];
+      }
+      
+      // MIGRATION: Recover products from localStorage
+      try {
+        const localData = localStorage.getItem('adminProducts');
+        if (localData) {
+          const localProducts = JSON.parse(localData);
+          const initialIds = new Set(initialProducts.map(p => p.id?.toString()));
+          // Find user-added products (long timestamps or not in initialProducts)
+          const userAddedLocalProducts = localProducts.filter(p => !initialIds.has(p.id?.toString()));
+          
+          let newlyMigrated = [];
+          for (const lp of userAddedLocalProducts) {
+             // Check if we already migrated it (by name match)
+             if (!fetchedProducts.find(fp => fp.name === (lp.title || lp.name))) {
+                 const payload = {
+                    name: lp.title || lp.name || 'Unnamed Product',
+                    description: lp.description || lp.content || '',
+                    price: lp.price || lp.oldPrice || lp.offerPrice ? parseFloat(lp.offerPrice || lp.price || lp.oldPrice) : 0,
+                    category: lp.category || 'Uncategorized',
+                    stock: lp.count || lp.stock || 10,
+                    image_url: lp.image_url || (lp.gallery && lp.gallery[0]) || lp.image || '',
+                    discount: lp.offer ? parseFloat(typeof lp.offer === 'string' ? lp.offer.replace('%', '') : lp.offer) : 0
+                 };
+                 const res = await productsAPI.create(payload);
+                 newlyMigrated.push(res.data);
+             }
+          }
+          if (newlyMigrated.length > 0) {
+             fetchedProducts = [...newlyMigrated, ...fetchedProducts];
+          }
+          // Optional: clear local storage so it doesn't run again, but leaving it is safe since we check by name
+        }
+      } catch (err) {
+        console.error("Migration error:", err);
+      }
+      
+      setProducts(getSortedProducts(fetchedProducts));
+      return { success: true, data: fetchedProducts };
     } catch (err) {
+      console.error('Error fetching products:', err);
       setError(err.message);
       return { success: false, error: err.message };
     } finally {
@@ -125,13 +129,28 @@ export const ProductProvider = ({ children }) => {
     }
   };
 
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
   const addProduct = async (productData) => {
     try {
       setLoading(true);
-      const newProduct = { ...productData, id: Date.now().toString() };
-      setProducts([newProduct, ...products]);
-      return { success: true, data: newProduct };
+      const payload = {
+        name: productData.name || productData.title,
+        description: productData.description || '',
+        price: parseFloat(productData.price) || 0,
+        category: productData.category || 'Uncategorized',
+        stock: parseInt(productData.stock) || 0,
+        image_url: productData.image || productData.image_url || '',
+        discount: parseFloat(productData.discount) || 0
+      };
+      
+      const response = await productsAPI.create(payload);
+      setProducts(prev => getSortedProducts([response.data, ...prev]));
+      return { success: true, data: response.data };
     } catch (err) {
+      console.error('Error adding product:', err);
       setError(err.message);
       return { success: false, error: err.message };
     } finally {
@@ -142,12 +161,24 @@ export const ProductProvider = ({ children }) => {
   const updateProduct = async (productId, productData) => {
     try {
       setLoading(true);
-      const updatedProducts = products.map(p =>
-        p.id.toString() === productId.toString() ? { ...p, ...productData } : p
+      
+      const payload = {};
+      if (productData.name !== undefined || productData.title !== undefined) payload.name = productData.name || productData.title;
+      if (productData.description !== undefined) payload.description = productData.description;
+      if (productData.price !== undefined) payload.price = parseFloat(productData.price) || 0;
+      if (productData.category !== undefined) payload.category = productData.category;
+      if (productData.stock !== undefined) payload.stock = parseInt(productData.stock) || 0;
+      if (productData.image !== undefined || productData.image_url !== undefined) payload.image_url = productData.image || productData.image_url;
+      if (productData.discount !== undefined) payload.discount = parseFloat(productData.discount) || 0;
+      if (productData.isActive !== undefined) payload.isActive = productData.isActive;
+      
+      const response = await productsAPI.update(productId, payload);
+      setProducts(prev => 
+        getSortedProducts(prev.map(p => p.id === productId ? response.data : p))
       );
-      setProducts(updatedProducts);
-      return { success: true, data: productData };
+      return { success: true, data: response.data };
     } catch (err) {
+      console.error('Error updating product:', err);
       setError(err.message);
       return { success: false, error: err.message };
     } finally {
@@ -158,10 +189,11 @@ export const ProductProvider = ({ children }) => {
   const deleteProduct = async (productId) => {
     try {
       setLoading(true);
-      const filteredProducts = products.filter(p => p.id.toString() !== productId.toString());
-      setProducts(filteredProducts);
+      await productsAPI.delete(productId);
+      setProducts(prev => prev.filter(p => p.id !== productId));
       return { success: true };
     } catch (err) {
+      console.error('Error deleting product:', err);
       setError(err.message);
       return { success: false, error: err.message };
     } finally {
@@ -169,38 +201,32 @@ export const ProductProvider = ({ children }) => {
     }
   };
 
-
-  const sortedProducts = getSortedProducts(products);
-
   const getProductById = (productId) => {
     return products.find(p => p.id.toString() === productId.toString());
   };
 
   const getProductsByCategory = (category) => {
-    return sortedProducts.filter(p => 
+    return products.filter(p => 
       p.category?.toLowerCase() === category.toLowerCase()
     );
   };
 
   const searchProducts = (query) => {
     const lowerQuery = query.toLowerCase();
-    return sortedProducts.filter(p =>
-      p.title?.toLowerCase().includes(lowerQuery) ||
+    return products.filter(p =>
       p.name?.toLowerCase().includes(lowerQuery) ||
-      p.content?.toLowerCase().includes(lowerQuery) ||
       p.description?.toLowerCase().includes(lowerQuery)
     );
   };
 
-  const resetProducts = () => {
-    const initialized = getSortedProducts(initialProducts);
-    setProducts(initialized);
-    localStorage.setItem(ADMIN_PRODUCTS_KEY, JSON.stringify(initialized));
-    localStorage.setItem(VERSION_KEY, PRODUCT_DATA_VERSION);
+  const resetProducts = async () => {
+     // Optionally implement a clear and re-seed logic
+     // But for now, just fetch products.
+     await fetchProducts();
   };
 
   const value = {
-    products: sortedProducts,
+    products,
     loading,
     error,
     fetchProducts,
@@ -210,7 +236,7 @@ export const ProductProvider = ({ children }) => {
     getProductById,
     getProductsByCategory,
     searchProducts,
-    resetProducts,
+    resetProducts
   };
 
   return <ProductContext.Provider value={value}>{children}</ProductContext.Provider>;

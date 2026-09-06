@@ -1,11 +1,13 @@
 import React from 'react';
 import { useCart } from '../context/CartContext';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { FaTrash, FaMinus, FaPlus, FaShoppingBag, FaArrowRight } from 'react-icons/fa';
 import { BiArrowBack } from 'react-icons/bi';
 
 function Cart() {
   const { cart, removeFromCart, updateQuantity, getCartTotal, getCartItemCount, clearCart } = useCart();
+
+  const navigate = useNavigate();
 
   const handleQuantityChange = (productId, newQuantity) => {
     if (newQuantity >= 1) {
@@ -14,14 +16,7 @@ function Cart() {
   };
 
   const handleCheckout = () => {
-    const cartItems = cart.map(item => 
-      `${item.title} (Qty: ${item.quantity}) - ₹${item.offerPrice || item.price}`
-    ).join('\n');
-    
-    const total = getCartTotal();
-    const message = `Hello, I want to place an order:\n\n${cartItems}\n\nTotal: ₹${total.toFixed(2)}\n\nPlease contact me to confirm the order.`;
-    const whatsappUrl = `https://wa.me/919846007257?text=${encodeURIComponent(message)}`;
-    window.open(whatsappUrl, '_blank');
+    navigate('/checkout', { state: { cartItems: cart } });
   };
 
   if (cart.length === 0) {

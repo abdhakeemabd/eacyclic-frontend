@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import Swal from 'sweetalert2';
+import { showSuccess, showError } from '../utils/swalUtils';
 import ImageLoader from '../component/image-loader';
 import { ordersAPI } from '../utils/api';
 
@@ -8,8 +8,9 @@ function Checkout() {
   const location = useLocation();
   const navigate = useNavigate();
   
-  // Extract product and quantity from navigation state
-  const { product, quantity = 1 } = location.state || {};
+  // Extract product, quantity or cart items from navigation state
+  const { product, quantity = 1, cartItems } = location.state || {};
+  const checkoutItems = cartItems || (product ? [{...product, quantity}] : []);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -25,16 +26,16 @@ function Checkout() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    if (!product) {
+    if (checkoutItems.length === 0) {
       navigate('/product', { replace: true });
     }
-  }, [product, navigate]);
+  }, [checkoutItems, navigate]);
 
-  if (!product) return null;
+  if (checkoutItems.length === 0) return null;
 
-  const price = product.offerPrice || product.price || 0;
+  const subtotal = checkoutItems.reduce((sum, item) => sum + (item.offerPrice || item.price || 0) * (item.quantity || 1), 0);
   const deliveryFee = 0; // Fixed free delivery for now
-  const total = (price * quantity) + deliveryFee;
+  const total = subtotal + deliveryFee;
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -67,49 +68,29 @@ function Checkout() {
       customer_email: "",
       customer_phone: formData.phone,
       shipping_address: `${formData.houseName}, ${formData.area}, ${formData.city}, ${formData.district}, ${formData.state} - ${formData.pincode}, ${formData.country}`,
-      subtotal: price * quantity,
+      subtotal: subtotal,
       shipping_cost: deliveryFee,
       tax: 0,
       total: total,
       status: 'pending',
-      items: [
-        {
-          product_name: product.title,
-          quantity: quantity,
-          price: price
-        }
-      ]
+      items: checkoutItems.map(item => ({
+        product_id: item.id || null,
+        product_name: item.title || item.name,
+        quantity: item.quantity || 1,
+        price: item.offerPrice || item.price || 0
+      }))
     };
 
     try {
-      // Save locally as source of truth for frontend demo
-      const existingOrders = JSON.parse(localStorage.getItem('adminOrders') || '[]');
-      localStorage.setItem('adminOrders', JSON.stringify([orderPayload, ...existingOrders]));
+      // Post to backend API directly
+      await ordersAPI.create(orderPayload);
 
-      // Try to post to backend API silently
-      try {
-        await ordersAPI.create(orderPayload);
-      } catch (apiError) {
-        console.warn("Backend API failed, but order saved locally.");
-      }
-
-      Swal.fire({
-        icon: 'success',
-        title: 'Order Placed!',
-        text: 'Your order has been placed successfully.',
-        confirmButtonColor: '#0ea5e9',
-        customClass: { popup: 'rounded-2xl' }
-      }).then(() => {
+      showSuccess('Order Placed!', 'Your order has been placed successfully.').then(() => {
         navigate('/', { replace: true });
       });
       
     } catch (error) {
-      Swal.fire({
-        icon: 'error',
-        title: 'Order Failed',
-        text: 'Something went wrong while placing your order. Please try again.',
-        customClass: { popup: 'rounded-2xl' }
-      });
+      showError('Order Failed', 'Something went wrong while placing your order. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -189,25 +170,28 @@ function Checkout() {
                 Order Summary
               </h2>
               
-              <div className="flex gap-4 mb-6">
-                <div className="w-20 h-20 bg-gray-50 rounded-xl overflow-hidden border border-gray-100 shrink-0">
-                  <ImageLoader 
-                    src={product.image_url || product.image || (product.gallery && product.gallery[0])} 
-                    alt={product.title} 
-                    className="w-full h-full object-cover" 
-                  />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900 line-clamp-2 leading-tight mb-1">{product.title}</h3>
-                  {product.category && <p className="text-xs text-gray-500 uppercase tracking-wider font-semibold mb-2">{product.category}</p>}
-                  <p className="text-gray-500 text-sm">Qty: <span className="font-bold text-gray-900">{quantity}</span></p>
-                </div>
+              <div className="space-y-4 mb-6 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
+                {checkoutItems.map((item, idx) => (
+                  <div key={idx} className="flex gap-4 border-b border-gray-100 pb-4 last:border-0 last:pb-0">
+                    <div className="w-16 h-16 bg-gray-50 rounded-xl overflow-hidden border border-gray-100 shrink-0">
+                      <ImageLoader 
+                        src={item.image_url || item.image || (item.gallery && item.gallery[0])} 
+                        alt={item.title || item.name} 
+                        className="w-full h-full object-cover" 
+                      />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-gray-900 line-clamp-1 leading-tight mb-1 text-sm">{item.title || item.name}</h3>
+                      <p className="text-gray-500 text-xs">Qty: <span className="font-bold text-gray-900">{item.quantity || 1}</span> × ₹{item.offerPrice || item.price || 0}</p>
+                    </div>
+                  </div>
+                ))}
               </div>
 
               <div className="space-y-3 text-sm border-t border-gray-100 pt-6">
                 <div className="flex justify-between text-gray-600">
-                  <span>Price ({quantity} item)</span>
-                  <span>₹{price * quantity}</span>
+                  <span>Subtotal ({checkoutItems.length} {checkoutItems.length === 1 ? 'item' : 'items'})</span>
+                  <span>₹{subtotal.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-gray-600">
                   <span>Delivery Charges</span>

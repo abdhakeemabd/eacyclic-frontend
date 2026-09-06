@@ -10,12 +10,30 @@ const api = axios.create({
   },
 });
 
+// Add a request interceptor to attach the auth token
+api.interceptors.request.use((config) => {
+  const adminUser = localStorage.getItem('adminUser');
+  if (adminUser) {
+    try {
+      const parsedUser = JSON.parse(adminUser);
+      if (parsedUser.token) {
+        config.headers.Authorization = `Token ${parsedUser.token}`;
+      }
+    } catch (e) {
+      console.error('Error parsing adminUser from localStorage', e);
+    }
+  }
+  return config;
+}, (error) => {
+  return Promise.reject(error);
+});
+
 // Products API
 export const productsAPI = {
   getAll: () => api.get('/products'),
   getById: (id) => api.get(`/products/${id}`),
   create: (data) => api.post('/products', data),
-  update: (id, data) => api.put(`/products/${id}`, data),
+  update: (id, data) => api.patch(`/products/${id}`, data),
   delete: (id) => api.delete(`/products/${id}`),
 };
 
@@ -58,20 +76,20 @@ export const analyticsAPI = {
 
 // Cart API
 export const cartAPI = {
-  getCart: () => api.get('/api/v1/cart'),
-  addToCart: (productId, quantity = 1) => api.post('/api/v1/cart/add', { product_id: productId, quantity }),
-  updateCartItem: (productId, quantity) => api.put(`/api/v1/cart/${productId}`, { quantity }),
-  removeFromCart: (productId) => api.delete(`/api/v1/cart/${productId}`),
-  clearCart: () => api.delete('/api/v1/cart/clear'),
+  getCart: () => api.get('/cart'),
+  addToCart: (productId, quantity = 1) => api.post('/cart/add', { product_id: productId, quantity }),
+  updateCartItem: (productId, quantity) => api.put(`/cart/${productId}`, { quantity }),
+  removeFromCart: (productId) => api.delete(`/cart/${productId}`),
+  clearCart: () => api.delete('/cart/clear'),
 };
 
 // User Profile API
 export const userAPI = {
-  getProfile: () => api.get('/api/v1/user/profile'),
-  updateProfile: (data) => api.put('/api/v1/user/profile', data),
-  login: (credentials) => api.post('/api/v1/auth/login', credentials),
-  register: (userData) => api.post('/api/v1/auth/register', userData),
-  logout: () => api.post('/api/v1/auth/logout'),
+  getProfile: () => api.get('/user/profile'),
+  updateProfile: (data) => api.put('/user/profile', data),
+  login: (credentials) => api.post('/auth/login', credentials),
+  register: (userData) => api.post('/auth/register', userData),
+  logout: () => api.post('/auth/logout'),
 };
 
 export default api;

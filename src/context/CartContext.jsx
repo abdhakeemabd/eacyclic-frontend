@@ -1,28 +1,47 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import axios from 'axios';
+import { cartAPI } from '../utils/api';
+import { useUser } from './UserContext';
 
 const CartContext = createContext();
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
 
 export const CartProvider = ({ children }) => {
   const [cart, setCart] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Load cart from localStorage on mount
-  useEffect(() => {
-    const savedCart = localStorage.getItem('cart');
-    if (savedCart) {
-      try {
-        setCart(JSON.parse(savedCart));
-      } catch (e) {
-        console.error('Failed to parse cart from localStorage:', e);
-      }
-    }
-  }, []);
+  const { isAuthenticated } = useUser();
 
-  // Save cart to localStorage whenever it changes
+  // Load cart from API if authenticated, else from localStorage
+  useEffect(() => {
+    const fetchCart = async () => {
+      if (isAuthenticated) {
+        try {
+          const response = await cartAPI.getCart();
+          // Assuming response.data.items is an array of { id, product, product_details, quantity }
+          // We need to map it to match the local cart structure: { id, name, price, quantity, ... }
+          const apiCart = response.data.items.map(item => ({
+            ...item.product_details,
+            quantity: item.quantity
+          }));
+          setCart(apiCart);
+        } catch (e) {
+          console.error('Failed to fetch cart from API:', e);
+        }
+      } else {
+        const savedCart = localStorage.getItem('cart');
+        if (savedCart) {
+          try {
+            setCart(JSON.parse(savedCart));
+          } catch (e) {
+            console.error('Failed to parse cart from localStorage:', e);
+          }
+        }
+      }
+    };
+    fetchCart();
+  }, [isAuthenticated]);
+
+  // Save cart to localStorage whenever it changes (as backup or for guests)
   useEffect(() => {
     localStorage.setItem('cart', JSON.stringify(cart));
   }, [cart]);
@@ -46,11 +65,10 @@ export const CartProvider = ({ children }) => {
         setCart([...cart, { ...product, quantity }]);
       }
 
-      // Optional: Sync with backend API
-      // await axios.post(`${API_BASE_URL}/api/v1/cart/add`, {
-      //   product_id: product.id,
-      //   quantity
-      // });
+      // Sync with backend API if authenticated
+      if (isAuthenticated) {
+        await cartAPI.addToCart(product.id, quantity);
+      }
 
       return { success: true };
     } catch (err) {
@@ -69,8 +87,10 @@ export const CartProvider = ({ children }) => {
 
       setCart(cart.filter(item => item.id !== productId));
 
-      // Optional: Sync with backend API
-      // await axios.delete(`${API_BASE_URL}/api/v1/cart/${productId}`);
+      // Sync with backend API
+      if (isAuthenticated) {
+        await cartAPI.removeFromCart(productId);
+      }
 
       return { success: true };
     } catch (err) {
@@ -96,8 +116,10 @@ export const CartProvider = ({ children }) => {
       );
       setCart(updatedCart);
 
-      // Optional: Sync with backend API
-      // await axios.put(`${API_BASE_URL}/api/v1/cart/${productId}`, { quantity });
+      // Sync with backend API
+      if (isAuthenticated) {
+        await cartAPI.updateCartItem(productId, quantity);
+      }
 
       return { success: true };
     } catch (err) {
@@ -116,8 +138,10 @@ export const CartProvider = ({ children }) => {
 
       setCart([]);
 
-      // Optional: Sync with backend API
-      // await axios.delete(`${API_BASE_URL}/api/v1/cart/clear`);
+      // Sync with backend API
+      if (isAuthenticated) {
+        await cartAPI.clearCart();
+      }
 
       return { success: true };
     } catch (err) {

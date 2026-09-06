@@ -52,21 +52,7 @@ function AdminDashboard() {
       let ordersData = orders.status === 'fulfilled' ? orders.value.data : [];
       let contactsData = contacts.status === 'fulfilled' ? contacts.value.data : [];
       
-      try {
-        const localOrders = JSON.parse(localStorage.getItem('adminOrders') || '[]');
-        const mergedOrdersMap = new Map();
-        ordersData.forEach(o => { if (o.id) mergedOrdersMap.set(o.id.toString(), o); });
-        localOrders.forEach(o => { if (o.id) mergedOrdersMap.set(o.id.toString(), o); });
-        ordersData = Array.from(mergedOrdersMap.values());
-      } catch (e) { console.warn('Local orders fetch failed'); }
 
-      try {
-        const localContacts = JSON.parse(localStorage.getItem('adminContacts') || '[]');
-        const mergedContactsMap = new Map();
-        contactsData.forEach(c => { if (c.id) mergedContactsMap.set(c.id.toString(), c); });
-        localContacts.forEach(c => { if (c.id) mergedContactsMap.set(c.id.toString(), c); });
-        contactsData = Array.from(mergedContactsMap.values());
-      } catch (e) { console.warn('Local contacts fetch failed'); }
 
       
       const uniqueCustomers = new Set(ordersData.map(o => o.customer_email).filter(Boolean));
@@ -433,7 +419,7 @@ function AdminDashboard() {
                   </td>
                   
                   <td className="px-4 py-4 align-middle">
-                    <p className="font-bold text-foreground text-sm">${order.total?.toFixed(2)}</p>
+                    <p className="font-bold text-foreground text-sm">${Number(order.total || 0).toFixed(2)}</p>
                   </td>
                   
                   <td className="px-6 py-4 align-middle text-center flex justify-center">

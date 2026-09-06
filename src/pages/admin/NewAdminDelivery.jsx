@@ -1,75 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import AdminLayout from '../../component/AdminLayout';
 import { FaSearch, FaTruck, FaCheckCircle, FaTimesCircle, FaClock, FaBox } from 'react-icons/fa';
+import { deliveryAPI } from '../../utils/api';
 
 function NewAdminDelivery() {
-  const [deliveries, setDeliveries] = useState([
-    {
-      id: 1,
-      trackingNumber: 'TRK123456789',
-      orderId: '1001',
-      customer: 'John Doe',
-      address: '123 Main St, New York, NY 10001',
-      phone: '+1234567890',
-      status: 'in_transit',
-      estimatedDelivery: '2026-02-02',
-      createdAt: '2026-01-30',
-      carrier: 'FedEx',
-      items: 3
-    },
-    {
-      id: 2,
-      trackingNumber: 'TRK987654321',
-      orderId: '1002',
-      customer: 'Jane Smith',
-      address: '456 Oak Ave, Los Angeles, CA 90001',
-      phone: '+1234567891',
-      status: 'delivered',
-      estimatedDelivery: '2026-01-31',
-      createdAt: '2026-01-29',
-      carrier: 'UPS',
-      items: 2
-    },
-    {
-      id: 3,
-      trackingNumber: 'TRK456789123',
-      orderId: '1003',
-      customer: 'Bob Johnson',
-      address: '789 Pine Rd, Chicago, IL 60601',
-      phone: '+1234567892',
-      status: 'out_for_delivery',
-      estimatedDelivery: '2026-01-31',
-      createdAt: '2026-01-28',
-      carrier: 'DHL',
-      items: 1
-    },
-    {
-      id: 4,
-      trackingNumber: 'TRK789123456',
-      orderId: '1004',
-      customer: 'Alice Brown',
-      address: '321 Elm St, Houston, TX 77001',
-      phone: '+1234567893',
-      status: 'pending',
-      estimatedDelivery: '2026-02-05',
-      createdAt: '2026-01-30',
-      carrier: 'USPS',
-      items: 4
-    },
-    {
-      id: 5,
-      trackingNumber: 'TRK321654987',
-      orderId: '1005',
-      customer: 'Charlie Wilson',
-      address: '654 Maple Dr, Phoenix, AZ 85001',
-      phone: '+1234567894',
-      status: 'failed',
-      estimatedDelivery: '2026-01-30',
-      createdAt: '2026-01-27',
-      carrier: 'FedEx',
-      items: 2
-    },
-  ]);
+  const [deliveries, setDeliveries] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -87,10 +23,44 @@ function NewAdminDelivery() {
     return statusOptions.find(opt => opt.value === status) || statusOptions[0];
   };
 
-  const updateDeliveryStatus = (id, newStatus) => {
-    setDeliveries(deliveries.map(delivery =>
-      delivery.id === id ? { ...delivery, status: newStatus } : delivery
-    ));
+  useEffect(() => {
+    fetchDeliveries();
+  }, []);
+
+  const fetchDeliveries = async () => {
+    try {
+      setLoading(true);
+      const response = await deliveryAPI.getAll();
+      const formattedDeliveries = response.data.map(d => ({
+        id: d.id.toString(),
+        trackingNumber: d.tracking_number || `TRK${d.id}`,
+        orderId: d.order,
+        customer: d.driver_name || 'N/A', // Using driver name as a placeholder for customer for now, ideally backend includes customer details in delivery serializer
+        address: d.driver_phone || 'N/A',
+        phone: d.driver_phone || 'N/A',
+        status: d.status,
+        estimatedDelivery: d.estimated_delivery ? new Date(d.estimated_delivery).toLocaleDateString() : 'Pending',
+        createdAt: new Date(d.updated_at).toLocaleDateString(),
+        carrier: 'Internal',
+        items: 1 // Default placeholder
+      }));
+      setDeliveries(formattedDeliveries);
+    } catch (e) {
+      console.error("Error fetching deliveries", e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateDeliveryStatus = async (id, newStatus) => {
+    try {
+      await deliveryAPI.updateStatus(id, newStatus);
+      setDeliveries(deliveries.map(delivery =>
+        delivery.id === id ? { ...delivery, status: newStatus } : delivery
+      ));
+    } catch (e) {
+      console.error("Failed to update status", e);
+    }
   };
 
   const filteredDeliveries = deliveries.filter(delivery => {
@@ -199,7 +169,10 @@ function NewAdminDelivery() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {filteredDeliveries.map((delivery) => {
+                {loading ? (
+                  <tr><td colSpan="8" className="text-center py-4">Loading...</td></tr>
+                ) : (
+                filteredDeliveries.map((delivery) => {
                   const statusConfig = getStatusConfig(delivery.status);
                   return (
                     <tr key={delivery.id} className="hover:bg-gray-50 transition">
@@ -244,7 +217,7 @@ function NewAdminDelivery() {
                       </td>
                     </tr>
                   );
-                })}
+                }))}
               </tbody>
             </table>
           </div>

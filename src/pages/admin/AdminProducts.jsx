@@ -10,7 +10,7 @@ import { useProducts } from '../../context/ProductContext';
 import { BaseTable } from '../../components/shadcn-custom/BaseTable';
 import { BaseDropdown } from '../../components/shadcn-custom/BaseDropdown';
 import { ReadMoreText } from '../../components/common/ReadMoreText';
-import Swal from 'sweetalert2';
+import { showSuccess, showError, showConfirm } from '../../utils/swalUtils';
 import { Fancybox } from '@fancyapps/ui';
 import '@fancyapps/ui/dist/fancybox/fancybox.css';
 import { useSearchParams } from 'react-router-dom';
@@ -142,74 +142,60 @@ function AdminProducts() {
 
       if (editingProduct) {
         await updateProduct(editingProduct.id, payload);
-        Swal.fire({
-          icon: 'success',
-          title: 'Updated Successfully',
-          text: 'The product details have been saved.',
-          timer: 2000,
-          showConfirmButton: false,
-          customClass: { popup: 'rounded-2xl' }
-        });
+        showSuccess('Updated Successfully', 'The product details have been saved.');
       } else {
         await addProduct(payload);
-        Swal.fire({
-          icon: 'success',
-          title: 'Product Created',
-          text: 'New product has been successfully added to your catalog.',
-          timer: 2000,
-          showConfirmButton: false,
-          customClass: { popup: 'rounded-2xl' }
-        });
+        showSuccess('Product Created', 'New product has been successfully added to your catalog.');
       }
       setShowModal(false);
       resetForm();
     } catch (error) {
       console.error('Error saving product:', error);
-      Swal.fire({
-        icon: 'error',
-        title: 'Oops...',
-        text: 'Something went wrong while saving the product!',
-        customClass: { popup: 'rounded-2xl' }
-      });
+      showError('Oops...', 'Something went wrong while saving the product!');
     }
   };
 
   const handleDelete = async (id) => {
-    const result = await Swal.fire({
-      title: 'Are you absolutely sure?',
-      text: "This will permanently delete the product from the catalog.",
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#ef4444',
-      cancelButtonColor: '#64748b',
-      confirmButtonText: 'Yes, delete it!',
-      customClass: { popup: 'rounded-2xl' }
-    });
+    const result = await showConfirm(
+      'Are you absolutely sure?',
+      'This will permanently delete the product from the catalog.',
+      'Yes, delete it!',
+      'bg-[#ef4444] hover:bg-[#dc2626] focus:ring-[#ef4444]'
+    );
 
     if (result.isConfirmed) {
       try {
         await removeProduct(id);
-        Swal.fire({
-          icon: 'success',
-          title: 'Deleted!',
-          text: 'The product has been removed.',
-          timer: 1500,
-          showConfirmButton: false,
-          customClass: { popup: 'rounded-2xl' }
-        });
+        showSuccess('Deleted!', 'The product has been removed.');
       } catch (error) {
         console.error('Error deleting product:', error);
-        Swal.fire('Error', 'Failed to delete the product.', 'error');
+        showError('Error', 'Failed to delete the product.');
       }
     }
   };
 
   const handleToggleActive = async (product) => {
-    try {
-      const updatedStatus = product.isActive === false ? true : false;
-      await updateProduct(product.id, { isActive: updatedStatus });
-    } catch (error) {
-      console.error('Error updating status:', error);
+    const isActivating = product.isActive === false;
+    const actionText = isActivating ? 'Activate' : 'Deactivate';
+    
+    const result = await showConfirm(
+      `${actionText} Product?`,
+      `Are you sure you want to ${actionText.toLowerCase()} ${product.name || product.title}?`,
+      actionText,
+      isActivating ? 'bg-[#0084ff] hover:bg-[#0073e6] focus:ring-[#0084ff]' : 'bg-[#0084ff] hover:bg-[#0073e6] focus:ring-[#0084ff]'
+    );
+
+    if (result.isConfirmed) {
+      try {
+        await updateProduct(product.id, { isActive: isActivating });
+        showSuccess(
+          `Product ${actionText}d`, 
+          `${product.name || product.title} has been successfully ${actionText.toLowerCase()}d.`
+        );
+      } catch (error) {
+        console.error('Error updating status:', error);
+        showError('Error', `Failed to ${actionText.toLowerCase()} the product.`);
+      }
     }
   };
 

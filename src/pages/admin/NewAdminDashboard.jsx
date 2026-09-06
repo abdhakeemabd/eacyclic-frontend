@@ -9,7 +9,7 @@ import {
   LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, 
   Tooltip, ResponsiveContainer
 } from 'recharts';
-import { getDashboardStats } from '../../utils/adminData';
+import { analyticsAPI } from '../../utils/api';
 
 function NewAdminDashboard() {
   const navigate = useNavigate();
@@ -17,10 +17,43 @@ function NewAdminDashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Load dashboard data
-    const data = getDashboardStats();
-    setDashboardData(data);
-    setLoading(false);
+    const fetchDashboard = async () => {
+      try {
+        const response = await analyticsAPI.getDashboardStats();
+        const apiData = response.data;
+        // Map API response to required component structure
+        setDashboardData({
+          totalProducts: apiData.total_products || 0,
+          totalOrders: apiData.total_orders || 0,
+          pendingDeliveries: 0, // Not explicitly tracked in simple analytics yet
+          unreadMessages: 0,
+          todayRevenue: apiData.total_revenue || 0,
+          thisMonthRevenue: apiData.total_revenue || 0, // Fallback placeholder
+          thisYearRevenue: apiData.total_revenue || 0,  // Fallback placeholder
+          salesData: [
+            { name: 'Mon', sales: 4000 },
+            { name: 'Tue', sales: 3000 },
+            { name: 'Wed', sales: 2000 },
+            { name: 'Thu', sales: 2780 },
+            { name: 'Fri', sales: 1890 },
+            { name: 'Sat', sales: 2390 },
+            { name: 'Sun', sales: 3490 },
+          ], // Static placeholder for charts until full timeseries is built
+          recentOrders: apiData.recent_orders.map(o => ({
+            id: o.id.toString(),
+            customer: o.customer_name,
+            total: parseFloat(o.total),
+            status: o.status,
+            date: new Date(o.created_at).toLocaleDateString()
+          }))
+        });
+      } catch (e) {
+        console.error('Failed to fetch dashboard data:', e);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchDashboard();
   }, []);
 
   if (loading || !dashboardData) {

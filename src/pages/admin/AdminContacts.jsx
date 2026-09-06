@@ -47,18 +47,7 @@ function AdminContacts() {
         console.warn('API fetch failed');
       }
       
-      let localContacts = [];
-      try {
-        localContacts = JSON.parse(localStorage.getItem('adminContacts') || '[]');
-      } catch (e) {
-        console.warn('Local fetch failed');
-      }
-
-      // Merge by ID
-      const mergedMap = new Map();
-      apiContacts.forEach(c => { if (c.id) mergedMap.set(c.id.toString(), c); });
-      localContacts.forEach(c => { if (c.id) mergedMap.set(c.id.toString(), c); });
-      const combinedContacts = Array.from(mergedMap.values());
+      const combinedContacts = apiContacts;
       
       // Sort newest first
       combinedContacts.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
@@ -75,10 +64,7 @@ function AdminContacts() {
     try {
       await contactAPI.markAsRead(contactId);
     } catch (error) {
-      console.warn('Error marking contact as read (likely CORS). Updating localStorage.');
-      const localContacts = JSON.parse(localStorage.getItem('adminContacts') || '[]');
-      const updated = localContacts.map(c => c.id === contactId ? { ...c, is_read: true } : c);
-      localStorage.setItem('adminContacts', JSON.stringify(updated));
+      console.warn('Error marking contact as read:', error);
     }
     fetchContacts();
   };
@@ -88,10 +74,7 @@ function AdminContacts() {
       try {
         await contactAPI.delete(contactId);
       } catch (error) {
-        console.warn('Error deleting contact (likely CORS). Updating localStorage.');
-        const localContacts = JSON.parse(localStorage.getItem('adminContacts') || '[]');
-        const updated = localContacts.filter(c => c.id !== contactId);
-        localStorage.setItem('adminContacts', JSON.stringify(updated));
+        console.warn('Error deleting contact:', error);
       }
       fetchContacts();
       if (selectedContact?.id === contactId) {

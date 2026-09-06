@@ -4,7 +4,7 @@ import { IoIosMail } from "react-icons/io";
 import { FaMapMarkerAlt } from "react-icons/fa";
 import MapLoader from './map-loader';
 import { contactAPI } from '../utils/api';
-import Swal from 'sweetalert2';
+import { showSuccess, showError } from '../utils/swalUtils';
 
 function ContactForm() {
   const [formData, setFormData] = useState({
@@ -24,37 +24,13 @@ function ContactForm() {
     e.preventDefault();
     setLoading(true);
     try {
-      try {
-        await contactAPI.create(formData);
-      } catch (apiError) {
-        console.warn('API submission failed (likely CORS), falling back to localStorage:', apiError);
-        const localContacts = JSON.parse(localStorage.getItem('adminContacts') || '[]');
-        localContacts.push({
-          id: Date.now(),
-          ...formData,
-          is_read: false,
-          created_at: new Date().toISOString()
-        });
-        localStorage.setItem('adminContacts', JSON.stringify(localContacts));
-      }
+      await contactAPI.create(formData);
       
-      Swal.fire({
-        icon: 'success',
-        title: 'Success!',
-        text: 'Your inquiry has been submitted successfully.',
-        timer: 2000,
-        timerProgressBar: true,
-        showConfirmButton: false,
-      });
+      showSuccess('Success!', 'Your inquiry has been submitted successfully.');
       setFormData({ name: '', subject: '', email: '', phone: '', message: '' });
     } catch (error) {
       console.error('Submission error:', error);
-      Swal.fire({
-        icon: 'error',
-        title: 'Oops...',
-        text: 'Something went wrong. Please try again.',
-        confirmButtonColor: '#000',
-      });
+      showError('Oops...', 'Something went wrong. Please try again.');
     } finally {
       setLoading(false);
     }

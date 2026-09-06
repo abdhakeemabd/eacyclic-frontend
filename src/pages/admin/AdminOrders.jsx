@@ -55,23 +55,10 @@ function AdminOrders() {
         console.warn('Error fetching API orders:', e);
       }
       
-      let localOrders = [];
-      try {
-        localOrders = JSON.parse(localStorage.getItem('adminOrders') || '[]');
-      } catch (e) {
-        console.warn('Error fetching local orders:', e);
-      }
-      
-      // Merge logic: Combine localOrders and apiOrders, preferring localOrders for duplicates
-      const mergedMap = new Map();
-      apiOrders.forEach(o => { if (o.id) mergedMap.set(o.id.toString(), o); });
-      localOrders.forEach(o => { if (o.id) mergedMap.set(o.id.toString(), o); });
-      
-      const allOrders = Array.from(mergedMap.values());
       // Sort by newest first
-      allOrders.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+      apiOrders.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
       
-      setOrders(allOrders);
+      setOrders(apiOrders);
       
     } catch (error) {
       console.error('Error fetching orders:', error);
@@ -90,11 +77,6 @@ function AdminOrders() {
       }
     } catch (error) {
       console.error('Error updating order status:', error);
-      // Fallback for demo
-      const localOrders = JSON.parse(localStorage.getItem('adminOrders') || '[]');
-      const updated = localOrders.map(o => o.id === orderId ? { ...o, status: newStatus } : o);
-      localStorage.setItem('adminOrders', JSON.stringify(updated));
-      fetchOrders();
       if (selectedOrder?.id === orderId) {
         setShowModal(false);
       }
@@ -268,7 +250,7 @@ function AdminOrders() {
                       </p>
                     </td>
                     <td className="px-2 py-4 align-middle">
-                      <p className="font-black text-foreground text-sm">₹{order.total?.toFixed(2) || 0}</p>
+                      <p className="font-black text-foreground text-sm">₹{Number(order.total || 0).toFixed(2)}</p>
                     </td>
                     <td className="px-2 py-4 align-middle">
                       <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border ${getStatusStyle(order.status)}`}>
@@ -330,7 +312,7 @@ function AdminOrders() {
                                     {order.items?.map((item, idx) => (
                                       <li key={idx} className="flex justify-between items-center border-b border-border/50 pb-2 last:border-0 text-sm">
                                         <span className="text-foreground">{item.product_name} <span className="text-muted-foreground">x {item.quantity}</span></span>
-                                        <span className="font-bold text-foreground">₹{(item.price * item.quantity).toFixed(2)}</span>
+                                        <span className="font-bold text-foreground">₹{Number(item.price * item.quantity || 0).toFixed(2)}</span>
                                       </li>
                                     ))}
                                   </ul>
@@ -463,19 +445,19 @@ function AdminOrders() {
                         <div className="bg-muted/30 rounded-3xl p-6 space-y-3 border border-border">
                           <div className="flex justify-between text-sm">
                             <span className="text-muted-foreground">Subtotal</span>
-                            <span className="font-bold text-foreground">₹{selectedOrder.subtotal?.toFixed(2) || 0}</span>
+                            <span className="font-bold text-foreground">₹{Number(selectedOrder.subtotal || 0).toFixed(2)}</span>
                           </div>
                           <div className="flex justify-between text-sm">
                             <span className="text-muted-foreground">Shipping</span>
-                            <span className="font-bold text-foreground">₹{selectedOrder.shipping_cost?.toFixed(2) || 0}</span>
+                            <span className="font-bold text-foreground">₹{Number(selectedOrder.shipping_cost || 0).toFixed(2)}</span>
                           </div>
                           <div className="flex justify-between text-sm">
                             <span className="text-muted-foreground">Tax</span>
-                            <span className="font-bold text-foreground">₹{selectedOrder.tax?.toFixed(2) || 0}</span>
+                            <span className="font-bold text-foreground">₹{Number(selectedOrder.tax || 0).toFixed(2)}</span>
                           </div>
                           <div className="border-t border-border pt-3 flex justify-between">
                             <span className="font-black text-primary">Total</span>
-                            <span className="font-black text-xl text-foreground">₹{selectedOrder.total?.toFixed(2) || 0}</span>
+                            <span className="font-black text-xl text-foreground">₹{Number(selectedOrder.total || 0).toFixed(2)}</span>
                           </div>
                         </div>
                       </div>
@@ -498,7 +480,7 @@ function AdminOrders() {
                                 <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest">Qty: {item.quantity} × ₹{item.price}</p>
                               </div>
                             </div>
-                            <span className="font-black text-foreground">₹{(item.price * item.quantity).toFixed(2)}</span>
+                            <span className="font-black text-foreground">₹{Number(item.price * item.quantity || 0).toFixed(2)}</span>
                           </div>
                         ))}
                       </div>
