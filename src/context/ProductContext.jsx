@@ -4,7 +4,7 @@ import axios from 'axios';
 
 const ProductContext = createContext();
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
 
 const ADMIN_PRODUCTS_KEY = 'adminProducts';
 const VERSION_KEY = 'productDataVersion';
