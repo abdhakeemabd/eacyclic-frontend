@@ -1,0 +1,142 @@
+/* ============================================
+   ADMIN PANEL STYLES
+   Separate from public website styles
+   ============================================ */
+
+/* Admin Layout Base */
+.admin-layout {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Admin Sidebar */
+.admin-sidebar {
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Admin Navigation */
+.admin-nav-item {
+  transition: all 0.2s ease-in-out;
+}
+
+.admin-nav-item:hover {
+  transform: translateX(4px);
+}
+
+/* Admin Cards */
+.admin-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.admin-card:hover {
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+}
+
+/* Admin Tables */
+.admin-table thead th {
+  background: linear-gradient(to bottom, #f9fafb, #f3f4f6);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.admin-table tbody tr:hover {
+  background-color: #f9fafb;
+}
+
+/* Admin Buttons */
+.admin-btn-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  box-shadow: 0 4px 6px rgba(102, 126, 234, 0.3);
+  transition: all 0.3s ease;
+}
+
+.admin-btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(102, 126, 234, 0.4);
+}
+
+/* Admin Modal */
+.admin-modal-overlay {
+  background-color: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+}
+
+/* Admin Form Inputs */
+.admin-input:focus,
+.admin-textarea:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+/* Admin File Upload */
+.admin-file-input:hover {
+  border-color: #667eea;
+  background-color: #f9fafb;
+}
+
+/* Admin Image Preview */
+.admin-image-preview:hover .admin-image-preview-delete {
+  opacity: 1;
+}
+
+/* Admin Loading Spinner */
+@keyframes admin-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.admin-spinner {
+  border: 3px solid #f3f4f6;
+  border-top: 3px solid #667eea;
+  border-radius: 50%;
+  animation: admin-spin 1s linear infinite;
+}
+
+/* Admin Scrollbar */
+.admin-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.admin-scrollbar::-webkit-scrollbar-track {
+  background: #f3f4f6;
+  border-radius: 4px;
+}
+
+.admin-scrollbar::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 4px;
+}
+
+.admin-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+/* Prevent admin styles from affecting public site */
+.admin-layout header {
+  position: static !important;
+  background-color: white !important;
+  border-bottom: 1px solid #e5e7eb !important;
+  color: #1f2937 !important;
+  z-index: auto !important;
+}
+
+.admin-layout .logo {
+  max-width: none !important;
+}
+
+/* Admin Responsive */
+@media (max-width: 768px) {
+  .admin-modal-content {
+    margin: 1rem;
+    max-width: calc(100% - 2rem);
+  }
+}

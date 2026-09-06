@@ -1,0 +1,26 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap');
+
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0px); }
+}
+
+.animateFloat {
+  animation: float 6s ease-in-out infinite;
+}
+
+.glassNav {
+  background: rgba(5, 5, 5, 0.7);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.clipPathArg {
+  clip-path: polygon(0 0, 100% 0, 92% 100%, 0 100%);
+}
+
+.clipPathEsp {
+  clip-path: polygon(8% 0, 100% 0, 100% 100%, 0 100%);
+}

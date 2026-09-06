@@ -1,0 +1,128 @@
+header {
+    width: 100%;
+    z-index: 50;
+    background-color: #fff;
+    border-bottom: 1px solid #ebebec;
+}
+
+header .logo {
+    max-width: 80px;
+}
+
+.ReactModalPortal .ReactModal__Overlay {
+    background-color: #00000075 !important;
+}
+
+.home-banner {
+    position: relative;
+    padding-top: 80px;
+    padding-bottom: 60px;
+    min-height: max(90vh, 650px);
+    height: auto;
+    background: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url('../images/banner/banner.png') no-repeat center center;
+    background-size: cover;
+    width: 100%;
+}
+
+.home-banner::before {
+    display: none; /* Handled by linear-gradient for better control */
+}
+
+@media (max-width:567px) {
+    .home-banner {
+        min-height: max(100vh, 650px);
+        padding-top: 100px;
+        padding-bottom: 80px;
+        background-position: center;
+    }
+}
+
+/* Hide scrollbar for category filter */
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+.no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+.home_prodcut_sec .product-card .product-img {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    object-fit: cover;
+    background-color: #f2f2f200;
+    /* User specified bg */
+    /* Border removed to use Tailwind */
+    padding: 10px;
+    /* Breathe room */
+    border-radius: 6px 6px 0px 0px;
+}
+
+.home_prodcut_sec .prodcut-card .text-m {
+    font-size: 18px;
+}
+
+.home_feature_sec .features_slider .feature-img-card {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    background-color: #f2f2f200;
+    /* User specified bg */
+    border: 1px solid #ebebec;
+    /* User specified border */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+.home_feature_sec .features_slider .feature-img-card .feature-img {
+    width: 100%;
+    height: 100%;
+    aspect-ratio: 1 / 1;
+    object-fit: cover;
+    border-radius: 5px;
+    display: block;
+    /* Removes bottom space */
+}
+
+.home_feature_sec .features_slider {
+    margin-left: -15px;
+    margin-right: -15px;
+}
+
+.home_prodcut_sec .product-card:hover {
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+    transform: translateY(-5px);
+    transition: all 0.3s ease;
+}
+
+/*  */
+.product-banner {
+    position: relative;
+    padding-top: 130px;
+    height: auto;
+    background: url('../images/img/4.webp') no-repeat bottom center;
+    background-size: cover;
+    width: 100%;
+    aspect-ratio: 368 / 148;
+}
+
+.product_main_sec .product-card .pro-img {
+    aspect-ratio: 1 / 1;
+    width: 100%;
+    object-fit: cover;
+}
+
+
+/* contact */
+.contact-banner {
+    position: relative;
+    padding-top: 130px;
+    height: auto;
+    background: url('../images/img/1.webp') no-repeat bottom center;
+    background-size: cover;
+    width: 100%;
+    aspect-ratio: 368 / 148;
+}
