@@ -1,8 +1,24 @@
 User-agent: *
 Allow: /
 
-# Exclude Admin Panel from search engines
+# Block admin panel from all search engines
 Disallow: /admin
-Disallow: /admin-login
+Disallow: /admin/
+Disallow: /admin/*
+Disallow: /checkout
+Disallow: /cart
+Disallow: /profile
 
+# Block search result pages (prevents duplicate content penalty)
+Disallow: /product?search=
+
+# Allow product category pages (these ARE good to index)
+Allow: /product?category=
+Allow: /product-view/
+
+# Sitemaps
 Sitemap: https://eacyclic.com/sitemap.xml
+Sitemap: https://eacyclic.com/sitemap-products.xml
+
+# Crawl rate (be polite)
+Crawl-delay: 1

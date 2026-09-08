@@ -3,61 +3,108 @@
 
 <head>
   <meta charset="UTF-8" />
-  <link rel="icon" type="image/svg+xml" href="./src/assets/images/logo/fav.png" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  
-  <!-- Primary Meta Tags -->
+  <link rel="icon" type="image/webp" href="/favicon.webp" />
+
+  <!-- ── Google Analytics (GA4) ─────────────────────────────────────────── -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-EFZHJ13ZYG"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-EFZHJ13ZYG', {
+      page_path: window.location.pathname,
+      send_page_view: true
+    });
+  </script>
+
+  <!-- ══ STEP 1: Paste your Google Search Console verification code below ══ -->
+  <!-- Get it from: https://search.google.com/search-console/ → Add Property → HTML Tag -->
+  <!-- <meta name="google-site-verification" content="PASTE_YOUR_GOOGLE_CODE_HERE" /> -->
+  <!-- <meta name="msvalidate.01" content="PASTE_YOUR_BING_CODE_HERE" /> -->
+
+  <!-- ── Performance: DNS Prefetch & Preconnect ─────────────────────────── -->
+  <!-- These make Google Fonts, API calls, and image loads faster -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="dns-prefetch" href="//eacyclic.com" />
+
+  <!-- ── Primary Meta Tags ─────────────────────────────────────────────── -->
   <title>Eacyclic – Buy Products Online in Kerala | Best Shopping Website in India</title>
   <meta name="title" content="Eacyclic – Buy Products Online in Kerala | Best Shopping Website in India" />
-  <meta name="description"
-    content="Shop online with Eacyclic. Find the best products around you in Kerala and across India. Easy shopping, fast delivery. Buy products online today!" />
-  <meta name="keywords" content="Eacyclic, online shopping, Kerala, India, buy products online, e-commerce" />
-  <meta name="author" content="eacyclic" />
-  <meta name="robots" content="index, follow" />
+  <meta name="description" content="Shop online with Eacyclic. Find the best products around you in Kerala and across India. Easy shopping, fast delivery. Buy products online today!" />
+  <meta name="keywords" content="Eacyclic, online shopping Kerala, buy products online India, e-commerce Kerala, best shopping website India" />
+  <meta name="author" content="Eacyclic" />
+  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
   <meta name="language" content="English" />
   <meta name="revisit-after" content="1 days" />
   <meta name="geo.region" content="IN-KL" />
   <meta name="geo.placename" content="Malappuram" />
-  
-  <!-- Open Graph / Facebook -->
+  <meta name="theme-color" content="#ea580c" />
+
+  <!-- ── Open Graph / Facebook / WhatsApp ──────────────────────────────── -->
+  <meta property="og:site_name" content="Eacyclic" />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://eacyclic.com/" />
-  <meta property="og:title" content="eacyclic | Best Online Shopping in Kerala & India" />
-  <meta property="og:description" content="Shop the best products near you with eacyclic. The fastest one-click shopping experience in India." />
-  <meta property="og:image" content="./src/assets/images/logo/logo.png" />
-  
-  <!-- Twitter -->
-  <meta property="twitter:card" content="summary_large_image" />
-  <meta property="twitter:url" content="https://eacyclic.com/" />
-  <meta property="twitter:title" content="eacyclic | Best Online Shopping in Kerala & India" />
-  <meta property="twitter:description" content="Shop the best products near you with eacyclic. The fastest one-click shopping experience in India." />
-  <meta property="twitter:image" content="./src/assets/images/logo/logo.png" />
-  
-  <!-- Canonical URL -->
+  <meta property="og:title" content="Eacyclic | Best Online Shopping in Kerala & India" />
+  <meta property="og:description" content="Shop the best products near you with Eacyclic. The fastest one-click shopping experience in India." />
+  <meta property="og:image" content="https://eacyclic.com/favicon.webp" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:locale" content="en_IN" />
+
+  <!-- ── Twitter Card ───────────────────────────────────────────────────── -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:url" content="https://eacyclic.com/" />
+  <meta name="twitter:title" content="Eacyclic | Best Online Shopping in Kerala & India" />
+  <meta name="twitter:description" content="Shop the best products near you with Eacyclic. The fastest one-click shopping experience in India." />
+  <meta name="twitter:image" content="https://eacyclic.com/favicon.webp" />
+
+  <!-- ── Canonical URL ──────────────────────────────────────────────────── -->
   <link rel="canonical" href="https://eacyclic.com/" />
-  
-  <!-- Structured Data -->
+
+  <!-- ── Sitemaps ───────────────────────────────────────────────────────── -->
+  <link rel="sitemap" type="application/xml" href="/sitemap.xml" />
+
+  <!-- ── JSON-LD: Website + Organization + Search Action ──────────────── -->
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
-    "@type": "WebSite",
-    "name": "eacyclic",
-    "url": "https://eacyclic.com",
-    "description": "Find and shop the best products around you",
-    "potentialAction": {
-      "@type": "SearchAction",
-      "target": "https://eacyclic.com/product?search={search_term_string}",
-      "query-input": "required name=search_term_string"
-    }
-  }
-  </script>
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "Organization",
-    "name": "Eacyclic",
-    "url": "https://eacyclic.com",
-    "logo": "https://eacyclic.com/logo.png"
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": "https://eacyclic.com/#website",
+        "name": "Eacyclic",
+        "url": "https://eacyclic.com",
+        "description": "Find and shop the best products around you in Kerala and India",
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": "https://eacyclic.com/product?search={search_term_string}",
+          "query-input": "required name=search_term_string"
+        }
+      },
+      {
+        "@type": "Organization",
+        "@id": "https://eacyclic.com/#organization",
+        "name": "Eacyclic",
+        "url": "https://eacyclic.com",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://eacyclic.com/favicon.webp",
+          "width": 512,
+          "height": 512
+        },
+        "description": "Online shopping platform serving Kerala and India",
+        "areaServed": {
+          "@type": "State",
+          "name": "Kerala",
+          "containedIn": {
+            "@type": "Country",
+            "name": "India"
+          }
+        }
+      }
+    ]
   }
   </script>
 </head>
