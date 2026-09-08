@@ -143,7 +143,9 @@ export const ProductProvider = ({ children }) => {
         category: productData.category || 'Uncategorized',
         stock: parseInt(productData.stock) || 0,
         image_url: productData.image || productData.image_url || '',
-        discount: parseFloat(productData.discount) || 0
+        discount: parseFloat(productData.discount) || 0,
+        freeShipping: productData.freeShipping !== undefined ? productData.freeShipping : true,
+        gallery: productData.gallery || []
       };
       
       const response = await productsAPI.create(payload);
@@ -171,6 +173,8 @@ export const ProductProvider = ({ children }) => {
       if (productData.image !== undefined || productData.image_url !== undefined) payload.image_url = productData.image || productData.image_url;
       if (productData.discount !== undefined) payload.discount = parseFloat(productData.discount) || 0;
       if (productData.isActive !== undefined) payload.isActive = productData.isActive;
+      if (productData.freeShipping !== undefined) payload.freeShipping = productData.freeShipping;
+      if (productData.gallery !== undefined) payload.gallery = productData.gallery;
       
       const response = await productsAPI.update(productId, payload);
       setProducts(prev => 

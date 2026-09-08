@@ -49,9 +49,22 @@ function AdminProducts() {
     image_url: '',
     discount: 0,
     imageFile: null,
-    isActive: true
+    isActive: true,
+    freeShipping: true,
+    gallery: []
   });
-  const [imagePreview, setImagePreview] = useState('');
+  const [imagePreviews, setImagePreviews] = useState([]);
+
+  React.useEffect(() => {
+    if (showModal) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [showModal]);
 
   React.useEffect(() => {
     Fancybox.bind("[data-fancybox]", {
@@ -122,12 +135,19 @@ function AdminProducts() {
   };
 
   const handleImageChange = async (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const base64 = await fileToBase64(file);
-      setFormData({...formData, imageFile: file, image_url: base64});
-      setImagePreview(base64);
+    const files = Array.from(e.target.files);
+    if (files.length > 0) {
+      const base64Images = await Promise.all(files.map(file => fileToBase64(file)));
+      const newGallery = [...formData.gallery, ...base64Images];
+      setFormData({...formData, gallery: newGallery, image_url: newGallery[0] || ''});
+      setImagePreviews(newGallery);
     }
+  };
+
+  const removeImage = (index) => {
+    const newGallery = formData.gallery.filter((_, i) => i !== index);
+    setFormData({...formData, gallery: newGallery, image_url: newGallery[0] || ''});
+    setImagePreviews(newGallery);
   };
 
   const handleSubmit = async (e) => {
@@ -211,9 +231,13 @@ function AdminProducts() {
       image_url: product.image_url || product.image || (product.gallery && product.gallery[0]) || '',
       discount: product.offer ? parseInt(product.offer) : 0,
       imageFile: null,
-      isActive: product.isActive !== false
+      isActive: product.isActive !== false,
+      freeShipping: product.freeShipping !== false,
+      gallery: product.gallery && product.gallery.length ? product.gallery : (product.image_url || product.image ? [product.image_url || product.image] : [])
     });
-    setImagePreview(product.image_url || product.image || (product.gallery && product.gallery[0]) || '');
+    
+    const initialPreviews = product.gallery && product.gallery.length ? product.gallery : (product.image_url || product.image ? [product.image_url || product.image] : []);
+    setImagePreviews(initialPreviews);
     setShowModal(true);
   };
 
@@ -227,9 +251,11 @@ function AdminProducts() {
       image_url: '',
       discount: 0,
       imageFile: null,
-      isActive: true
+      isActive: true,
+      freeShipping: true,
+      gallery: []
     });
-    setImagePreview('');
+    setImagePreviews([]);
     setEditingProduct(null);
   };
 
@@ -695,23 +721,52 @@ function AdminProducts() {
                         </div>
                       </div>
 
+                      <div className="md:col-span-2 flex items-center justify-between p-4 bg-muted/20 border border-border rounded-xl">
+                        <div>
+                          <label className="text-sm font-bold text-foreground block">Free Delivery</label>
+                          <p className="text-xs text-muted-foreground mt-0.5">Offer free shipping for this product</p>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={formData.freeShipping}
+                            onChange={(e) => setFormData({ ...formData, freeShipping: e.target.checked })}
+                            className="sr-only peer"
+                          />
+                          <div className="w-11 h-6 bg-muted peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                        </label>
+                      </div>
+
                       <div className="md:col-span-2">
                         <label className="text-xs uppercase font-bold text-muted-foreground mb-2 block">Product Media</label>
-                        <div className="flex items-center space-x-6">
-                          <div className="w-24 h-24 rounded-xl bg-muted flex items-center justify-center overflow-hidden border-2 border-dashed border-border">
-                            {imagePreview ? (
-                              <img src={imagePreview} alt="Preview" className="w-full h-full object-contain bg-white p-1" />
+                        <div className="flex flex-col space-y-4">
+                          <div className="flex flex-wrap gap-4">
+                            {imagePreviews.length > 0 ? (
+                              imagePreviews.map((preview, index) => (
+                                <div key={index} className="relative w-24 h-24 rounded-xl bg-muted flex items-center justify-center overflow-hidden border-2 border-border group">
+                                  <img src={preview} alt="Preview" className="w-full h-full object-contain bg-white p-1" />
+                                  <button
+                                    type="button"
+                                    onClick={() => removeImage(index)}
+                                    className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                                  >
+                                    <Trash2 className="text-white" size={20} />
+                                  </button>
+                                </div>
+                              ))
                             ) : (
-                              <ImageIcon className="text-muted-foreground" size={24} />
+                              <div className="w-24 h-24 rounded-xl bg-muted flex items-center justify-center overflow-hidden border-2 border-dashed border-border">
+                                <ImageIcon className="text-muted-foreground" size={24} />
+                              </div>
                             )}
                           </div>
-                          <div className="flex-1">
+                          <div>
                             <label className="inline-flex items-center px-4 py-2.5 bg-secondary text-secondary-foreground rounded-xl text-sm font-bold cursor-pointer hover:bg-secondary/80 transition-colors">
                               <Plus size={18} className="mr-2" />
-                              Upload Image
-                              <input type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
+                              Upload Images
+                              <input type="file" multiple accept="image/*" onChange={handleImageChange} className="hidden" />
                             </label>
-                            <p className="text-[10px] text-muted-foreground mt-2">Max size: 5MB. Formats: JPG, PNG, WEBP</p>
+                            <p className="text-[10px] text-muted-foreground mt-2">Max size: 5MB per image. Formats: JPG, PNG, WEBP</p>
                           </div>
                         </div>
                       </div>

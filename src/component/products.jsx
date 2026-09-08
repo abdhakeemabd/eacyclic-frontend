@@ -12,12 +12,13 @@ function Products() {
   const [carts, setCarts] = useState({});
   const [activeTab, setActiveTab] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
-  const [visibleCount, setVisibleCount] = useState(20);
+  const [visibleCount, setVisibleCount] = useState(18);
   const { addToCart } = useCart();
   const { products, loading } = useProducts();
   const location = useLocation();
   const navigate = useNavigate();
   const observer = useRef();
+  const loaderRef = useRef();
 
   // Group categories for tabs
   const categories = useMemo(() => {
@@ -39,25 +40,25 @@ function Products() {
     });
   }, [products, searchTerm, activeTab]);
 
-  // Initialize search from URL
+  // Initialize search and category from URL
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const search = params.get('search');
-    if (search) {
-      setSearchTerm(search);
-    }
+    const category = params.get('category');
+    if (search) setSearchTerm(search);
+    if (category) setActiveTab(category);
   }, [location.search]);
 
-  // Infinite Scroll Observer
+  // Infinite Scroll Observer — loads 18 more items at bottom
   const lastProductElementRef = useCallback(node => {
     if (observer.current) observer.current.disconnect();
     observer.current = new IntersectionObserver(entries => {
       if (entries[0].isIntersecting && visibleCount < filteredProducts.length) {
-        setVisibleCount(prevCount => prevCount + 20);
+        setVisibleCount(prevCount => prevCount + 18);
       }
-    });
+    }, { rootMargin: '200px' });
     if (node) observer.current.observe(node);
-  }, [visibleCount, products.length, searchTerm, activeTab]);
+  }, [visibleCount, filteredProducts.length, searchTerm, activeTab]);
 
   const toggleLike = (id) => {
     setLikes((prev) => ({ ...prev, [id]: !prev[id] }));
@@ -98,7 +99,7 @@ function Products() {
             {categories.map((cat) => (
               <button
                 key={cat}
-                onClick={() => { setActiveTab(cat); setVisibleCount(20); }}
+                onClick={() => { setActiveTab(cat); setVisibleCount(18); }}
                 className={`px-6 py-2 rounded-lg text-sm font-semibold transition-all duration-300 whitespace-nowrap shadow-sm cursor-pointer
 101:                     ${activeTab === cat ? 'bg-orange-600 text-white shadow-md' : 'bg-white text-gray-700 hover:bg-gray-100'}`}
               >
@@ -114,7 +115,7 @@ function Products() {
                 const currentIndex = categories.indexOf(activeTab);
                 const prevIdx = (currentIndex - 1 + categories.length) % categories.length;
                 setActiveTab(categories[prevIdx]);
-                setVisibleCount(20);
+                setVisibleCount(18);
               }}
               className="p-2 text-gray-800 hover:bg-gray-200 rounded-full transition-colors flex items-center justify-center cursor-pointer"
               aria-label="Previous category"
@@ -133,7 +134,7 @@ function Products() {
                 const currentIndex = categories.indexOf(activeTab);
                 const nextIdx = (currentIndex + 1) % categories.length;
                 setActiveTab(categories[nextIdx]);
-                setVisibleCount(20);
+                setVisibleCount(18);
               }}
               className="p-2 text-gray-800 hover:bg-gray-200 rounded-full transition-colors flex items-center justify-center cursor-pointer"
               aria-label="Next category"
@@ -151,7 +152,7 @@ function Products() {
               value={searchTerm}
               onChange={(e) => {
                 setSearchTerm(e.target.value);
-                setVisibleCount(20);
+                setVisibleCount(18);
               }}
               className="w-full pl-6 pr-14 py-3 bg-white text-black border border-gray-100 rounded-xl focus:ring-2 focus:ring-black focus:outline-none transition-all shadow-sm placeholder-gray-400"
             />
@@ -170,7 +171,6 @@ function Products() {
                 {displayedProducts.map((product, index) => (
                   <div
                     key={product.id}
-                    ref={index === displayedProducts.length - 1 ? lastProductElementRef : null}
                     className="group bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-300 flex flex-col h-full overflow-hidden relative"
                   >
                     <Link to={`/product-view/${product.id}`} state={{ product }} className="absolute inset-0 z-0"></Link>
@@ -227,9 +227,18 @@ function Products() {
                 ))}
               </div>
 
+              {/* Loading indicator at bottom for infinite scroll */}
               {visibleCount < filteredProducts.length && (
-                <div className="flex justify-center mt-8">
-                  <div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
+                <div ref={lastProductElementRef} className="flex justify-center mt-12 py-4">
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
+                    <p className="text-xs text-gray-400 font-medium">Loading more products...</p>
+                  </div>
+                </div>
+              )}
+              {visibleCount >= filteredProducts.length && filteredProducts.length > 18 && (
+                <div className="flex justify-center mt-10 py-4">
+                  <p className="text-xs text-gray-400 font-semibold uppercase tracking-widest">✓ All {filteredProducts.length} products shown</p>
                 </div>
               )}
             </>
