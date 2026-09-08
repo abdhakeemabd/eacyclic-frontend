@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useAdmin } from '../../context/AdminContext';
-import AdminLayout from '../../component/AdminLayout';
 import { motion } from 'framer-motion';
 import { 
   LineChart, Line, PieChart, Pie, Cell,
@@ -15,6 +14,7 @@ import {
 import { productsAPI, ordersAPI, contactAPI } from '../../utils/api';
 import { BaseTable } from '../../components/shadcn-custom/BaseTable';
 import { BaseDropdown } from '../../components/shadcn-custom/BaseDropdown';
+import AdminStatCard from '../../component/AdminStatCard';
 
 function AdminDashboard() {
   const { adminUser } = useAdmin();
@@ -65,7 +65,7 @@ function AdminDashboard() {
       const monthOrders = ordersData.filter(o => o.created_at?.startsWith(thisMonth));
       const yearOrders = ordersData.filter(o => o.created_at?.startsWith(thisYear.toString()));
 
-      const calculateTotal = (orders) => orders.reduce((sum, order) => sum + (order.total || 0), 0);
+      const calculateTotal = (orders) => orders.reduce((sum, order) => sum + (parseFloat(order.total) || 0), 0);
 
       setStats({
         totalProducts: productsData.length || 0,
@@ -113,7 +113,7 @@ function AdminDashboard() {
         const sales = orders.filter(o => {
           const orderDate = new Date(o.created_at);
           return orderDate.getHours() === hour.getHours() && orderDate.getDate() === hour.getDate();
-        }).reduce((sum, o) => sum + (o.total || 0), 0);
+        }).reduce((sum, o) => sum + (parseFloat(o.total) || 0), 0);
         data.push({ name: `${hourStr}:00`, sales });
       }
     } else if (selectedPeriod === 'month') {
@@ -121,7 +121,7 @@ function AdminDashboard() {
         const date = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
         const dateStr = date.toISOString().split('T')[0];
         const sales = orders.filter(o => o.created_at?.startsWith(dateStr))
-          .reduce((sum, o) => sum + (o.total || 0), 0);
+          .reduce((sum, o) => sum + (parseFloat(o.total) || 0), 0);
         data.push({ name: date.getDate().toString(), sales });
       }
     } else {
@@ -129,45 +129,12 @@ function AdminDashboard() {
         const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
         const monthStr = date.toISOString().slice(0, 7);
         const sales = orders.filter(o => o.created_at?.startsWith(monthStr))
-          .reduce((sum, o) => sum + (o.total || 0), 0);
+          .reduce((sum, o) => sum + (parseFloat(o.total) || 0), 0);
         data.push({ name: date.toLocaleString('default', { month: 'short' }), sales });
       }
     }
     setSalesData(data);
   };
-
-  const StatCard = ({ icon: Icon, title, value, trend, color, delay }) => (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay }}
-      className="bg-card text-card-foreground rounded-2xl p-6 border border-border shadow-sm flex flex-col justify-between"
-    >
-      <div className="flex items-start justify-between">
-        <div>
-          <p className="text-sm font-medium text-muted-foreground">{title}</p>
-          <h3 className="text-3xl font-bold mt-2 text-foreground tabular-nums">
-            {typeof value === 'number' && title.toLowerCase().includes('sales') ? `$${value.toLocaleString()}` : value}
-          </h3>
-        </div>
-        <div className={`p-3 rounded-xl bg-muted`}>
-          <Icon size={20} className={color} />
-        </div>
-      </div>
-      
-      <div className="mt-6 flex items-center text-xs">
-        {trend > 0 ? (
-          <span className="text-emerald-500 font-medium flex items-center bg-emerald-500/10 px-2 py-1 rounded-md">
-            <TrendingUp size={12} className="mr-1" /> +{trend}% from last month
-          </span>
-        ) : (
-          <span className="text-rose-500 font-medium flex items-center bg-rose-500/10 px-2 py-1 rounded-md">
-            <ArrowDownRight size={12} className="mr-1" /> {trend}% from last month
-          </span>
-        )}
-      </div>
-    </motion.div>
-  );
 
   const getStatusStyle = (status) => {
     const styles = {
@@ -197,7 +164,7 @@ function AdminDashboard() {
   }
 
   return (
-    <AdminLayout>
+    <>
       <div className="space-y-6 px-4 md:px-8 py-6 w-full max-w-[1600px] mx-auto">
         {/* Welcome Section */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -217,8 +184,8 @@ function AdminDashboard() {
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
-          <StatCard 
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <AdminStatCard 
             icon={ShoppingBag} 
             title="Total Sales" 
             value={stats.todaySales} 
@@ -226,7 +193,7 @@ function AdminDashboard() {
             color="text-primary" 
             delay={0.1}
           />
-          <StatCard 
+          <AdminStatCard 
             icon={Users} 
             title="Customers" 
             value={stats.totalCustomers} 
@@ -234,7 +201,7 @@ function AdminDashboard() {
             color="text-blue-500" 
             delay={0.2}
           />
-          <StatCard 
+          <AdminStatCard 
             icon={ShoppingBag} 
             title="Orders" 
             value={stats.totalOrders} 
@@ -242,7 +209,7 @@ function AdminDashboard() {
             color="text-emerald-500" 
             delay={0.3}
           />
-          <StatCard 
+          <AdminStatCard 
             icon={MessageSquare} 
             title="Messages" 
             value={stats.unreadMessages} 
@@ -433,7 +400,7 @@ function AdminDashboard() {
           </div>
         </div>
       </div>
-    </AdminLayout>
+    </>
   );
 }
 

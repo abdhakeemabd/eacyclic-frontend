@@ -1,5 +1,4 @@
 import React, { useState, useMemo } from 'react';
-import AdminLayout from '../../component/AdminLayout';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Plus, Edit, Trash2, Search, Image as ImageIcon, 
@@ -14,6 +13,8 @@ import { showSuccess, showError, showConfirm } from '../../utils/swalUtils';
 import { Fancybox } from '@fancyapps/ui';
 import '@fancyapps/ui/dist/fancybox/fancybox.css';
 import { useSearchParams } from 'react-router-dom';
+import AdminStatCard from '../../component/AdminStatCard';
+import { Activity, AlertCircle, Layers as LayersIcon } from 'lucide-react';
 
 function AdminProducts() {
   const { products, addProduct, updateProduct, deleteProduct: removeProduct } = useProducts();
@@ -252,7 +253,7 @@ function AdminProducts() {
   ];
 
   return (
-    <AdminLayout>
+    <>
       <div className="space-y-6 px-4 md:px-8 py-6 w-full max-w-[1600px] mx-auto">
         {/* Main Card Container */}
         <div className="bg-card text-card-foreground rounded-3xl shadow-md border border-border overflow-hidden">
@@ -277,6 +278,38 @@ function AdminProducts() {
                 <Plus size={18} />
                 <span>Add New Product</span>
               </button>
+            </div>
+
+            {/* Stat Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <AdminStatCard 
+                icon={Package} 
+                title="Total Products" 
+                value={products.length} 
+                color="text-primary" 
+                delay={0.1}
+              />
+              <AdminStatCard 
+                icon={Activity} 
+                title="Active Products" 
+                value={products.filter(p => p.isActive !== false).length} 
+                color="text-emerald-500" 
+                delay={0.2}
+              />
+              <AdminStatCard 
+                icon={AlertCircle} 
+                title="Out of Stock" 
+                value={products.filter(p => (p.count || p.stock || 0) <= 0).length} 
+                color="text-rose-500" 
+                delay={0.3}
+              />
+              <AdminStatCard 
+                icon={LayersIcon} 
+                title="Categories" 
+                value={Math.max(0, categories.length - 1)} 
+                color="text-blue-500" 
+                delay={0.4}
+              />
             </div>
 
             <div className="flex flex-col md:flex-row gap-4 justify-between items-center z-10 relative bg-muted/30 p-3 rounded-xl border border-border/50">
@@ -706,7 +739,7 @@ function AdminProducts() {
           )}
         </AnimatePresence>
       </div>
-    </AdminLayout>
+    </>
   );
 }
 

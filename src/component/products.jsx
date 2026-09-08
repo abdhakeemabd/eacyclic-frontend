@@ -31,8 +31,9 @@ function Products() {
   // Filter products based on search and tab
   const filteredProducts = useMemo(() => {
     return products.filter(product => {
-      const matchesSearch = (product.title || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (product.content || '').toLowerCase().includes(searchTerm.toLowerCase());
+      const titleName = product.name || product.title || '';
+      const matchesSearch = titleName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (product.description || product.content || '').toLowerCase().includes(searchTerm.toLowerCase());
       const matchesTab = activeTab === 'All' || product.category === activeTab;
       return matchesSearch && matchesTab;
     });
@@ -67,8 +68,8 @@ function Products() {
     if (!isInCart) {
       const result = await addToCart({
         id: product.id,
-        title: product.title,
-        content: product.content,
+        title: product.name || product.title,
+        content: product.description || product.content,
         price: product.price || product.offerPrice,
         offerPrice: product.offerPrice || product.price,
         image: product.image_url || product.image || (product.gallery && product.gallery[0]),
@@ -184,7 +185,7 @@ function Products() {
                     <div className="block overflow-hidden aspect-[4/3] bg-gray-50 relative z-10">
                       <ImageLoader
                         src={product.image_url || product.image || (product.gallery && product.gallery[0])}
-                        alt={product.title}
+                        alt={product.name || product.title}
                         className="transition-transform duration-500 group-hover:scale-110"
                       />
                     </div>
@@ -193,7 +194,7 @@ function Products() {
                       <div className="flex-1">
                         <div className="text-gray-400 text-[9px] uppercase font-bold tracking-widest mb-1">{product.category || 'Shop'}</div>
                         <h3 className="font-semibold text-gray-900 text-base mb-1 line-clamp-1 group-hover:text-orange-600 transition-colors pointer-events-auto leading-snug">
-                          <Link to={`/product-view/${product.id}`} state={{ product }}>{product.title}</Link>
+                          <Link to={`/product-view/${product.id}`} state={{ product }}>{product.name || product.title}</Link>
                         </h3>
                         <p className="text-gray-500 text-xs mb-3 line-clamp-2 min-h-[32px]">{product.content || product.description}</p>
 

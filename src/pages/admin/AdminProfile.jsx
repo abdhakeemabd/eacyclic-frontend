@@ -1,5 +1,4 @@
 import React from 'react';
-import AdminLayout from '../../component/AdminLayout';
 import { motion } from 'framer-motion';
 import { 
   User, Mail, Shield, Key, Camera, 
@@ -11,7 +10,7 @@ function AdminProfile() {
   const { adminUser, logout } = useAdmin();
 
   return (
-    <AdminLayout>
+    <>
       <div className="max-w-4xl mx-auto space-y-8">
         <div className="flex items-center justify-between">
           <div>
@@ -199,7 +198,7 @@ function AdminProfile() {
           </div>
         </div>
       </div>
-    </AdminLayout>
+    </>
   );
 }
 

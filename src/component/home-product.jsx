@@ -77,12 +77,12 @@ function HomeProduct() {
                 <ImageLoader 
                   className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" 
                   src={item.image_url || item.image || (item.gallery && item.gallery[0])} 
-                  alt={item.title} 
+                  alt={item.name || item.title} 
                 />
               </div>
               <div className="p-4 flex flex-col flex-1 relative z-20 pointer-events-none">
                 <div className="flex-1">
-                  <h3 className="font-semibold text-gray-800 text-base mb-1 line-clamp-1 group-hover:text-orange-600 transition-colors leading-snug">{item.title}</h3>
+                  <h3 className="font-semibold text-gray-800 text-base mb-1 line-clamp-1 group-hover:text-orange-600 transition-colors leading-snug">{item.name || item.title}</h3>
                   <div className="flex items-baseline gap-2 mb-3">
                     <div className="text-xl font-semibold text-gray-900 leading-none">₹{item.offerPrice || item.price}</div>
                     {item.oldPrice && (

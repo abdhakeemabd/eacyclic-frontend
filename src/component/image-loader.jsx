@@ -5,9 +5,13 @@ const ImageLoader = ({ src, alt, className = '', imgClassName = '', wrapperClass
   const [isLoaded, setIsLoaded] = useState(false);
   const [error, setError] = useState(false);
 
-  // Instantly resolve cached images to avoid skeleton flicker
   useEffect(() => {
-    if (imgRef.current && imgRef.current.complete) {
+    if (!src) {
+      setError(true);
+      setIsLoaded(false);
+      return;
+    }
+    if (imgRef.current && imgRef.current.complete && imgRef.current.naturalHeight !== 0) {
       setIsLoaded(true);
     } else {
       setIsLoaded(false);
@@ -27,8 +31,11 @@ const ImageLoader = ({ src, alt, className = '', imgClassName = '', wrapperClass
 
       {/* Fallback in case image fails to load */}
       {error && (
-        <div className="absolute inset-0 flex items-center justify-center bg-gray-100 text-gray-400 text-xs select-none">
-          Image not available
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-50 text-gray-400 text-xs select-none z-20">
+          <svg className="w-8 h-8 mb-2 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+          <span className="opacity-75">Image not available</span>
         </div>
       )}
 
@@ -37,9 +44,9 @@ const ImageLoader = ({ src, alt, className = '', imgClassName = '', wrapperClass
         ref={imgRef}
         src={src || undefined}
         alt={alt || 'Product image'}
-        className={`w-full h-full object-cover transition-all duration-500 ${
+        className={`w-full h-full object-cover transition-all duration-500 text-transparent ${
           isLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
-        } ${className} ${imgClassName}`}
+        } ${error ? 'hidden' : 'block'} ${className} ${imgClassName}`}
         onLoad={() => setIsLoaded(true)}
         onError={() => setError(true)}
         loading="lazy"

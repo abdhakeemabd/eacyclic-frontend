@@ -1,11 +1,12 @@
 import React, { Suspense, lazy } from 'react'
-import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Route, Routes, Outlet } from 'react-router-dom';
 
 import Header from './component/header';
 import Footer from './component/footer';
 import ScrollToTop from './component/scrool-totop';
 import ProtectedRoute from './component/ProtectedRoute';
 import AdminRedirect from './component/AdminRedirect';
+import AdminLayout from './component/AdminLayout';
 import '../src/assets/style/public.css';
 
 import { AdminProvider } from './context/AdminContext';
@@ -49,6 +50,19 @@ function PublicLayout({ children }) {
   );
 }
 
+// Layout wrapper for Admin pages
+function AdminLayoutWrapper() {
+  return (
+    <ProtectedRoute>
+      <AdminLayout>
+        <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div></div>}>
+          <Outlet />
+        </Suspense>
+      </AdminLayout>
+    </ProtectedRoute>
+  );
+}
+
 function HomeRoutes() {
   return (
     <AdminProvider>
@@ -59,17 +73,20 @@ function HomeRoutes() {
               <ScrollToTop />
               <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="w-10 h-10 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div></div>}>
                 <Routes>
-                  {/* Admin Routes - No Header/Footer */}
                   <Route path='/admin' element={<AdminRedirect />} />
                   <Route path='/admin/login' element={<AdminLogin />} />
-                  <Route path='/admin/dashboard' element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
-                  <Route path='/admin/products' element={<ProtectedRoute><AdminProducts /></ProtectedRoute>} />
-                  <Route path='/admin/orders' element={<ProtectedRoute><AdminOrders /></ProtectedRoute>} />
-                  <Route path='/admin/shipped' element={<ProtectedRoute><AdminShipped /></ProtectedRoute>} />
-                  <Route path='/admin/orders/:orderId' element={<ProtectedRoute><OrderDetails /></ProtectedRoute>} />
-                  <Route path='/admin/delivery' element={<ProtectedRoute><AdminDelivery /></ProtectedRoute>} />
-                  <Route path='/admin/contacts' element={<ProtectedRoute><AdminContacts /></ProtectedRoute>} />
-                  <Route path='/admin/profile' element={<ProtectedRoute><AdminProfile /></ProtectedRoute>} />
+                  
+                  {/* Admin Routes - Wrapped in Layout to preserve state */}
+                  <Route element={<AdminLayoutWrapper />}>
+                    <Route path='/admin/dashboard' element={<AdminDashboard />} />
+                    <Route path='/admin/products' element={<AdminProducts />} />
+                    <Route path='/admin/orders' element={<AdminOrders />} />
+                    <Route path='/admin/shipped' element={<AdminShipped />} />
+                    <Route path='/admin/orders/:orderId' element={<OrderDetails />} />
+                    <Route path='/admin/delivery' element={<AdminDelivery />} />
+                    <Route path='/admin/contacts' element={<AdminContacts />} />
+                    <Route path='/admin/profile' element={<AdminProfile />} />
+                  </Route>
 
                   {/* Public Routes - With Header/Footer */}
                   <Route path='/' element={<PublicLayout><Home /></PublicLayout>} />

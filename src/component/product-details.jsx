@@ -21,7 +21,7 @@ function ProductDetails() {
     const passedProduct = location.state?.product;
     const globalProduct = getProductById(id);
 
-    if (passedProduct && globalProduct && passedProduct.title === globalProduct.title) {
+    if (passedProduct && globalProduct && (passedProduct.name || passedProduct.title) === (globalProduct.name || globalProduct.title)) {
       setProduct(globalProduct);
     } else if (passedProduct) {
       setProduct(passedProduct);
@@ -47,12 +47,12 @@ function ProductDetails() {
   const handleAddToCart = async () => {
     const result = await addToCart({
       id: product.id,
-      title: product.title,
+      title: product.name || product.title,
       content: product.content,
       price: product.offerPrice,
       offerPrice: product.offerPrice,
-      image: product.gallery?.[0],
-      gallery: product.gallery,
+      image: product.image_url || product.image || product.gallery?.[0],
+      gallery: product.gallery || [product.image_url || product.image],
     });
 
     if (result.success) {
@@ -73,14 +73,14 @@ function ProductDetails() {
           <div className="md:col-span-7">
             <div className="bg-white p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-300">
               <a
-                href={product.gallery?.[activeImage]}
+                href={product.gallery?.[activeImage] || product.image_url || product.image}
                 data-fancybox="gallery"
-                data-caption={`${product.title} - ₹${product.offerPrice}`}
+                data-caption={`${product.name || product.title} - ₹${product.offerPrice}`}
                 className="block w-full h-[500px] bg-[#f2f2f200] rounded-lg flex items-center justify-center overflow-hidden mb-4 border border-[#ebebec]"
               >
                 <ImageLoader
-                  src={product.gallery?.[activeImage]}
-                  alt={product.title}
+                  src={product.gallery?.[activeImage] || product.image_url || product.image}
+                  alt={product.name || product.title}
                   aspectRatio=""
                   wrapperClassName="w-full h-full"
                   imgClassName="max-w-full max-h-full object-contain hover:scale-105 transition-transform duration-500 mix-blend-multiply"
@@ -88,8 +88,8 @@ function ProductDetails() {
               </a>
 
               <div className="space-y-4">
-                <h1 className="text-2xl md:text-3xl font-semibold text-gray-900 leading-tight">{product.title}</h1>
-                <p className="text-gray-600 text-base leading-relaxed">{product.content}</p>
+                <h1 className="text-2xl md:text-3xl font-semibold text-gray-900 leading-tight">{product.name || product.title}</h1>
+                <p className="text-gray-600 text-base leading-relaxed">{product.description || product.content}</p>
 
                 <div className="mt-4">
                   <div className="flex items-center gap-4">
@@ -179,7 +179,8 @@ function ProductDetails() {
           <div className="md:col-span-5">
             <div className="bg-white p-6 rounded-lg shadow-sm sticky top-6">
               <div className="grid grid-cols-2 gap-4">
-                {product.gallery?.map((img, index) => (
+                {(product.gallery?.length ? product.gallery : [product.image_url || product.image]).map((img, index) => (
+                  img && (
                   <div
                     key={index}
                     className="aspect-square cursor-pointer"
@@ -197,6 +198,7 @@ function ProductDetails() {
                       />
                     </div>
                   </div>
+                  )
                 ))}
               </div>
               

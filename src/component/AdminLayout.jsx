@@ -27,7 +27,7 @@ const NavItem = ({ item, isCollapsed, isActive, navigate, setIsMobileMenuOpen })
       </div>
       {!isCollapsed && (
         <motion.span
-          initial={{ opacity: 0, x: -10 }}
+          initial={false}
           animate={{ opacity: 1, x: 0 }}
           className="ml-3 whitespace-nowrap"
         >
@@ -81,14 +81,14 @@ const AdminLayout = ({ children }) => {
 
   return (
     <div className={`min-h-screen flex bg-gray-50 dark:bg-[#0f111a] transition-colors duration-300`}>
-      {/* Sidebar for Desktop */}
       <motion.aside
+        initial={false}
         variants={sidebarVariants}
         animate={isSidebarOpen ? 'open' : 'closed'}
         className="hidden lg:flex flex-col border-r border-gray-200 dark:border-gray-800 bg-white dark:bg-[#151823] sticky top-0 h-screen z-40 overflow-hidden"
       >
         <div className="p-6 flex items-center justify-between">
-          <AnimatePresence mode="wait">
+          <AnimatePresence mode="wait" initial={false}>
             {isSidebarOpen ? (
               <motion.div
                 key="logo-full"

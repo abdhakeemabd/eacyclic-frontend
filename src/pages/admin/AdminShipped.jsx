@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import AdminLayout from '../../component/AdminLayout';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Search, Truck, CheckCircle, Clock, 
@@ -10,6 +9,7 @@ import { deliveryAPI, ordersAPI } from '../../utils/api';
 import { BaseTable } from '../../components/shadcn-custom/BaseTable';
 import { BaseDropdown } from '../../components/shadcn-custom/BaseDropdown';
 import { useSearchParams } from 'react-router-dom';
+import AdminStatCard from '../../component/AdminStatCard';
 
 function AdminShipped() {
   const [deliveries, setDeliveries] = useState([]);
@@ -48,15 +48,15 @@ function AdminShipped() {
       
       const combinedOrders = allOrders;
 
-      // Filter to only shipped items (not delivered)
+      // Filter to only shipped items
       const deliveryOrders = combinedOrders
-        .filter(order => ['shipped', 'in_transit', 'out_for_delivery'].includes(order.status))
+        .filter(order => ['shipped', 'in_transit', 'out_for_delivery', 'delivered'].includes(order.status))
         .map(order => ({
           id: order.id,
           order_id: order.id,
           customer_name: order.customer_name,
           shipping_address: order.shipping_address,
-          status: order.status === 'delivered' ? 'delivered' : 'in_transit',
+          status: order.status,
           tracking_number: order.tracking_number || `TRK${order.id}`,
           estimated_delivery: order.estimated_delivery,
           created_at: order.created_at,
@@ -77,7 +77,7 @@ function AdminShipped() {
 
   const handleStatusUpdate = async (deliveryId, newStatus) => {
     try {
-      await deliveryAPI.updateStatus(deliveryId, newStatus);
+      await ordersAPI.updateStatus(deliveryId, newStatus);
       fetchDeliveries();
     } catch (error) {
       console.error('Error updating delivery status:', error);
@@ -132,7 +132,7 @@ function AdminShipped() {
   };
 
   return (
-    <AdminLayout>
+    <>
       <div className="space-y-6 px-4 md:px-8 py-6 w-full max-w-[1600px] mx-auto">
         <div className="bg-card text-card-foreground rounded-3xl shadow-md border border-border overflow-hidden">
           
@@ -145,6 +145,38 @@ function AdminShipped() {
                 </h1>
                 <p className="text-muted-foreground text-sm mt-1">Track dispatched orders and update their transit progress</p>
               </div>
+            </div>
+
+            {/* Stat Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <AdminStatCard 
+                icon={Truck} 
+                title="Total Active" 
+                value={deliveries.length} 
+                color="text-primary" 
+                delay={0.1}
+              />
+              <AdminStatCard 
+                icon={Navigation} 
+                title="In Transit" 
+                value={deliveries.filter(d => d.status === 'in_transit').length} 
+                color="text-amber-500" 
+                delay={0.2}
+              />
+              <AdminStatCard 
+                icon={Clock} 
+                title="Out for Delivery" 
+                value={deliveries.filter(d => d.status === 'out_for_delivery').length} 
+                color="text-purple-500" 
+                delay={0.3}
+              />
+              <AdminStatCard 
+                icon={CheckCircle} 
+                title="Delivered" 
+                value={deliveries.filter(d => d.status === 'delivered').length} 
+                color="text-emerald-500" 
+                delay={0.4}
+              />
             </div>
 
             <div className="flex flex-col md:flex-row gap-4 justify-between items-center z-10 relative bg-muted/30 p-3 rounded-xl border border-border/50">
@@ -177,6 +209,7 @@ function AdminShipped() {
                     <option value="shipped">Shipped</option>
                     <option value="in_transit">In Transit</option>
                     <option value="out_for_delivery">Out for Delivery</option>
+                    <option value="delivered">Delivered</option>
                   </select>
                 </div>
               </div>
@@ -331,7 +364,7 @@ function AdminShipped() {
           )}
         </div>
       </div>
-    </AdminLayout>
+    </>
   );
 }
 

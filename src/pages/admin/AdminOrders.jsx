@@ -1,30 +1,30 @@
 import React, { useState, useEffect } from 'react';
-import AdminLayout from '../../component/AdminLayout';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Search, Eye, Truck, 
   Calendar, User, Mail, Phone, MapPin, 
   ShoppingBag, CreditCard, X, Package, Layers,
-  ChevronLeft, ChevronRight, ChevronDown
+  ChevronLeft, ChevronRight, ChevronDown, Clock, CheckCircle, XCircle
 } from 'lucide-react';
 import { ordersAPI } from '../../utils/api';
 import { BaseTable } from '../../components/shadcn-custom/BaseTable';
 import { BaseDropdown } from '../../components/shadcn-custom/BaseDropdown';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
+import AdminStatCard from '../../component/AdminStatCard';
+import { showConfirm, showSuccess, showError } from '../../utils/swalUtils';
 
 function AdminOrders() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const initialPage = parseInt(searchParams.get('page')) || 1;
   const [currentPage, setCurrentPage] = useState(initialPage);
   const [itemsPerPage] = useState(25);
   
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
-  const [selectedOrder, setSelectedOrder] = useState(null);
-  const [showModal, setShowModal] = useState(false);
   const [expandedRow, setExpandedRow] = useState(null);
 
   const toggleRow = (id) => {
@@ -68,40 +68,37 @@ function AdminOrders() {
     }
   };
 
-  const handleStatusUpdate = async (orderId, newStatus) => {
-    try {
-      await ordersAPI.updateStatus(orderId, newStatus);
-      fetchOrders();
-      if (selectedOrder?.id === orderId) {
-        setShowModal(false);
+  const handleStatusUpdate = (orderId, newStatus) => {
+    setTimeout(async () => {
+      const result = await showConfirm(
+        'Update Order Status', 
+        `Are you sure you want to mark this order as ${newStatus}?`, 
+        'Yes, Update'
+      );
+      
+      if (result.isConfirmed) {
+        try {
+          await ordersAPI.updateStatus(orderId, newStatus);
+          showSuccess('Status Updated', `Order marked as ${newStatus}`);
+          fetchOrders();
+        } catch (error) {
+          showError('Update Failed', 'Failed to update order status');
+        }
       }
-    } catch (error) {
-      console.error('Error updating order status:', error);
-      if (selectedOrder?.id === orderId) {
-        setShowModal(false);
-      }
-    }
+    }, 10);
   };
 
-  const viewOrderDetails = async (orderId) => {
-    try {
-      const response = await ordersAPI.getById(orderId);
-      setSelectedOrder(response.data);
-      setShowModal(true);
-    } catch (error) {
-      console.error('Error fetching order details:', error);
-      const order = orders.find(o => o.id === orderId);
-      setSelectedOrder(order);
-      setShowModal(true);
-    }
+  const viewOrderDetails = (orderId) => {
+    navigate(`/admin/orders/${orderId}`);
   };
 
   const filteredOrders = orders.filter(order => {
+    const isExcludedStatus = ['shipped', 'in_transit', 'out_for_delivery', 'delivered'].includes(order.status);
     const matchesSearch = 
       (order.id?.toString() || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
       (order.customer_name || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
       (order.customer_email || "").toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = filterStatus === 'all' || order.status === filterStatus;
+    const matchesStatus = filterStatus === 'all' ? !isExcludedStatus : order.status === filterStatus;
     return matchesSearch && matchesStatus;
   });
 
@@ -151,7 +148,7 @@ function AdminOrders() {
   };
 
   return (
-    <AdminLayout>
+    <>
       <div className="space-y-6 px-4 md:px-8 py-6 w-full max-w-[1600px] mx-auto">
         <div className="bg-card text-card-foreground rounded-3xl shadow-md border border-border overflow-hidden">
           
@@ -164,6 +161,38 @@ function AdminOrders() {
                 </h1>
                 <p className="text-muted-foreground text-sm mt-1">Track and process your customer orders</p>
               </div>
+            </div>
+
+            {/* Stat Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <AdminStatCard 
+                icon={ShoppingBag} 
+                title="Total Orders" 
+                value={orders.length} 
+                color="text-primary" 
+                delay={0.1}
+              />
+              <AdminStatCard 
+                icon={Clock} 
+                title="Pending Orders" 
+                value={orders.filter(o => o.status === 'pending').length} 
+                color="text-amber-500" 
+                delay={0.2}
+              />
+              <AdminStatCard 
+                icon={Layers} 
+                title="Processing" 
+                value={orders.filter(o => o.status === 'processing').length} 
+                color="text-blue-500" 
+                delay={0.3}
+              />
+              <AdminStatCard 
+                icon={CreditCard} 
+                title="Total Revenue" 
+                value={orders.reduce((sum, o) => sum + (Number(o.total) || 0), 0)} 
+                color="text-emerald-500" 
+                delay={0.4}
+              />
             </div>
 
             <div className="flex flex-col md:flex-row gap-4 justify-between items-center z-10 relative bg-muted/30 p-3 rounded-xl border border-border/50">
@@ -259,7 +288,7 @@ function AdminOrders() {
                     </td>
                     <td className="px-2 py-4 align-middle">
                       <div className="flex items-center text-xs font-medium text-muted-foreground">
-                        {new Date(order.created_at).toLocaleDateString()}
+                        {new Date(order.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })}
                       </div>
                     </td>
                     <td className="px-4 py-4 align-middle text-center flex justify-center">
@@ -273,9 +302,31 @@ function AdminOrders() {
                           },
                           { type: 'separator' },
                           { 
+                            label: 'Mark Pending', 
+                            onClick: () => handleStatusUpdate(order.id, 'pending'),
+                            icon: <Clock size={14} className="mr-2" />
+                          },
+                          { 
+                            label: 'Mark Processing', 
+                            onClick: () => handleStatusUpdate(order.id, 'processing'),
+                            icon: <Package size={14} className="mr-2" />
+                          },
+                          { 
                             label: 'Mark Shipped', 
                             onClick: () => handleStatusUpdate(order.id, 'shipped'),
                             icon: <Truck size={14} className="mr-2" />
+                          },
+                          { 
+                            label: 'Mark Delivered', 
+                            onClick: () => handleStatusUpdate(order.id, 'delivered'),
+                            icon: <CheckCircle size={14} className="mr-2" />
+                          },
+                          { type: 'separator' },
+                          { 
+                            label: 'Cancel Order', 
+                            onClick: () => handleStatusUpdate(order.id, 'cancelled'),
+                            icon: <XCircle size={14} className="mr-2 text-red-500" />,
+                            className: 'text-red-600 hover:bg-red-50'
                           }
                         ]}
                       />
@@ -372,151 +423,8 @@ function AdminOrders() {
             </div>
           )}
         </div>
-
-        <AnimatePresence>
-          {showModal && selectedOrder && (
-            <>
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                onClick={() => setShowModal(false)}
-                className="fixed inset-0 bg-black/60 z-[100]"
-              />
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                className="fixed inset-0 flex items-center justify-center z-[101] p-4 pointer-events-none"
-              >
-                <div className="bg-card rounded-[2.5rem] shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden pointer-events-auto flex flex-col border border-border">
-                  <div className="p-8 flex items-center justify-between bg-muted/30 border-b border-border">
-                    <div>
-                      <h2 className="text-2xl font-black text-foreground flex items-center">
-                        <ShoppingBag className="mr-3 text-primary" />
-                        Order Details
-                        <span className="ml-3 text-primary">#{selectedOrder.id}</span>
-                      </h2>
-                      <p className="text-sm text-muted-foreground mt-1">Placed on {new Date(selectedOrder.created_at).toLocaleDateString()}</p>
-                    </div>
-                    <button
-                      onClick={() => setShowModal(false)}
-                      className="p-3 rounded-2xl bg-background border border-border text-muted-foreground hover:text-destructive hover:border-destructive/30 transition-colors shadow-sm"
-                    >
-                      <X size={20} />
-                    </button>
-                  </div>
-                  
-                  <div className="p-8 overflow-y-auto custom-scrollbar flex-1 space-y-8 bg-background">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                      {/* Customer Info */}
-                      <div className="space-y-4">
-                        <h3 className="text-[10px] uppercase font-black text-muted-foreground tracking-widest flex items-center">
-                          <User size={14} className="mr-2" /> Customer Information
-                        </h3>
-                        <div className="bg-muted/30 rounded-3xl p-6 space-y-4 border border-border">
-                          <div className="flex items-center space-x-3">
-                            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary shadow-sm font-bold">
-                              {selectedOrder.customer_name?.[0] || 'G'}
-                            </div>
-                            <div>
-                              <p className="font-bold text-foreground">{selectedOrder.customer_name || 'Guest User'}</p>
-                              <p className="text-xs text-muted-foreground">{selectedOrder.customer_email || 'No email provided'}</p>
-                            </div>
-                          </div>
-                          <div className="grid grid-cols-2 gap-4 pt-2">
-                            <div className="flex items-start space-x-2">
-                              <Phone size={14} className="mt-1 text-muted-foreground" />
-                              <span className="text-xs text-foreground font-medium">{selectedOrder.customer_phone || 'N/A'}</span>
-                            </div>
-                            <div className="flex items-start space-x-2">
-                              <MapPin size={14} className="mt-1 text-muted-foreground" />
-                              <span className="text-xs text-foreground font-medium line-clamp-2">{selectedOrder.shipping_address || 'N/A'}</span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Summary */}
-                      <div className="space-y-4">
-                        <h3 className="text-[10px] uppercase font-black text-muted-foreground tracking-widest flex items-center">
-                          <CreditCard size={14} className="mr-2" /> Payment Summary
-                        </h3>
-                        <div className="bg-muted/30 rounded-3xl p-6 space-y-3 border border-border">
-                          <div className="flex justify-between text-sm">
-                            <span className="text-muted-foreground">Subtotal</span>
-                            <span className="font-bold text-foreground">₹{Number(selectedOrder.subtotal || 0).toFixed(2)}</span>
-                          </div>
-                          <div className="flex justify-between text-sm">
-                            <span className="text-muted-foreground">Shipping</span>
-                            <span className="font-bold text-foreground">₹{Number(selectedOrder.shipping_cost || 0).toFixed(2)}</span>
-                          </div>
-                          <div className="flex justify-between text-sm">
-                            <span className="text-muted-foreground">Tax</span>
-                            <span className="font-bold text-foreground">₹{Number(selectedOrder.tax || 0).toFixed(2)}</span>
-                          </div>
-                          <div className="border-t border-border pt-3 flex justify-between">
-                            <span className="font-black text-primary">Total</span>
-                            <span className="font-black text-xl text-foreground">₹{Number(selectedOrder.total || 0).toFixed(2)}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Order Items */}
-                    <div className="space-y-4">
-                      <h3 className="text-[10px] uppercase font-black text-muted-foreground tracking-widest flex items-center">
-                        <ShoppingBag size={14} className="mr-2" /> Order Items ({selectedOrder.items?.length || 0})
-                      </h3>
-                      <div className="space-y-3">
-                        {selectedOrder.items?.map((item, idx) => (
-                          <div key={idx} className="flex items-center justify-between p-4 bg-muted/30 border border-border rounded-2xl hover:bg-muted/50 transition-colors">
-                            <div className="flex items-center space-x-4">
-                              <div className="w-12 h-12 rounded-xl bg-background flex items-center justify-center text-primary shadow-sm border border-border/50">
-                                <Package size={20} />
-                              </div>
-                              <div>
-                                <p className="font-bold text-foreground text-sm">{item.product_name}</p>
-                                <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest">Qty: {item.quantity} × ₹{item.price}</p>
-                              </div>
-                            </div>
-                            <span className="font-black text-foreground">₹{Number(item.price * item.quantity || 0).toFixed(2)}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Status Management */}
-                    <div className="space-y-4">
-                      <h3 className="text-[10px] uppercase font-black text-muted-foreground tracking-widest flex items-center">
-                        <Truck size={14} className="mr-2" /> Update Order Status
-                      </h3>
-                      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-                        {['pending', 'processing', 'shipped', 'delivered', 'cancelled'].map((status) => {
-                          const isActive = selectedOrder.status === status;
-                          return (
-                            <button
-                              key={status}
-                              onClick={() => handleStatusUpdate(selectedOrder.id, status)}
-                              className={`px-4 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border
-                                ${isActive 
-                                  ? 'bg-primary text-primary-foreground border-primary shadow-md' 
-                                  : 'bg-muted/50 text-muted-foreground border-border hover:bg-primary/10 hover:text-primary hover:border-primary/30'}`}
-                            >
-                              {status}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            </>
-          )}
-        </AnimatePresence>
       </div>
-    </AdminLayout>
+    </>
   );
 }
 

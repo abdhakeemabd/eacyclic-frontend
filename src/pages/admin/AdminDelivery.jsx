@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import AdminLayout from '../../component/AdminLayout';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Search, Truck, CheckCircle, Clock, 
@@ -10,6 +9,7 @@ import { deliveryAPI, ordersAPI } from '../../utils/api';
 import { BaseTable } from '../../components/shadcn-custom/BaseTable';
 import { BaseDropdown } from '../../components/shadcn-custom/BaseDropdown';
 import { useSearchParams } from 'react-router-dom';
+import AdminStatCard from '../../component/AdminStatCard';
 
 function AdminDelivery() {
   const [deliveries, setDeliveries] = useState([]);
@@ -132,7 +132,7 @@ function AdminDelivery() {
   };
 
   return (
-    <AdminLayout>
+    <>
       <div className="space-y-6 px-4 md:px-8 py-6 w-full max-w-[1600px] mx-auto">
         <div className="bg-card text-card-foreground rounded-3xl shadow-md border border-border overflow-hidden">
           
@@ -145,6 +145,31 @@ function AdminDelivery() {
                 </h1>
                 <p className="text-muted-foreground text-sm mt-1">View successfully delivered orders and failed delivery attempts</p>
               </div>
+            </div>
+
+            {/* Stat Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <AdminStatCard 
+                icon={Package} 
+                title="Total Processed" 
+                value={deliveries.length} 
+                color="text-primary" 
+                delay={0.1}
+              />
+              <AdminStatCard 
+                icon={CheckCircle} 
+                title="Delivered" 
+                value={deliveries.filter(d => d.status === 'delivered').length} 
+                color="text-emerald-500" 
+                delay={0.2}
+              />
+              <AdminStatCard 
+                icon={AlertCircle} 
+                title="Failed Deliveries" 
+                value={deliveries.filter(d => d.status === 'failed').length} 
+                color="text-destructive" 
+                delay={0.3}
+              />
             </div>
 
             <div className="flex flex-col md:flex-row gap-4 justify-between items-center z-10 relative bg-muted/30 p-3 rounded-xl border border-border/50">
@@ -314,7 +339,7 @@ function AdminDelivery() {
           )}
         </div>
       </div>
-    </AdminLayout>
+    </>
   );
 }
 

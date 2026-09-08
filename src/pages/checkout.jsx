@@ -21,7 +21,8 @@ function Checkout() {
     district: '',
     state: '',
     country: 'India',
-    pincode: ''
+    pincode: '',
+    email: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -48,24 +49,15 @@ function Checkout() {
     
     // Professional Sequential Order ID Generation
     const generateOrderId = () => {
-      try {
-        const existingOrders = JSON.parse(localStorage.getItem('adminOrders') || '[]');
-        const numericIds = existingOrders
-          .map(o => parseInt(o.id, 10))
-          .filter(id => !isNaN(id));
-        
-        if (numericIds.length === 0) return 1;
-        return Math.max(...numericIds) + 1;
-      } catch (e) {
-        return Math.floor(Math.random() * 10000) + 1000;
-      }
+      // Use a timestamp-based ID to ensure uniqueness and prevent 400 Bad Request from duplicate IDs
+      return Math.floor(Date.now() / 1000) + Math.floor(Math.random() * 1000);
     };
     
     const orderPayload = {
       id: generateOrderId(),
       created_at: new Date().toISOString(),
       customer_name: formData.name,
-      customer_email: "",
+      customer_email: formData.email,
       customer_phone: formData.phone,
       shipping_address: `${formData.houseName}, ${formData.area}, ${formData.city}, ${formData.district}, ${formData.state} - ${formData.pincode}, ${formData.country}`,
       subtotal: subtotal,
@@ -75,7 +67,7 @@ function Checkout() {
       status: 'pending',
       items: checkoutItems.map(item => ({
         product_id: item.id || null,
-        product_name: item.title || item.name,
+        product_name: item.title || item.name || 'Unknown Product',
         quantity: item.quantity || 1,
         price: item.offerPrice || item.price || 0
       }))
@@ -121,6 +113,11 @@ function Checkout() {
                     <label className="text-sm font-semibold text-gray-700">Phone Number <span className="text-red-500">*</span></label>
                     <input required type="tel" maxLength="10" name="phone" value={formData.phone} onChange={handleInputChange} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none transition-all" placeholder="Enter Your Phone Number" />
                   </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-sm font-semibold text-gray-700">Email Address <span className="text-red-500">*</span></label>
+                  <input required type="email" name="email" value={formData.email} onChange={handleInputChange} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none transition-all" placeholder="Enter Your Email Address" />
                 </div>
 
                 <div className="space-y-1.5">

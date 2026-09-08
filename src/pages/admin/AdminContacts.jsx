@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import AdminLayout from '../../component/AdminLayout';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Search, Mail, MailOpen, Trash2, 
@@ -10,6 +9,7 @@ import { contactAPI } from '../../utils/api';
 import { BaseTable } from '../../components/shadcn-custom/BaseTable';
 import { BaseDropdown } from '../../components/shadcn-custom/BaseDropdown';
 import { useSearchParams } from 'react-router-dom';
+import AdminStatCard from '../../component/AdminStatCard';
 
 function AdminContacts() {
   const [contacts, setContacts] = useState([]);
@@ -130,7 +130,7 @@ function AdminContacts() {
   ];
 
   return (
-    <AdminLayout>
+    <>
       <div className="space-y-6 px-4 md:px-8 py-6 w-full max-w-[1600px] mx-auto">
         <div className="bg-card text-card-foreground rounded-3xl shadow-md border border-border overflow-hidden">
           
@@ -143,6 +143,31 @@ function AdminContacts() {
                 </h1>
                 <p className="text-muted-foreground text-sm mt-1">Manage feedback, questions and support messages</p>
               </div>
+            </div>
+
+            {/* Stat Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <AdminStatCard 
+                icon={MessageSquare} 
+                title="Total Inquiries" 
+                value={contacts.length} 
+                color="text-primary" 
+                delay={0.1}
+              />
+              <AdminStatCard 
+                icon={Mail} 
+                title="Unread Messages" 
+                value={contacts.filter(c => !c.is_read).length} 
+                color="text-amber-500" 
+                delay={0.2}
+              />
+              <AdminStatCard 
+                icon={MailOpen} 
+                title="Read Messages" 
+                value={contacts.filter(c => c.is_read).length} 
+                color="text-emerald-500" 
+                delay={0.3}
+              />
             </div>
 
             <div className="flex flex-col md:flex-row gap-4 justify-between items-center z-10 relative bg-muted/30 p-3 rounded-xl border border-border/50">
@@ -399,7 +424,7 @@ function AdminContacts() {
           )}
         </AnimatePresence>
       </div>
-    </AdminLayout>
+    </>
   );
 }
 

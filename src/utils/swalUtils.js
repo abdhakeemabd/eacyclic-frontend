@@ -20,7 +20,7 @@ const baseConfig = {
   }
 };
 
-export const showSuccess = (title, text, timer = 5000) => {
+export const showSuccess = (title, text, timer = 4000) => {
   return Swal.fire({
     ...baseConfig,
     icon: 'success',
