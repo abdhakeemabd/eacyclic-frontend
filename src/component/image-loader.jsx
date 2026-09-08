@@ -35,7 +35,7 @@ const ImageLoader = ({ src, alt, className = '', imgClassName = '', wrapperClass
       {/* Semantic image tag is ALWAYS present in DOM for SEO */}
       <img
         ref={imgRef}
-        src={src || ''}
+        src={src || undefined}
         alt={alt || 'Product image'}
         className={`w-full h-full object-cover transition-all duration-500 ${
           isLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
