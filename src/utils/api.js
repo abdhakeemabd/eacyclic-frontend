@@ -12,16 +12,10 @@ const api = axios.create({
 
 // Add a request interceptor to attach the auth token
 api.interceptors.request.use((config) => {
-  const adminUser = localStorage.getItem('adminUser');
-  if (adminUser) {
-    try {
-      const parsedUser = JSON.parse(adminUser);
-      if (parsedUser.token) {
-        config.headers.Authorization = `Token ${parsedUser.token}`;
-      }
-    } catch (e) {
-      console.error('Error parsing adminUser from localStorage', e);
-    }
+  // Try adminToken first (admin panel), then fallback to userToken (customer)
+  const token = localStorage.getItem('adminToken') || localStorage.getItem('userToken');
+  if (token) {
+    config.headers.Authorization = `Token ${token}`;
   }
   return config;
 }, (error) => {
@@ -90,6 +84,11 @@ export const userAPI = {
   login: (credentials) => api.post('/auth/login', credentials),
   register: (userData) => api.post('/auth/register', userData),
   logout: () => api.post('/auth/logout'),
+};
+
+// Admin Auth API
+export const adminAPI = {
+  login: (username, password) => api.post('/admin/login', { username, password }),
 };
 
 export default api;

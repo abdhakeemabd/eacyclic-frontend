@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { adminAPI } from '../utils/api';
 
 const AdminContext = createContext();
 
@@ -17,10 +18,11 @@ export const AdminProvider = ({ children }) => {
   const [darkMode, setDarkMode] = useState(localStorage.getItem('adminDarkMode') === 'true');
   const [themeColor, setThemeColor] = useState(localStorage.getItem('adminThemeColor') || 'indigo');
 
-  // Check if admin is already logged in
+  // Restore session from localStorage on mount
   useEffect(() => {
     const storedAdmin = localStorage.getItem('adminUser');
-    if (storedAdmin) {
+    const storedToken = localStorage.getItem('adminToken');
+    if (storedAdmin && storedToken) {
       try {
         const parsedAdmin = JSON.parse(storedAdmin);
         setAdminUser(parsedAdmin);
@@ -28,6 +30,7 @@ export const AdminProvider = ({ children }) => {
       } catch (error) {
         console.error('Error parsing stored admin:', error);
         localStorage.removeItem('adminUser');
+        localStorage.removeItem('adminToken');
       }
     }
     setLoading(false);
@@ -48,25 +51,30 @@ export const AdminProvider = ({ children }) => {
     localStorage.setItem('adminThemeColor', themeColor);
   }, [themeColor]);
 
-  const login = (username, password) => {
-    if (username === 'admin_nisam' && password === 'Nizam@5001#') {
-      const admin = {
-        username: 'admin_nisam',
-        role: 'admin',
-        loginTime: new Date().toISOString()
-      };
-      setAdminUser(admin);
+  // Login — calls real Django backend
+  const login = async (username, password) => {
+    try {
+      const response = await adminAPI.login(username, password);
+      const { token, user } = response.data;
+
+      setAdminUser(user);
       setIsAuthenticated(true);
-      localStorage.setItem('adminUser', JSON.stringify(admin));
+      localStorage.setItem('adminUser', JSON.stringify(user));
+      localStorage.setItem('adminToken', token);
+
       return { success: true };
+    } catch (error) {
+      const message =
+        error.response?.data?.error || 'Login failed. Please try again.';
+      return { success: false, message };
     }
-    return { success: false, message: 'Invalid credentials' };
   };
 
   const logout = () => {
     setAdminUser(null);
     setIsAuthenticated(false);
     localStorage.removeItem('adminUser');
+    localStorage.removeItem('adminToken');
   };
 
   const toggleDarkMode = () => setDarkMode(!darkMode);
