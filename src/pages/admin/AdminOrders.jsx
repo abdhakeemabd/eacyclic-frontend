@@ -86,6 +86,8 @@ function AdminOrders() {
         }
       }
     }, 10);
+  };
+
   const handleDeleteOrder = (orderId) => {
     setTimeout(async () => {
       const result = await showConfirm(
