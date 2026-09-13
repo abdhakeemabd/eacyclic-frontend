@@ -4,7 +4,7 @@ import {
   Search, Eye, Truck, 
   Calendar, User, Mail, Phone, MapPin, 
   ShoppingBag, CreditCard, X, Package, Layers,
-  ChevronLeft, ChevronRight, ChevronDown, Clock, CheckCircle, XCircle
+  ChevronLeft, ChevronRight, ChevronDown, Clock, CheckCircle, XCircle, Trash2
 } from 'lucide-react';
 import { ordersAPI } from '../../utils/api';
 import { BaseTable } from '../../components/shadcn-custom/BaseTable';
@@ -83,6 +83,24 @@ function AdminOrders() {
           fetchOrders();
         } catch (error) {
           showError('Update Failed', 'Failed to update order status');
+        }
+      }
+    }, 10);
+  const handleDeleteOrder = (orderId) => {
+    setTimeout(async () => {
+      const result = await showConfirm(
+        'Delete Order', 
+        'Are you sure you want to permanently delete this order?', 
+        'Yes, Delete'
+      );
+      
+      if (result.isConfirmed) {
+        try {
+          await ordersAPI.delete(orderId);
+          showSuccess('Order Deleted', 'Order has been deleted successfully');
+          fetchOrders();
+        } catch (error) {
+          showError('Delete Failed', 'Failed to delete order');
         }
       }
     }, 10);
@@ -325,7 +343,12 @@ function AdminOrders() {
                           { 
                             label: 'Cancel Order', 
                             onClick: () => handleStatusUpdate(order.id, 'cancelled'),
-                            icon: <XCircle size={14} className="mr-2 text-red-500" />,
+                            icon: <XCircle size={14} className="mr-2 text-amber-500" />
+                          },
+                          { 
+                            label: 'Delete Order', 
+                            onClick: () => handleDeleteOrder(order.id),
+                            icon: <Trash2 size={14} className="mr-2 text-red-500" />,
                             className: 'text-red-600 hover:bg-red-50'
                           }
                         ]}
