@@ -12,10 +12,12 @@ const api = axios.create({
 
 // Add a request interceptor to attach the auth token
 api.interceptors.request.use((config) => {
-  // Try adminToken first (admin panel), then fallback to userToken (customer)
-  const token = localStorage.getItem('adminToken') || localStorage.getItem('userToken');
-  if (token) {
-    config.headers.Authorization = `Token ${token}`;
+  const isAuthEndpoint = config.url.includes('/login') || config.url.includes('/register');
+  if (!isAuthEndpoint) {
+    const token = localStorage.getItem('adminToken') || localStorage.getItem('userToken');
+    if (token) {
+      config.headers.Authorization = `Token ${token}`;
+    }
   }
   return config;
 }, (error) => {
