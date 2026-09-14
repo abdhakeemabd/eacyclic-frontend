@@ -92,6 +92,7 @@ export const userAPI = {
 // Admin Auth API
 export const adminAPI = {
   login: (username, password) => api.post('/admin/login', { username, password }),
+  changePassword: (data) => api.post('/admin/change-password', data),
 };
 
 export default api;
