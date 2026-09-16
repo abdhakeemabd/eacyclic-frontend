@@ -13,15 +13,16 @@ const api = axios.create({
 
 // Add a request interceptor to attach the auth token
 api.interceptors.request.use((config) => {
-  const isAuthEndpoint = config.url.includes('/login') || config.url.includes('/register');
+  const isAuthEndpoint = config.url.includes('/login') || config.url.includes('/register') || config.url.includes('/send-otp') || config.url.includes('/verify-otp');
   if (!isAuthEndpoint) {
-    const token = localStorage.getItem('adminToken') || localStorage.getItem('userToken');
+    const token = localStorage.getItem('authToken') || localStorage.getItem('adminToken') || localStorage.getItem('userToken');
     if (token) {
       config.headers.Authorization = `Token ${token}`;
     }
   }
   return config;
 }, (error) => {
+
   return Promise.reject(error);
 });
 
@@ -86,8 +87,11 @@ export const userAPI = {
   updateProfile: (data) => api.put('/user/profile', data),
   login: (credentials) => api.post('/auth/login', credentials),
   register: (userData) => api.post('/auth/register', userData),
+  sendOTP: (email) => api.post('/auth/send-otp', { email }),
+  verifyOTP: (email, otp) => api.post('/auth/verify-otp', { email, otp }),
   logout: () => api.post('/auth/logout'),
 };
+
 
 // Admin Auth API
 export const adminAPI = {

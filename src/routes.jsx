@@ -23,8 +23,10 @@ const Faq = lazy(() => import('./pages/faq'));
 const ProdcutView = lazy(() => import('./pages/prodcut-view'));
 const Profile = lazy(() => import('./component/profile'));
 const Cart = lazy(() => import('./pages/cart'));
+const Wishlist = lazy(() => import('./pages/wishlist'));
 const NotFound = lazy(() => import('./pages/not-found'));
 const Checkout = lazy(() => import('./pages/checkout'));
+
 
 // Lazy loaded admin pages
 const AdminLogin = lazy(() => import('./pages/admin/AdminLogin'));
@@ -94,7 +96,9 @@ function HomeRoutes() {
                   <Route path='/product' element={<PublicLayout><Prodcut /></PublicLayout>} />
                   <Route path='/product-view/:id' element={<PublicLayout><ProdcutView /></PublicLayout>} />
                   <Route path='/cart' element={<PublicLayout><Cart /></PublicLayout>} />
+                  <Route path='/wishlist' element={<PublicLayout><Wishlist /></PublicLayout>} />
                   <Route path='/faq' element={<PublicLayout><Faq /></PublicLayout>} />
+
                   <Route path='/contact' element={<PublicLayout><Contact /></PublicLayout>} />
                   <Route path='/profile' element={<PublicLayout><Profile /></PublicLayout>} />
                   <Route path='/checkout' element={<PublicLayout><Checkout /></PublicLayout>} />

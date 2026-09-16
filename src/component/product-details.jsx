@@ -21,16 +21,13 @@ function ProductDetails() {
     const passedProduct = location.state?.product;
     const globalProduct = getProductById(id);
 
-    if (passedProduct && globalProduct && (passedProduct.name || passedProduct.title) === (globalProduct.name || globalProduct.title)) {
-      setProduct(globalProduct);
-    } else if (passedProduct) {
+    if (passedProduct) {
       setProduct(passedProduct);
     } else if (globalProduct) {
       setProduct(globalProduct);
     }
     setActiveImage(0);
-    // Scroll to top when product changes
-    window.scrollTo(0, 0);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [id, location.state, products, getProductById]);
 
   useEffect(() => {
@@ -45,13 +42,14 @@ function ProductDetails() {
   }, []);
 
   const handleAddToCart = async () => {
+    if (!product) return;
     const result = await addToCart({
       id: product.id,
       title: product.name || product.title,
-      content: product.content,
-      price: product.offerPrice,
-      offerPrice: product.offerPrice,
-      image: product.image_url || product.image || product.gallery?.[0],
+      content: product.content || product.description,
+      price: product.offerPrice || product.price,
+      offerPrice: product.offerPrice || product.price,
+      image: product.image_url || product.image || (product.gallery && product.gallery[0]),
       gallery: product.gallery || [product.image_url || product.image],
     });
 
@@ -61,10 +59,18 @@ function ProductDetails() {
   };
 
   const handleBuyNow = () => {
+    if (!product) return;
     navigate('/checkout', { state: { product, quantity: 1 } });
   };
 
-  if (!product) return <div>Loading...</div>;
+  if (!product) {
+    return (
+      <div className="py-20 text-center bg-slate-50 min-h-[60vh] flex flex-col items-center justify-center">
+        <div className="w-10 h-10 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+        <p className="text-sm font-bold text-slate-600">Loading product details...</p>
+      </div>
+    );
+  }
 
   return (
     <section className="py-10 bg-gray-50">
@@ -92,26 +98,32 @@ function ProductDetails() {
                 <p className="text-gray-600 text-base leading-relaxed">{product.description || product.content}</p>
 
                 <div className="mt-4">
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-start text-gray-900">
-                      <span className="text-3xl font-medium">₹</span>
-                      <span className="text-4xl font-semibold leading-none">{product.offerPrice}</span>
+                  <div className="flex items-center gap-4 flex-wrap">
+                    <div className="flex items-baseline text-slate-900 gap-1">
+                      <span className="text-2xl font-bold text-orange-600">₹</span>
+                      <span className="text-3xl sm:text-4xl font-black text-slate-900 leading-none">
+                        {product.offerPrice || product.price || '0'}
+                      </span>
                     </div>
-                    {product.offer && (
-                      <span className="text-2xl font-semibold text-green-600">-{product.offer.replace(/[^0-9]/g, '')}%</span>
+
+                    {(product.offer || product.discount > 0) && (
+                      <span className="text-sm font-bold bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full border border-emerald-200">
+                        {product.offer ? product.offer : `-${product.discount}% OFF`}
+                      </span>
                     )}
                   </div>
-                  {product.oldPrice && (
-                    <div className="text-m text-gray-500 mt-2">
-                       M.R.P.: <span className="line-through text-base font-semibold">₹{product.oldPrice}</span>
+
+                  {(product.oldPrice || (product.discount > 0 && product.price)) && (
+                    <div className="text-xs sm:text-sm text-slate-400 mt-2 font-medium">
+                      M.R.P.: <span className="line-through">₹{product.oldPrice || Math.round((parseFloat(product.price || 0) * 100) / (100 - parseFloat(product.discount || 0)))}</span>
                     </div>
                   )}
                 </div>
 
                 {/* Persuasive Elements */}
-                <div className="flex items-center gap-2 text-red-600 font-bold text-sm animate-pulse py-2">
-                  <span className="w-2 h-2 bg-red-600 rounded-full"></span>
-                  <span>Limited Time Offer: Selling fast!</span>
+                <div className="flex items-center gap-2 text-rose-600 font-bold text-xs sm:text-sm py-2">
+                  <span className="w-2 h-2 bg-rose-500 rounded-full animate-ping"></span>
+                  <span>Limited Time Deal: Selling fast in Kerala!</span>
                 </div>
 
                 {/* Shipping & Return Badges */}

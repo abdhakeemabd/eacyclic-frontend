@@ -4,33 +4,36 @@ import { userAPI } from '../utils/api';
 const UserContext = createContext();
 
 export const UserProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(() => {
+    try {
+      const savedUser = localStorage.getItem('user');
+      return savedUser ? JSON.parse(savedUser) : null;
+    } catch (e) {
+      console.error('Failed to parse user from localStorage:', e);
+      return null;
+    }
+  });
+
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    const token = localStorage.getItem('authToken');
+    const savedUser = localStorage.getItem('user');
+    return Boolean(token && savedUser);
+  });
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isOfflineMode, setIsOfflineMode] = useState(false);
 
   // Load user and sync database on mount
   useEffect(() => {
-    // 1. Load active session
-    const savedUser = localStorage.getItem('user');
     const token = localStorage.getItem('authToken');
-    
-    if (savedUser && token) {
-      try {
-        const parsedUser = JSON.parse(savedUser);
-        setUser(parsedUser);
-        setIsAuthenticated(true);
-        if (parsedUser.isOffline) {
-          setIsOfflineMode(true);
-        }
-      } catch (e) {
-        console.error('Failed to parse user from localStorage:', e);
-        localStorage.removeItem('user');
-        localStorage.removeItem('authToken');
+    if (user && token) {
+      if (user.isOffline) {
+        setIsOfflineMode(true);
       }
     }
   }, []);
+
 
   // Check if error is network/connection error (server down)
   const isServerDown = (err) => {
@@ -159,12 +162,61 @@ export const UserProvider = ({ children }) => {
     }
   };
 
+  // Request OTP
+  const sendOTP = async (email) => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const response = await userAPI.sendOTP(email);
+      return { 
+        success: true, 
+        message: response.data.message, 
+        email: response.data.email
+      };
+
+
+    } catch (err) {
+      const errMsg = err.response?.data?.error || err.message;
+      setError(errMsg);
+      return { success: false, error: errMsg };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Verify OTP
+  const verifyOTP = async (email, otp) => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const response = await userAPI.verifyOTP(email, otp);
+      const { user: userData, token, message } = response.data;
+
+      setUser(userData);
+      setIsAuthenticated(true);
+      setIsOfflineMode(false);
+      localStorage.setItem('user', JSON.stringify(userData));
+      localStorage.setItem('authToken', token);
+      localStorage.setItem('adminUser', JSON.stringify({ ...userData, token }));
+
+      return { success: true, data: userData, message };
+    } catch (err) {
+      const errMsg = err.response?.data?.error || err.message;
+      setError(errMsg);
+      return { success: false, error: errMsg };
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Logout user
   const logout = async () => {
     try {
       await userAPI.logout();
     } catch (e) {
-      console.error(e);
+      console.error('Logout error:', e);
     }
     setUser(null);
     setIsAuthenticated(false);
@@ -172,7 +224,12 @@ export const UserProvider = ({ children }) => {
     localStorage.removeItem('user');
     localStorage.removeItem('authToken');
     localStorage.removeItem('adminUser');
+    localStorage.removeItem('userToken');
+    localStorage.removeItem('adminToken');
+    localStorage.removeItem('userProfile');
+    localStorage.removeItem('cart');
   };
+
 
   const value = {
     user,
@@ -184,8 +241,11 @@ export const UserProvider = ({ children }) => {
     updateUserProfile,
     login,
     register,
+    sendOTP,
+    verifyOTP,
     logout,
   };
+
 
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>;
 };

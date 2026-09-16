@@ -1,39 +1,68 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import Logo from '../assets/images/logo/logo.png';
-import { FaRegUser, FaShoppingCart, FaUserCircle, FaWifi, FaLock, FaEnvelope, FaPhone, FaUser } from "react-icons/fa";
-import { IoCloseOutline, IoMenuOutline } from "react-icons/io5";
-import Modal from 'react-modal';
-import Product1 from '../assets/images/img/1.webp';
+import { FaRegUser, FaShoppingCart, FaHeart, FaSignOutAlt, FaBell } from "react-icons/fa";
+import { IoCloseOutline, IoMenuOutline, IoChevronDown } from "react-icons/io5";
+import { AlertTriangle, CreditCard, RotateCcw, Star, Tag, Check, User } from 'lucide-react';
+import Swal from 'sweetalert2';
 import { useCart } from '../context/CartContext';
 import { useUser } from '../context/UserContext';
-
-Modal.setAppElement('#root');
+import OTPLoginModal from './OTPLoginModal';
 
 function Header() {
-  const { user, login, register, logout, isAuthenticated, isOfflineMode, loading: authLoading } = useUser();
+  const { user, logout, isAuthenticated, isOfflineMode } = useUser();
+  const { getCartItemCount, likes = [] } = useCart();
   const [menuOpen, setMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const [modalIsOpen, setIsOpen] = useState(false);
-  const [modalOpenAnimation, setModalOpenAnimation] = useState(false);
-  
-  // Modal state ('login' | 'register')
-  const [activeTab, setActiveTab] = useState('login');
-  
-  // Credentials
-  const [loginIdentifier, setLoginIdentifier] = useState(''); // email or phone
-  const [loginPassword, setLoginPassword] = useState('');
-  
-  const [regName, setRegName] = useState('');
-  const [regEmail, setRegEmail] = useState('');
-  const [regPhone, setRegPhone] = useState('');
-  const [regPassword, setRegPassword] = useState('');
-  
-  const [authError, setAuthError] = useState('');
-  const [authSuccessMsg, setAuthSuccessMsg] = useState('');
+  const [notifMenuOpen, setNotifMenuOpen] = useState(false);
+  const [isOtpModalOpen, setIsOtpModalOpen] = useState(false);
+
+  // Mock Notifications List matching image design
+  const [notifications, setNotifications] = useState([
+    {
+      id: 1,
+      icon: <AlertTriangle className="w-4 h-4 text-amber-600" />,
+      bg: 'bg-amber-50',
+      title: '9 SKUs went out of stock in Notebooks',
+      time: '6 min ago',
+      read: false
+    },
+    {
+      id: 2,
+      icon: <CreditCard className="w-4 h-4 text-emerald-600" />,
+      bg: 'bg-emerald-50',
+      title: 'Settlement of ₹3,12,480 credited by Razorpay',
+      time: '38 min ago',
+      read: false
+    },
+    {
+      id: 3,
+      icon: <RotateCcw className="w-4 h-4 text-amber-600" />,
+      bg: 'bg-amber-50',
+      title: 'Order #MB-40213 marked as returned',
+      time: '2 hours ago',
+      read: false
+    },
+    {
+      id: 4,
+      icon: <Star className="w-4 h-4 text-blue-500" />,
+      bg: 'bg-blue-50',
+      title: '4 new reviews awaiting moderation',
+      time: '5 hours ago',
+      read: false
+    },
+    {
+      id: 5,
+      icon: <Tag className="w-4 h-4 text-slate-500" />,
+      bg: 'bg-slate-100',
+      title: 'Diwali Bundle campaign ended',
+      time: 'Yesterday',
+      read: true
+    }
+  ]);
 
   const userMenuRef = useRef();
-  const { getCartItemCount } = useCart();
+  const notifMenuRef = useRef();
   const location = useLocation();
 
   const isActive = (path) => {
@@ -43,105 +72,75 @@ function Header() {
     return location.pathname === path;
   };
 
-  // Close user menu when clicking outside
+  // Close menus when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
         setUserMenuOpen(false);
+      }
+      if (notifMenuRef.current && !notifMenuRef.current.contains(event.target)) {
+        setNotifMenuOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Modal controls
-  const openModal = () => {
-    setAuthError('');
-    setAuthSuccessMsg('');
-    setIsOpen(true);
-  };
-  const afterOpenModal = () => setTimeout(() => setModalOpenAnimation(true), 10);
-  const closeModal = () => {
-    setIsOpen(false);
-    setModalOpenAnimation(false);
-    setLoginIdentifier('');
-    setLoginPassword('');
-    setRegName('');
-    setRegEmail('');
-    setRegPhone('');
-    setRegPassword('');
-    setAuthError('');
-    setAuthSuccessMsg('');
-  };
+  const navigate = useNavigate();
 
-  const handleLoginSubmit = async (e) => {
-    e.preventDefault();
-    setAuthError('');
-    setAuthSuccessMsg('');
-
-    if (!loginIdentifier || !loginPassword) {
-      setAuthError('Please enter both username/phone/email and password.');
-      return;
-    }
-
-    const credentials = {
-      phone: !loginIdentifier.includes('@') ? loginIdentifier : undefined,
-      email: loginIdentifier.includes('@') ? loginIdentifier : undefined,
-      password: loginPassword
-    };
-
-    const result = await login(credentials);
-    if (result.success) {
-      setAuthSuccessMsg(result.isOffline ? 'Logged in offline successfully!' : 'Logged in successfully!');
-      setTimeout(() => {
-        closeModal();
-      }, 1000);
-    } else {
-      setAuthError(result.error || 'Login failed. Please check credentials.');
-    }
+  const handleLogout = () => {
+    setUserMenuOpen(false);
+    Swal.fire({
+      title: 'Log out of account?',
+      text: 'Are you sure you want to sign out?',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ea580c',
+      cancelButtonColor: '#64748b',
+      confirmButtonText: 'Yes, Sign Out',
+      customClass: {
+        popup: 'rounded-2xl shadow-xl font-sans'
+      }
+    }).then((result) => {
+      if (result.isConfirmed) {
+        logout();
+        localStorage.removeItem('userProfile');
+        navigate('/', { replace: true });
+        Swal.fire({
+          icon: 'info',
+          title: 'Logged Out',
+          text: 'You have been signed out. Please log in to access your account.',
+          timer: 3500,
+          toast: true,
+          position: 'top-end',
+          showConfirmButton: false,
+          customClass: {
+            popup: 'rounded-2xl shadow-xl border border-slate-200 bg-white font-sans'
+          }
+        });
+      }
+    });
   };
 
-  const handleRegisterSubmit = async (e) => {
-    e.preventDefault();
-    setAuthError('');
-    setAuthSuccessMsg('');
-
-    if (!regName || !regEmail || !regPhone || !regPassword) {
-      setAuthError('All registration fields are required.');
-      return;
-    }
-
-    const userData = {
-      name: regName,
-      email: regEmail,
-      phone: regPhone,
-      password: regPassword
-    };
-
-    const result = await register(userData);
-    if (result.success) {
-      setAuthSuccessMsg(result.isOffline ? 'Registered locally (Offline mode active)!' : 'Registered successfully!');
-      setTimeout(() => {
-        closeModal();
-      }, 1000);
-    } else {
-      setAuthError(result.error || 'Registration failed.');
-    }
+  const markAllAsRead = () => {
+    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
   };
+
+  const unreadCount = notifications.filter(n => !n.read).length;
 
   return (
-    <header className="bg-white py-4 relative z-50 shadow-sm border-b border-gray-100">
-      <div className="container mx-auto px-4 flex justify-between items-center">
+    <header className="bg-white py-2.5 sm:py-4 relative z-50 shadow-sm border-b border-gray-100">
+      <div className="container mx-auto px-2 sm:px-4 flex justify-between items-center gap-1.5 sm:gap-4">
         {/* Mobile Menu Button */}
-        <div className="md:hidden">
-          <button aria-label="Open Menu" className="border p-2 rounded-full" onClick={() => setMenuOpen(true)}>
-            <IoMenuOutline size={24} />
+        <div className="md:hidden shrink-0 flex items-center justify-center">
+          <button aria-label="Open Menu" className="p-1.5 rounded-full hover:bg-slate-100 flex items-center justify-center transition-colors text-slate-800" onClick={() => setMenuOpen(true)}>
+            <IoMenuOutline size={22} className="block" />
           </button>
         </div>
 
         {/* Logo */}
         <Link to="/" className="shrink-0" aria-label="Homepage">
-          <img className="h-10" src={Logo} alt="Logo" />
+          <img className="h-7 sm:h-9 md:h-10 object-contain max-w-[110px] sm:max-w-none" src={Logo} alt="Logo" />
         </Link>
 
         {/* Search Bar - Desktop */}
@@ -181,79 +180,179 @@ function Header() {
         </nav>
 
         {/* Cart and User Menu */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-1.5 sm:gap-2.5">
           {/* Offline Mode General indicator */}
           {isOfflineMode && isAuthenticated && (
-            <div className="hidden md:flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 text-amber-800 border border-amber-200 text-xs font-semibold">
+            <div className="hidden xl:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-50 text-amber-800 border border-amber-200 text-[11px] font-semibold">
               <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
-              Offline Mode
+              Offline
             </div>
           )}
 
-          {/* Cart Icon */}
-          <Link to="/cart" aria-label="Shopping Cart" className="relative border p-2 md:p-3 rounded-full hover:bg-gray-50 transition-colors duration-200">
-            <FaShoppingCart size={22} className="text-gray-700" />
-            {getCartItemCount() > 0 && (
-              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
-                {getCartItemCount()}
-              </span>
-            )}
-          </Link>
-
-          {/* User Menu */}
-          <div className="relative" ref={userMenuRef}>
-            <button aria-label="User Menu" className={`border p-2 md:p-3 rounded-full flex items-center justify-center ${isAuthenticated ? 'border-orange-500 text-orange-600' : 'border-gray-200 text-gray-700'}`} onClick={() => setUserMenuOpen(!userMenuOpen)}>
-              <FaRegUser size={22} />
+          {/* Wishlist / Liked Items Icon */}
+          {isAuthenticated ? (
+            <Link to="/profile?tab=wishlist" aria-label="Liked Items" className="relative p-2 sm:p-2.5 rounded-full hover:bg-slate-100 transition-colors">
+              <FaHeart className={`w-4 h-4 sm:w-5 sm:h-5 ${likes.length > 0 ? "text-red-500" : "text-slate-700"}`} />
+              {likes.length > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center">
+                  {likes.length}
+                </span>
+              )}
+            </Link>
+          ) : (
+            <button
+              onClick={() => setIsOtpModalOpen(true)}
+              aria-label="Liked Items"
+              className="relative p-2 sm:p-2.5 rounded-full hover:bg-slate-100 transition-colors"
+            >
+              <FaHeart className={`w-4 h-4 sm:w-5 sm:h-5 ${likes.length > 0 ? "text-red-500" : "text-slate-700"}`} />
+              {likes.length > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center">
+                  {likes.length}
+                </span>
+              )}
             </button>
-            {userMenuOpen && (
-              <div className="absolute right-0 mt-2 w-56 bg-white border border-gray-200 rounded-xl shadow-xl z-50 overflow-hidden">
-                {isAuthenticated ? (
-                  <div className="flex flex-col">
-                    <div className="px-4 py-3 bg-gray-50 border-b border-gray-100">
-                      <div className="font-semibold text-gray-900 truncate">{user?.name}</div>
-                      <div className="text-xs text-gray-500 truncate">{user?.email || user?.phone}</div>
-                      {isOfflineMode && (
-                        <span className="inline-flex items-center gap-1 mt-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
-                          <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
-                          Offline Session
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex flex-col p-2 gap-1">
-                      <Link
-                        to="/profile"
-                        onClick={() => setUserMenuOpen(false)}
-                        className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
-                      >
-                        My Account
-                      </Link>
+          )}
+
+          {/* Cart Icon */}
+          {isAuthenticated ? (
+            <Link to="/profile?tab=cart" aria-label="Shopping Cart" className="relative p-2 sm:p-2.5 rounded-full hover:bg-slate-100 transition-colors">
+              <FaShoppingCart className="w-4 h-4 sm:w-5 sm:h-5 text-slate-700" />
+              {getCartItemCount() > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center">
+                  {getCartItemCount()}
+                </span>
+              )}
+            </Link>
+          ) : (
+            <button
+              onClick={() => setIsOtpModalOpen(true)}
+              aria-label="Shopping Cart"
+              className="relative p-2 sm:p-2.5 rounded-full hover:bg-slate-100 transition-colors"
+            >
+              <FaShoppingCart className="w-4 h-4 sm:w-5 sm:h-5 text-slate-700" />
+              {getCartItemCount() > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center">
+                  {getCartItemCount()}
+                </span>
+              )}
+            </button>
+          )}
+
+          {/* User Logged In Section */}
+          {isAuthenticated ? (
+            <div className="flex items-center gap-1 sm:gap-2.5 pl-1.5 sm:pl-2 border-l border-gray-200">
+              {/* Notification Icon Bell Dropdown */}
+              <div className="relative" ref={notifMenuRef}>
+                <button
+                  onClick={() => setNotifMenuOpen(!notifMenuOpen)}
+                  className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-slate-50 hover:bg-slate-100 border border-slate-200/60 flex items-center justify-center relative transition-all"
+                  aria-label="Notifications"
+                >
+                  <FaBell className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-700" />
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 w-4 h-4 sm:w-4.5 sm:h-4.5 bg-rose-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-sm">
+                      {unreadCount}
+                    </span>
+                  )}
+                </button>
+
+                {/* Notifications Dropdown Modal */}
+                {notifMenuOpen && (
+                  <div className="absolute right-0 mt-3 w-72 sm:w-96 bg-white rounded-2xl shadow-2xl border border-gray-100 p-4 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+                    <div className="flex items-center justify-between pb-3 border-b border-gray-100">
+                      <h3 className="font-bold text-slate-900 text-sm">Notifications</h3>
                       <button
-                        onClick={() => { logout(); setUserMenuOpen(false); }}
-                        className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors font-semibold"
+                        onClick={markAllAsRead}
+                        className="text-xs font-bold text-emerald-600 hover:text-emerald-700 transition-colors"
                       >
-                        Logout
+                        Mark all read
                       </button>
                     </div>
-                  </div>
-                ) : (
-                  <div className="flex flex-col p-2 gap-1">
-                    <button 
-                      onClick={() => { setActiveTab('login'); openModal(); setUserMenuOpen(false); }} 
-                      className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors font-medium"
-                    >
-                      Login
-                    </button>
-                    <button 
-                      onClick={() => { setActiveTab('register'); openModal(); setUserMenuOpen(false); }} 
-                      className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors font-medium"
-                    >
-                      Register
-                    </button>
+
+                    <div className="space-y-2 mt-3 max-h-80 overflow-y-auto pr-1">
+                      {notifications.map((n) => (
+                        <div
+                          key={n.id}
+                          className={`p-2.5 rounded-xl flex items-start gap-2.5 transition-colors ${
+                            !n.read ? 'bg-emerald-50/60 border border-emerald-100' : 'hover:bg-slate-50'
+                          }`}
+                        >
+                          <div className={`w-7 h-7 rounded-lg ${n.bg} flex items-center justify-center shrink-0`}>
+                            {n.icon}
+                          </div>
+                          <div className="flex-1 text-left space-y-0.5">
+                            <p className="text-xs font-semibold text-slate-800 leading-tight">{n.title}</p>
+                            <span className="text-[10px] text-slate-400 font-medium block">{n.time}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>
-            )}
-          </div>
+
+              {/* User Avatar & Name Dropdown */}
+              <div className="relative" ref={userMenuRef}>
+                <button
+                  onClick={() => setUserMenuOpen(!userMenuOpen)}
+                  className="flex items-center gap-1.5 sm:gap-2 p-1 rounded-full hover:bg-slate-100 transition-all cursor-pointer group"
+                >
+                  <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-gradient-to-tr from-orange-600 to-amber-500 text-white flex items-center justify-center font-black text-xs sm:text-sm shadow-sm uppercase shrink-0">
+                    {user?.name ? user.name.charAt(0) : 'U'}
+                  </div>
+                  <div className="hidden xl:flex flex-col text-left max-w-[140px]">
+                    <span className="text-xs font-bold text-slate-900 group-hover:text-orange-600 transition-colors leading-tight truncate">
+                      {user?.name || 'Valued User'}
+                    </span>
+                    <span className="text-[10px] text-slate-400 font-medium leading-tight truncate">
+                      {user?.email || user?.phone || 'Customer Account'}
+                    </span>
+                  </div>
+                  <IoChevronDown className="w-3.5 h-3.5 text-slate-400 group-hover:text-slate-600 transition-transform duration-200" />
+                </button>
+
+                {/* Account Menu Dropdown */}
+                {userMenuOpen && (
+                  <div className="absolute right-0 mt-2 w-56 bg-white border border-gray-200 rounded-2xl shadow-xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
+                    <div className="flex flex-col">
+                      <div className="px-4 py-3 bg-slate-50/80 border-b border-gray-100">
+                        <div className="font-bold text-sm text-slate-900 truncate">{user?.name}</div>
+                        <div className="text-xs text-slate-500 truncate">{user?.email || user?.phone}</div>
+                      </div>
+                      <div className="flex flex-col p-2 gap-1">
+                        <Link
+                          to="/profile"
+                          onClick={() => setUserMenuOpen(false)}
+                          className="w-full text-left px-3 py-2 text-xs font-bold text-slate-700 hover:bg-orange-50 hover:text-orange-600 rounded-xl transition-colors flex items-center gap-2"
+                        >
+                          <User className="w-4 h-4" />
+                          My Account
+                        </Link>
+                        <button
+                          onClick={handleLogout}
+                          className="w-full text-left px-3 py-2 text-xs text-red-600 hover:bg-red-50 rounded-xl transition-colors font-bold flex items-center gap-2"
+                        >
+                          <FaSignOutAlt className="text-xs" />
+                          Logout
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : (
+            /* Direct Icon Button when not logged in */
+            <button
+              onClick={() => setIsOtpModalOpen(true)}
+              aria-label="Login"
+              title="Login"
+              className="p-2 sm:p-2.5 rounded-full hover:bg-slate-100 text-slate-700 hover:text-orange-600 transition-all cursor-pointer"
+            >
+              <FaRegUser className="w-4 h-4 sm:w-5 sm:h-5" />
+            </button>
+          )}
         </div>
       </div>
 
@@ -275,199 +374,30 @@ function Header() {
         <nav className="flex flex-col gap-6 px-6">
           <Link to="/" onClick={() => setMenuOpen(false)} className={`font-medium transition-colors ${isActive('/') ? 'text-orange-600' : 'text-gray-700 hover:text-orange-500'}`}>Home</Link>
           <Link to="/product" onClick={() => setMenuOpen(false)} className={`font-medium transition-colors ${isActive('/product') ? 'text-orange-600' : 'text-gray-700 hover:text-orange-500'}`}>Product</Link>
-          <Link to="/cart" onClick={() => setMenuOpen(false)} className={`font-medium transition-colors flex items-center gap-2 ${isActive('/cart') ? 'text-orange-600' : 'text-gray-700 hover:text-orange-500'}`}>
-            Cart {getCartItemCount() > 0 && <span className="bg-orange-500 text-white text-xs px-2 py-1 rounded-full">{getCartItemCount()}</span>}
-          </Link>
+          {isAuthenticated ? (
+            <Link to="/profile?tab=cart" onClick={() => setMenuOpen(false)} className={`font-medium transition-colors flex items-center gap-2 ${isActive('/cart') ? 'text-orange-600' : 'text-gray-700 hover:text-orange-500'}`}>
+              Cart {getCartItemCount() > 0 && <span className="bg-orange-500 text-white text-xs px-2 py-1 rounded-full">{getCartItemCount()}</span>}
+            </Link>
+          ) : (
+            <button
+              onClick={() => {
+                setMenuOpen(false);
+                setIsOtpModalOpen(true);
+              }}
+              className="font-medium transition-colors flex items-center gap-2 text-gray-700 hover:text-orange-500 text-left"
+            >
+              Cart {getCartItemCount() > 0 && <span className="bg-orange-500 text-white text-xs px-2 py-1 rounded-full">{getCartItemCount()}</span>}
+            </button>
+          )}
           <Link to="/contact" onClick={() => setMenuOpen(false)} className={`font-medium transition-colors ${isActive('/contact') ? 'text-orange-600' : 'text-gray-700 hover:text-orange-500'}`}>Contact</Link>
         </nav>
       </div>
 
-      {/* Modal for Login / Register */}
-      <Modal
-        isOpen={modalIsOpen}
-        onAfterOpen={afterOpenModal}
-        onRequestClose={() => {
-          setModalOpenAnimation(false);
-          setTimeout(closeModal, 300);
-        }}
-        className={`relative w-full max-w-4xl mx-auto p-0 bg-white rounded-2xl shadow-2xl transform transition-all duration-300 ease-out overflow-hidden ${modalOpenAnimation ? 'scale-100 opacity-100' : 'scale-95 opacity-0'} m-4`}
-        overlayClassName="fixed inset-0 bg-black/60 flex items-center justify-center z-[60] p-4"
-        contentLabel="Account Modal"
-      >
-        <div className="flex flex-col md:flex-row h-full max-h-[90vh] overflow-y-auto md:overflow-visible">
-          {/* Visual left panel */}
-          <div className="hidden md:block md:w-1/2 bg-gray-900 relative min-h-[500px]">
-            <img src={Product1} alt="Modal Visual" className="w-full h-full object-cover opacity-80" />
-            <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent p-10 flex flex-col justify-end">
-              <h2 className="text-white text-3xl font-bold mb-2">Eacyclic Marketplace</h2>
-              <p className="text-gray-200 text-sm">Discover and purchase curated premium goods directly with seamless WhatsApp checkout fallbacks.</p>
-            </div>
-          </div>
-
-          {/* Form right panel */}
-          <div className="w-full md:w-1/2 p-8 relative flex flex-col justify-center bg-white">
-            <button
-              aria-label="Close modal"
-              className="absolute right-4 top-4 text-gray-400 hover:text-black transition-all hover:rotate-90 duration-200"
-              onClick={() => {
-                setModalOpenAnimation(false);
-                setTimeout(closeModal, 300);
-              }}
-            >
-              <IoCloseOutline className="text-3xl" />
-            </button>
-
-            {/* Switcher Tab header */}
-            <div className="flex gap-4 border-b border-gray-100 pb-4 mb-6">
-              <button 
-                onClick={() => { setActiveTab('login'); setAuthError(''); }}
-                className={`text-lg font-bold pb-2 transition-all border-b-2 ${activeTab === 'login' ? 'border-orange-500 text-orange-600' : 'border-transparent text-gray-400'}`}
-              >
-                Sign In
-              </button>
-              <button 
-                onClick={() => { setActiveTab('register'); setAuthError(''); }}
-                className={`text-lg font-bold pb-2 transition-all border-b-2 ${activeTab === 'register' ? 'border-orange-500 text-orange-600' : 'border-transparent text-gray-400'}`}
-              >
-                Create Account
-              </button>
-            </div>
-
-            {/* Error / Success Feedback */}
-            {authError && (
-              <div className="mb-4 p-3 bg-red-50 border-l-4 border-red-500 text-red-700 text-xs font-semibold rounded">
-                {authError}
-              </div>
-            )}
-            {authSuccessMsg && (
-              <div className="mb-4 p-3 bg-green-50 border-l-4 border-green-500 text-green-700 text-xs font-semibold rounded">
-                {authSuccessMsg}
-              </div>
-            )}
-
-            {activeTab === 'login' ? (
-              <form onSubmit={handleLoginSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Email or Phone Number</label>
-                  <div className="relative">
-                    <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-gray-400"><FaEnvelope size={14} /></span>
-                    <input
-                      type="text"
-                      className="border border-gray-200 pl-10 pr-4 py-3 w-full rounded-xl focus:ring-2 focus:ring-orange-500 focus:outline-none transition-all placeholder-gray-400"
-                      placeholder="name@email.com or phone"
-                      value={loginIdentifier}
-                      onChange={(e) => setLoginIdentifier(e.target.value)}
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Password</label>
-                  <div className="relative">
-                    <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-gray-400"><FaLock size={14} /></span>
-                    <input
-                      type="password"
-                      className="border border-gray-200 pl-10 pr-4 py-3 w-full rounded-xl focus:ring-2 focus:ring-orange-500 focus:outline-none transition-all placeholder-gray-400"
-                      placeholder="••••••••"
-                      value={loginPassword}
-                      onChange={(e) => setLoginPassword(e.target.value)}
-                    />
-                  </div>
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={authLoading}
-                  className="bg-black hover:bg-gray-800 text-white font-bold py-3.5 px-6 rounded-xl w-full transition-all duration-300 transform active:scale-[0.98] hover:shadow-xl hover:-translate-y-0.5 flex items-center justify-center shadow-lg cursor-pointer"
-                >
-                  {authLoading ? (
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  ) : (
-                    'Log In'
-                  )}
-                </button>
-              </form>
-            ) : (
-              <form onSubmit={handleRegisterSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Full Name</label>
-                  <div className="relative">
-                    <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-gray-400"><FaUser size={14} /></span>
-                    <input
-                      type="text"
-                      className="border border-gray-200 pl-10 pr-4 py-3 w-full rounded-xl focus:ring-2 focus:ring-orange-500 focus:outline-none transition-all placeholder-gray-400"
-                      placeholder="John Doe"
-                      value={regName}
-                      onChange={(e) => setRegName(e.target.value)}
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Email Address</label>
-                    <div className="relative">
-                      <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-gray-400"><FaEnvelope size={14} /></span>
-                      <input
-                        type="email"
-                        className="border border-gray-200 pl-10 pr-4 py-3 w-full rounded-xl focus:ring-2 focus:ring-orange-500 focus:outline-none transition-all placeholder-gray-400 text-sm"
-                        placeholder="john@example.com"
-                        value={regEmail}
-                        onChange={(e) => setRegEmail(e.target.value)}
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Phone Number</label>
-                    <div className="relative">
-                      <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-gray-400"><FaPhone size={14} /></span>
-                      <input
-                        type="text"
-                        className="border border-gray-200 pl-10 pr-4 py-3 w-full rounded-xl focus:ring-2 focus:ring-orange-500 focus:outline-none transition-all placeholder-gray-400 text-sm"
-                        placeholder="10-digit number"
-                        value={regPhone}
-                        onChange={(e) => setRegPhone(e.target.value)}
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Password</label>
-                  <div className="relative">
-                    <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-gray-400"><FaLock size={14} /></span>
-                    <input
-                      type="password"
-                      className="border border-gray-200 pl-10 pr-4 py-3 w-full rounded-xl focus:ring-2 focus:ring-orange-500 focus:outline-none transition-all placeholder-gray-400"
-                      placeholder="••••••••"
-                      value={regPassword}
-                      onChange={(e) => setRegPassword(e.target.value)}
-                    />
-                  </div>
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={authLoading}
-                  className="bg-black hover:bg-gray-800 text-white font-bold py-3.5 px-6 rounded-xl w-full transition-all duration-300 transform active:scale-[0.98] hover:shadow-xl hover:-translate-y-0.5 flex items-center justify-center shadow-lg cursor-pointer"
-                >
-                  {authLoading ? (
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  ) : (
-                    'Register Account'
-                  )}
-                </button>
-              </form>
-            )}
-
-            {/* Offline Helper Warning */}
-            <div className="mt-6 pt-4 border-t border-gray-100 flex items-center gap-2 text-xs text-gray-400 font-medium">
-              <FaWifi className="shrink-0 animate-pulse text-amber-500" />
-              <span>Offline-ready protection: data saves locally if servers are offline.</span>
-            </div>
-          </div>
-        </div>
-      </Modal>
+      {/* OTP Login Modal */}
+      <OTPLoginModal
+        isOpen={isOtpModalOpen}
+        onClose={() => setIsOtpModalOpen(false)}
+      />
     </header>
   );
 }

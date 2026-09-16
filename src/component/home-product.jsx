@@ -131,7 +131,11 @@ function HomeProduct() {
                 >
                   <Link to={`/product-view/${item.id}`} state={{ product: item }} aria-label={`View details for ${item.name || item.title}`} className="absolute inset-0 z-0"></Link>
                   
-                  <div className="aspect-[4/3] overflow-hidden bg-gray-50 relative z-10">
+                  <Link 
+                    to={`/product-view/${item.id}`} 
+                    state={{ product: item }} 
+                    className="block aspect-[4/3] overflow-hidden bg-gray-50 relative z-10 cursor-pointer"
+                  >
                     {item.offer && (
                       <div className="absolute top-2 left-2 z-10 bg-red-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-sm">
                         -{item.offer.replace(/[^0-9]/g, '')}%
@@ -142,7 +146,7 @@ function HomeProduct() {
                       src={item.image_url || item.image || (item.gallery && item.gallery[0])} 
                       alt={item.name || item.title} 
                     />
-                  </div>
+                  </Link>
                   <div className="p-4 flex flex-col flex-1 relative z-20 pointer-events-none">
                     <div className="flex-1">
                       {item.category && (

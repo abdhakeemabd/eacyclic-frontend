@@ -13,8 +13,9 @@ function Products() {
   const [activeTab, setActiveTab] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
   const [visibleCount, setVisibleCount] = useState(18);
-  const { addToCart } = useCart();
+  const { addToCart, toggleLike: toggleWishlistLike, isLiked } = useCart();
   const { products, loading } = useProducts();
+
   const location = useLocation();
   const navigate = useNavigate();
   const observer = useRef();
@@ -182,13 +183,17 @@ function Products() {
                       </div>
                     )}
 
-                    <div className="block overflow-hidden aspect-[4/3] bg-gray-50 relative z-10">
+                    <Link
+                      to={`/product-view/${product.id}`}
+                      state={{ product }}
+                      className="block overflow-hidden aspect-[4/3] bg-gray-50 relative z-10 cursor-pointer"
+                    >
                       <ImageLoader
                         src={product.image_url || product.image || (product.gallery && product.gallery[0])}
                         alt={product.name || product.title}
                         className="transition-transform duration-500 group-hover:scale-110"
                       />
-                    </div>
+                    </Link>
 
                     <div className="p-4 flex flex-col flex-1 relative z-20 pointer-events-none">
                       <div className="flex-1">
@@ -208,9 +213,10 @@ function Products() {
 
                       <div className="flex items-center justify-between pt-3 border-t border-gray-50 pointer-events-auto">
                         <div className="flex gap-3">
-                          <button onClick={() => toggleLike(product.id)} className="text-gray-400 hover:text-red-500 transition-colors">
-                            {likes[product.id] ? <BiSolidLike className="text-red-500 text-lg" /> : <BiLike className="text-lg" />}
+                          <button onClick={() => toggleWishlistLike(product)} className="text-gray-400 hover:text-red-500 transition-colors" title="Like / Save to Wishlist">
+                            {isLiked(product.id) ? <BiSolidLike className="text-red-500 text-lg" /> : <BiLike className="text-lg" />}
                           </button>
+
                           <button onClick={() => toggleCart(product)} className={`transition-colors ${carts[product.id] ? 'text-orange-600' : 'text-gray-400 hover:text-orange-500'}`}>
                             {carts[product.id] ? <BiSolidCart className="text-xl" /> : <BiCart className="text-xl" />}
                           </button>

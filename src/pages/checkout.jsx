@@ -1,36 +1,53 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useUser } from '../context/UserContext';
 import { showSuccess, showError } from '../utils/swalUtils';
 import ImageLoader from '../component/image-loader';
 import { ordersAPI } from '../utils/api';
+import OTPLoginModal from '../component/OTPLoginModal';
 
 function Checkout() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { user, isAuthenticated } = useUser();
+  const [isOtpModalOpen, setIsOtpModalOpen] = useState(false);
   
   // Extract product, quantity or cart items from navigation state
   const { product, quantity = 1, cartItems } = location.state || {};
   const checkoutItems = cartItems || (product ? [{...product, quantity}] : []);
 
   const [formData, setFormData] = useState({
-    name: '',
-    phone: '',
-    houseName: '',
+    name: user?.name || '',
+    phone: user?.phone || '',
+    houseName: user?.address || '',
     area: '',
     city: '',
     district: '',
     state: '',
     country: 'India',
     pincode: '',
-    email: ''
+    email: user?.email || ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      setFormData(prev => ({
+        ...prev,
+        name: prev.name || user.name || '',
+        phone: prev.phone || user.phone || '',
+        email: prev.email || user.email || '',
+        houseName: prev.houseName || user.address || ''
+      }));
+    }
+  }, [user]);
 
   useEffect(() => {
     if (checkoutItems.length === 0) {
       navigate('/product', { replace: true });
     }
   }, [checkoutItems, navigate]);
+
 
   if (checkoutItems.length === 0) return null;
 
@@ -44,8 +61,10 @@ function Checkout() {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    if (e) e.preventDefault();
     setIsSubmitting(true);
+
+
     
     // Professional Sequential Order ID Generation
     const generateOrderId = () => {
@@ -223,8 +242,16 @@ function Checkout() {
 
         </div>
       </div>
+
+      {/* Mandatory OTP Login Modal for Order Confirmation */}
+      <OTPLoginModal
+        isOpen={isOtpModalOpen}
+        onClose={() => setIsOtpModalOpen(false)}
+        onSuccess={() => handleSubmit()}
+      />
     </div>
   );
 }
 
 export default Checkout;
+

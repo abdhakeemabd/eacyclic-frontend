@@ -5,46 +5,84 @@ import { useUser } from './UserContext';
 const CartContext = createContext();
 
 export const CartProvider = ({ children }) => {
-  const [cart, setCart] = useState([]);
+  // Lazy state initialization from localStorage so refresh never wipes saved items
+  const [cart, setCart] = useState(() => {
+    try {
+      const savedCart = localStorage.getItem('cart');
+      return savedCart ? JSON.parse(savedCart) : [];
+    } catch (e) {
+      console.error('Failed to load cart from localStorage:', e);
+      return [];
+    }
+  });
+
+  const [likes, setLikes] = useState(() => {
+    try {
+      const savedLikes = localStorage.getItem('likes');
+      return savedLikes ? JSON.parse(savedLikes) : [];
+    } catch (e) {
+      console.error('Failed to load likes from localStorage:', e);
+      return [];
+    }
+  });
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   const { isAuthenticated } = useUser();
 
-  // Load cart from API if authenticated, else from localStorage
+  // Fetch cart from API if authenticated
   useEffect(() => {
     const fetchCart = async () => {
       if (isAuthenticated) {
         try {
           const response = await cartAPI.getCart();
-          // Assuming response.data.items is an array of { id, product, product_details, quantity }
-          // We need to map it to match the local cart structure: { id, name, price, quantity, ... }
-          const apiCart = response.data.items.map(item => ({
-            ...item.product_details,
-            quantity: item.quantity
-          }));
-          setCart(apiCart);
+          if (response.data && response.data.items) {
+            const apiCart = response.data.items.map(item => ({
+              ...item.product_details,
+              quantity: item.quantity
+            }));
+            if (apiCart.length > 0) {
+              setCart(apiCart);
+            }
+          }
         } catch (e) {
           console.error('Failed to fetch cart from API:', e);
         }
-      } else {
-        const savedCart = localStorage.getItem('cart');
-        if (savedCart) {
-          try {
-            setCart(JSON.parse(savedCart));
-          } catch (e) {
-            console.error('Failed to parse cart from localStorage:', e);
-          }
-        }
       }
+      setIsInitialized(true);
     };
     fetchCart();
   }, [isAuthenticated]);
 
-  // Save cart to localStorage whenever it changes (as backup or for guests)
+  // Persist cart to localStorage whenever it changes
   useEffect(() => {
     localStorage.setItem('cart', JSON.stringify(cart));
   }, [cart]);
+
+  // Persist likes to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('likes', JSON.stringify(likes));
+  }, [likes]);
+
+  // Toggle Like / Wishlist
+  const toggleLike = (product) => {
+    const exists = likes.some(item => item.id === product.id);
+    let updatedLikes;
+    if (exists) {
+      updatedLikes = likes.filter(item => item.id !== product.id);
+    } else {
+      updatedLikes = [...likes, product];
+    }
+    setLikes(updatedLikes);
+    return !exists;
+  };
+
+  const isLiked = (productId) => {
+    return likes.some(item => item.id === productId);
+  };
+
 
   // Add item to cart
   const addToCart = async (product, quantity = 1) => {
@@ -167,6 +205,7 @@ export const CartProvider = ({ children }) => {
 
   const value = {
     cart,
+    likes,
     loading,
     error,
     addToCart,
@@ -175,7 +214,10 @@ export const CartProvider = ({ children }) => {
     clearCart,
     getCartTotal,
     getCartItemCount,
+    toggleLike,
+    isLiked,
   };
+
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 };

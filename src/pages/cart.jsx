@@ -1,11 +1,15 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useCart } from '../context/CartContext';
+import { useUser } from '../context/UserContext';
 import { Link, useNavigate } from 'react-router-dom';
 import { FaTrash, FaMinus, FaPlus, FaShoppingBag, FaArrowRight } from 'react-icons/fa';
 import { BiArrowBack } from 'react-icons/bi';
+import OTPLoginModal from '../component/OTPLoginModal';
 
 function Cart() {
   const { cart, removeFromCart, updateQuantity, getCartTotal, getCartItemCount, clearCart } = useCart();
+  const { isAuthenticated } = useUser();
+  const [isOtpModalOpen, setIsOtpModalOpen] = useState(false);
 
   const navigate = useNavigate();
 
@@ -18,6 +22,8 @@ function Cart() {
   const handleCheckout = () => {
     navigate('/checkout', { state: { cartItems: cart } });
   };
+
+
 
   if (cart.length === 0) {
     return (
@@ -235,8 +241,16 @@ function Cart() {
           </div>
         </div>
       </div>
+
+      {/* Mandatory OTP Login Modal */}
+      <OTPLoginModal
+        isOpen={isOtpModalOpen}
+        onClose={() => setIsOtpModalOpen(false)}
+        onSuccess={() => navigate('/checkout', { state: { cartItems: cart } })}
+      />
     </section>
   );
 }
+
 
 export default Cart;
