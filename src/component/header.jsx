@@ -192,7 +192,7 @@ function Header() {
           {/* Wishlist / Liked Items Icon */}
           {isAuthenticated ? (
             <Link to="/profile?tab=wishlist" aria-label="Liked Items" className="relative p-2 sm:p-2.5 rounded-full hover:bg-slate-100 transition-colors">
-              <FaHeart className={`w-4 h-4 sm:w-5 sm:h-5 ${likes.length > 0 ? "text-red-500" : "text-slate-700"}`} />
+              <FaHeart className={`w-3 h-3 sm:w-5 sm:h-5 ${likes.length > 0 ? "text-red-500" : "text-slate-700"}`} />
               {likes.length > 0 && (
                 <span className="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center">
                   {likes.length}
@@ -205,7 +205,7 @@ function Header() {
               aria-label="Liked Items"
               className="relative p-2 sm:p-2.5 rounded-full hover:bg-slate-100 transition-colors"
             >
-              <FaHeart className="w-4 h-4 sm:w-5 sm:h-5 text-slate-700" />
+              <FaHeart className="w-3 h-3 sm:w-5 sm:h-5 text-slate-700" />
             </button>
           )}
 
@@ -225,7 +225,7 @@ function Header() {
               aria-label="Shopping Cart"
               className="relative p-2 sm:p-2.5 rounded-full hover:bg-slate-100 transition-colors"
             >
-              <FaShoppingCart className="w-4 h-4 sm:w-5 sm:h-5 text-slate-700" />
+              <FaShoppingCart className="w-3 h-3 sm:w-5 sm:h-5 text-slate-700" />
             </button>
           )}
 
