@@ -147,7 +147,7 @@ const OTPLoginModal = ({ isOpen, onClose, onSuccess }) => {
         {/* Top Header Card */}
         <div className="bg-gradient-to-br from-gray-900 via-orange-950 to-orange-600 px-6 pt-8 pb-7 text-white relative overflow-hidden">
           {/* Subtle Decorative Glow Circle */}
-          <div className="absolute -right-8 -top-8 w-32 h-32 bg-orange-500/20 rounded-full blur-2xl"></div>
+          <div className="absolute -right-8 -top-8 w-32 h-32 bg-orange-500/20 rounded-full blur-2xl z-2"></div>
           
           <button
             onClick={() => { onClose(); resetForm(); }}
