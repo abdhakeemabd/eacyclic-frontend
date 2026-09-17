@@ -151,7 +151,7 @@ const OTPLoginModal = ({ isOpen, onClose, onSuccess }) => {
           
           <button
             onClick={() => { onClose(); resetForm(); }}
-            className="absolute top-4 right-4 text-white/70 hover:text-white p-2 rounded-full hover:bg-white/10 transition-all cursor-pointer"
+            className="absolute top-4 right-4 text-white/70 hover:text-white p-2 rounded-full hover:bg-white/10 transition-all cursor-pointer z-2"
             aria-label="Close"
           >
             <FaTimes className="text-base" />
