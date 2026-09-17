@@ -205,12 +205,7 @@ function Header() {
               aria-label="Liked Items"
               className="relative p-2 sm:p-2.5 rounded-full hover:bg-slate-100 transition-colors"
             >
-              <FaHeart className={`w-4 h-4 sm:w-5 sm:h-5 ${likes.length > 0 ? "text-red-500" : "text-slate-700"}`} />
-              {likes.length > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center">
-                  {likes.length}
-                </span>
-              )}
+              <FaHeart className="w-4 h-4 sm:w-5 sm:h-5 text-slate-700" />
             </button>
           )}
 
@@ -231,11 +226,6 @@ function Header() {
               className="relative p-2 sm:p-2.5 rounded-full hover:bg-slate-100 transition-colors"
             >
               <FaShoppingCart className="w-4 h-4 sm:w-5 sm:h-5 text-slate-700" />
-              {getCartItemCount() > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center">
-                  {getCartItemCount()}
-                </span>
-              )}
             </button>
           )}
 
@@ -386,7 +376,7 @@ function Header() {
               }}
               className="font-medium transition-colors flex items-center gap-2 text-gray-700 hover:text-orange-500 text-left"
             >
-              Cart {getCartItemCount() > 0 && <span className="bg-orange-500 text-white text-xs px-2 py-1 rounded-full">{getCartItemCount()}</span>}
+              Cart
             </button>
           )}
           <Link to="/contact" onClick={() => setMenuOpen(false)} className={`font-medium transition-colors ${isActive('/contact') ? 'text-orange-600' : 'text-gray-700 hover:text-orange-500'}`}>Contact</Link>
