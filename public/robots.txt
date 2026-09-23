@@ -17,7 +17,7 @@ Allow: /product?category=
 Allow: /product-view/
 
 # Sitemaps
-Sitemap: https://eacyclic.com/sitemap.xml
+Sitemap: https://www.eacyclic.com/sitemap.xml
 
 # Crawl rate (be polite)
 Crawl-delay: 1

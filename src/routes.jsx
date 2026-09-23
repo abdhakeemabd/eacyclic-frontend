@@ -13,6 +13,7 @@ import { AdminProvider } from './context/AdminContext';
 import { CartProvider } from './context/CartContext';
 import { UserProvider } from './context/UserContext';
 import { ProductProvider } from './context/ProductContext';
+import GoogleAnalytics from './component/GoogleAnalytics';
 
 // Lazy loaded public pages
 const Home = lazy(() => import('./pages'));
@@ -72,6 +73,7 @@ function HomeRoutes() {
         <ProductProvider>
           <CartProvider>
             <BrowserRouter>
+              <GoogleAnalytics />
               <ScrollToTop />
               <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="w-10 h-10 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div></div>}>
                 <Routes>

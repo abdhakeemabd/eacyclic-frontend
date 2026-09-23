@@ -6,7 +6,7 @@
 
   <!-- Homepage -->
   <url>
-    <loc>https://eacyclic.com/</loc>
+    <loc>https://www.eacyclic.com/</loc>
     <lastmod>2026-09-14</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.00</priority>
@@ -14,7 +14,7 @@
 
   <!-- Products Store Listing -->
   <url>
-    <loc>https://eacyclic.com/product</loc>
+    <loc>https://www.eacyclic.com/product</loc>
     <lastmod>2026-09-14</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.90</priority>
@@ -22,7 +22,7 @@
 
   <!-- About Us -->
   <url>
-    <loc>https://eacyclic.com/about</loc>
+    <loc>https://www.eacyclic.com/about</loc>
     <lastmod>2026-09-14</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.70</priority>
@@ -30,7 +30,7 @@
 
   <!-- Contact Us -->
   <url>
-    <loc>https://eacyclic.com/contact</loc>
+    <loc>https://www.eacyclic.com/contact</loc>
     <lastmod>2026-09-14</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.70</priority>
@@ -38,7 +38,7 @@
 
   <!-- Frequently Asked Questions (FAQ) -->
   <url>
-    <loc>https://eacyclic.com/faq</loc>
+    <loc>https://www.eacyclic.com/faq</loc>
     <lastmod>2026-09-14</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.60</priority>

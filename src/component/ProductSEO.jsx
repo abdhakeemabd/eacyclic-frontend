@@ -3,7 +3,7 @@ import { useParams, useLocation } from 'react-router-dom';
 import { useProducts } from '../context/ProductContext';
 import SEO from './SEO';
 
-const SITE_URL = 'https://eacyclic.com';
+const SITE_URL = 'https://www.eacyclic.com';
 
 /**
  * ProductSEO — reads the same product data as ProductDetails

@@ -10,10 +10,12 @@ const Home = () => {
   return (
     <main>
       <SEO 
-        title="Eacyclic – Buy Products Online in Kerala | Best Shopping Website in India" 
-        description="Shop online with Eacyclic. Find the best products around you in Kerala and across India. Easy shopping, fast delivery. Buy products online today!" 
+        title="Eacyclic | Buy Products Online in India" 
+        description="Eacyclic is an online shopping store where you can discover and buy quality products easily in one click. Shop online across India." 
         keywords="Eacyclic, online shopping, Kerala, India, buy products online, e-commerce"
       />
+
+
       <HomeBanner />
       
      <section className="py-12 bg-orange-600 border-b border-gray-100">
@@ -53,7 +55,28 @@ const Home = () => {
 
       <HomeProduct />
       <HomeFeatures />
+
+      {/* SEO Brand Content Section - Visually hidden but readable by search engines */}
+      <section className="sr-only">
+        <div className="container mx-auto max-w-3xl">
+          <h1 className="text-3xl font-bold text-gray-900 mb-4">Shop Online with Eacyclic</h1>
+          <p className="text-lg text-gray-700 mb-10">
+            Eacyclic is an online shopping store where you can discover and buy products easily in one click.
+          </p>
+
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Why Shop on Eacyclic?</h2>
+          <p className="text-lg text-gray-700">
+            Eacyclic makes online shopping simple, convenient and easy.
+            Discover products and buy online from Eacyclic.
+          </p>
+        </div>
+      </section>
       
+      <section className="sr-only">
+        <p className="text-gray-500 font-medium">
+          Eacyclic – Easy online shopping in one click.
+        </p>
+      </section>
     </main>
   )
 }
