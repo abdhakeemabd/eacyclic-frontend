@@ -66,18 +66,32 @@ function Checkout() {
 
 
     
-    // Professional Sequential Order ID Generation
     const generateOrderId = () => {
       // Use a timestamp-based ID to ensure uniqueness and prevent 400 Bad Request from duplicate IDs
       return Math.floor(Date.now() / 1000) + Math.floor(Math.random() * 1000);
     };
     
+    // Explicit validation fallback to ensure no empty fields bypass HTML validation
+    if (!formData.name?.trim() || !formData.phone?.trim() || !formData.email?.trim() || 
+        !formData.houseName?.trim() || !formData.area?.trim() || !formData.city?.trim() || 
+        !formData.district?.trim() || !formData.state?.trim() || !formData.pincode?.trim()) {
+      showError('Required Fields Missing', 'Please fill all mandatory fields to continue.');
+      setIsSubmitting(false);
+      return;
+    }
+
+    if (!isAuthenticated) {
+      setIsOtpModalOpen(true);
+      setIsSubmitting(false);
+      return;
+    }
+
     const orderPayload = {
       id: generateOrderId(),
       created_at: new Date().toISOString(),
-      customer_name: formData.name,
-      customer_email: formData.email,
-      customer_phone: formData.phone,
+      customer_name: formData.name.trim(),
+      customer_email: formData.email.trim(),
+      customer_phone: formData.phone.trim(),
       shipping_address: `${formData.houseName}, ${formData.area}, ${formData.city}, ${formData.district}, ${formData.state} - ${formData.pincode}, ${formData.country}`,
       subtotal: subtotal,
       shipping_cost: deliveryFee,

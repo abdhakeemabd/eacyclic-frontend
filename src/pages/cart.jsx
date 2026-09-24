@@ -20,7 +20,11 @@ function Cart() {
   };
 
   const handleCheckout = () => {
-    navigate('/checkout', { state: { cartItems: cart } });
+    if (!isAuthenticated) {
+      setIsOtpModalOpen(true);
+    } else {
+      navigate('/checkout', { state: { cartItems: cart } });
+    }
   };
 
 
