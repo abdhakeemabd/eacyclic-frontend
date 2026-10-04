@@ -123,6 +123,10 @@ const SEO = ({
     '@context': 'https://schema.org',
     '@type': 'WebSite',
     name: SITE_NAME,
+    alternateName: [
+      "Eacyclic",
+      "eacyclic.com"
+    ],
     url: SITE_URL,
     potentialAction: {
       '@type': 'SearchAction',
