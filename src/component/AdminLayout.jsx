@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import Logo from '../assets/images/logo/logo.png';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAdmin } from '../context/AdminContext';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -97,9 +98,7 @@ const AdminLayout = ({ children }) => {
                 exit={{ opacity: 0 }}
                 className="flex items-center"
               >
-                <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/30">
-                  <span className="text-white font-bold text-xl">KP</span>
-                </div>
+                <img src={Logo} alt="Logo" className="w-10 h-10 object-contain drop-shadow-md" />
                 <span className="ml-3 font-bold text-xl bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
                   Admin Panel
                 </span>
@@ -110,9 +109,9 @@ const AdminLayout = ({ children }) => {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center mx-auto shadow-lg shadow-indigo-500/30"
+                className="w-10 h-10 flex items-center justify-center mx-auto"
               >
-                <span className="text-white font-bold text-lg">KP</span>
+                <img src={Logo} alt="Logo" className="w-10 h-10 object-contain drop-shadow-md" />
               </motion.div>
             )}
           </AnimatePresence>
@@ -180,9 +179,7 @@ const AdminLayout = ({ children }) => {
             >
               <div className="p-6">
                 <div className="flex items-center mb-10">
-                  <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
-                    <span className="text-white font-bold text-xl">KP</span>
-                  </div>
+                  <img src={Logo} alt="Logo" className="w-10 h-10 object-contain drop-shadow-md" />
                   <span className="ml-3 font-bold text-xl dark:text-white">Admin Panel</span>
                 </div>
                 <nav>

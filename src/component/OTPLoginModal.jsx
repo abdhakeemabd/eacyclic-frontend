@@ -145,13 +145,13 @@ const OTPLoginModal = ({ isOpen, onClose, onSuccess }) => {
       <div className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-100 transition-all transform scale-100">
         
         {/* Top Header Card */}
-        <div className="bg-gradient-to-br from-gray-900 via-orange-950 to-orange-600 px-6 pt-8 pb-7 text-white relative overflow-hidden">
+        <div className="bg-gradient-to-br from-orange-50 via-white to-orange-100 px-6 pt-8 pb-7 text-gray-900 relative overflow-hidden border-b border-gray-100">
           {/* Subtle Decorative Glow Circle */}
           <div className="absolute -right-8 -top-8 w-32 h-32 bg-orange-500/20 rounded-full blur-2xl z-2"></div>
           
           <button
             onClick={() => { onClose(); resetForm(); }}
-            className="absolute top-4 right-4 text-white/70 hover:text-white p-2 rounded-full hover:bg-white/10 transition-all cursor-pointer z-2"
+            className="absolute top-4 right-4 text-gray-400 hover:text-gray-900 p-2 rounded-full hover:bg-gray-200/50 transition-all cursor-pointer z-2"
             aria-label="Close"
           >
             <FaTimes className="text-base" />
@@ -160,7 +160,7 @@ const OTPLoginModal = ({ isOpen, onClose, onSuccess }) => {
           {step === 2 && (
             <button
               onClick={() => { setStep(1); setError(''); setSuccessMsg(''); }}
-              className="absolute top-4 left-4 text-white/70 hover:text-white p-2 rounded-full hover:bg-white/10 transition-all cursor-pointer flex items-center gap-1.5 text-xs font-medium"
+              className="absolute top-4 left-4 text-gray-500 hover:text-gray-900 p-2 rounded-full hover:bg-gray-200/50 transition-all cursor-pointer flex items-center gap-1.5 text-xs font-medium"
             >
               <FaArrowLeft className="text-xs" />
               <span>Back</span>
@@ -177,13 +177,13 @@ const OTPLoginModal = ({ isOpen, onClose, onSuccess }) => {
               )}
             </div>
 
-            <h3 className="text-2xl font-black tracking-tight text-white">
+            <h3 className="text-2xl font-black tracking-tight text-gray-900">
               {step === 1 && 'Welcome Back'}
               {step === 2 && 'Enter Verification Code'}
               {step === 3 && 'Access Granted'}
             </h3>
 
-            <p className="text-xs text-gray-300 mt-1.5 max-w-xs font-normal leading-relaxed">
+            <p className="text-xs text-gray-600 mt-1.5 max-w-xs font-normal leading-relaxed">
               {step === 1 && 'Enter your email address to receive a secure login code.'}
               {step === 2 && `We sent a 6-digit code to ${email}`}
               {step === 3 && 'Logged in successfully! Redirecting...'}
@@ -192,8 +192,8 @@ const OTPLoginModal = ({ isOpen, onClose, onSuccess }) => {
             {/* Step Progress Dots */}
             {step !== 3 && (
               <div className="flex items-center gap-1.5 mt-4">
-                <span className={`h-1.5 rounded-full transition-all duration-300 ${step === 1 ? 'w-6 bg-orange-500' : 'w-1.5 bg-white/30'}`}></span>
-                <span className={`h-1.5 rounded-full transition-all duration-300 ${step === 2 ? 'w-6 bg-orange-500' : 'w-1.5 bg-white/30'}`}></span>
+                <span className={`h-1.5 rounded-full transition-all duration-300 ${step === 1 ? 'w-6 bg-orange-500' : 'w-1.5 bg-gray-300'}`}></span>
+                <span className={`h-1.5 rounded-full transition-all duration-300 ${step === 2 ? 'w-6 bg-orange-500' : 'w-1.5 bg-gray-300'}`}></span>
               </div>
             )}
           </div>
