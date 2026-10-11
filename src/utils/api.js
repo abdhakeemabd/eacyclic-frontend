@@ -22,9 +22,33 @@ api.interceptors.request.use((config) => {
   }
   return config;
 }, (error) => {
-
   return Promise.reject(error);
 });
+
+// Response interceptor to automatically handle 24-hour token expiration and revoked sessions
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && error.response.status === 401) {
+      const url = error.config?.url || '';
+      const isLoginOrAuth = url.includes('/login') || url.includes('/verify-otp');
+      if (!isLoginOrAuth) {
+        // Clear expired or revoked session tokens
+        localStorage.removeItem('adminToken');
+        localStorage.removeItem('adminUser');
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('user');
+        localStorage.removeItem('userToken');
+
+        // Redirect admin users to login page if currently on admin portal
+        if (typeof window !== 'undefined' && window.location.pathname.startsWith('/admin') && !window.location.pathname.includes('/admin/login')) {
+          window.location.href = '/admin/login?expired=1';
+        }
+      }
+    }
+    return Promise.reject(error);
+  }
+);
 
 // Products API
 export const productsAPI = {
@@ -90,12 +114,15 @@ export const userAPI = {
   sendOTP: (email) => api.post('/auth/send-otp', { email }),
   verifyOTP: (email, otp) => api.post('/auth/verify-otp', { email, otp }),
   logout: () => api.post('/auth/logout'),
+  logoutAll: () => api.post('/auth/logout-all'),
 };
 
 
 // Admin Auth API
 export const adminAPI = {
   login: (username, password) => api.post('/admin/login', { username, password }),
+  logout: () => api.post('/admin/logout'),
+  logoutAll: () => api.post('/admin/logout-all'),
   changePassword: (data) => api.post('/admin/change-password', data),
 };
 

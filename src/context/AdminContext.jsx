@@ -70,11 +70,30 @@ export const AdminProvider = ({ children }) => {
     }
   };
 
-  const logout = () => {
-    setAdminUser(null);
-    setIsAuthenticated(false);
-    localStorage.removeItem('adminUser');
-    localStorage.removeItem('adminToken');
+  const logout = async () => {
+    try {
+      await adminAPI.logout();
+    } catch (e) {
+      console.warn('Backend admin logout notice:', e);
+    } finally {
+      setAdminUser(null);
+      setIsAuthenticated(false);
+      localStorage.removeItem('adminUser');
+      localStorage.removeItem('adminToken');
+    }
+  };
+
+  const logoutAll = async () => {
+    try {
+      await adminAPI.logoutAll();
+    } catch (e) {
+      console.warn('Backend admin logout-all notice:', e);
+    } finally {
+      setAdminUser(null);
+      setIsAuthenticated(false);
+      localStorage.removeItem('adminUser');
+      localStorage.removeItem('adminToken');
+    }
   };
 
   const toggleDarkMode = () => setDarkMode(!darkMode);
@@ -82,7 +101,7 @@ export const AdminProvider = ({ children }) => {
 
   return (
     <AdminContext.Provider value={{ 
-      isAuthenticated, adminUser, login, logout, loading,
+      isAuthenticated, adminUser, login, logout, logoutAll, loading,
       darkMode, toggleDarkMode, themeColor, changeTheme 
     }}>
       {children}

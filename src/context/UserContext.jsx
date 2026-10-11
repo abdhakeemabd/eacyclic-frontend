@@ -230,6 +230,25 @@ export const UserProvider = ({ children }) => {
     localStorage.removeItem('cart');
   };
 
+  // Logout from all devices
+  const logoutAll = async () => {
+    try {
+      await userAPI.logoutAll();
+    } catch (e) {
+      console.error('Logout all error:', e);
+    }
+    setUser(null);
+    setIsAuthenticated(false);
+    setIsOfflineMode(false);
+    localStorage.removeItem('user');
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('adminUser');
+    localStorage.removeItem('userToken');
+    localStorage.removeItem('adminToken');
+    localStorage.removeItem('userProfile');
+    localStorage.removeItem('cart');
+  };
+
 
   const value = {
     user,
@@ -244,6 +263,7 @@ export const UserProvider = ({ children }) => {
     sendOTP,
     verifyOTP,
     logout,
+    logoutAll,
   };
 
 

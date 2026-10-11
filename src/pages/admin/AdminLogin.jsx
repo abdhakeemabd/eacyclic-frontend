@@ -18,6 +18,14 @@ function AdminLogin() {
     }
   }, [isAuthenticated, navigate]);
 
+  // Check if redirected due to token expiry (24h)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('expired') === '1') {
+      setError('Your administrative session has expired (24-hour limit). Please sign in again.');
+    }
+  }, []);
+
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {

@@ -8,7 +8,7 @@ import { useAdmin } from '../../context/AdminContext';
 import { adminAPI, userAPI } from '../../utils/api';
 
 function AdminProfile() {
-  const { adminUser, logout } = useAdmin();
+  const { adminUser, logout, logoutAll } = useAdmin();
   const [activeTab, setActiveTab] = useState('security'); // default to security/password view
 
   // Profile info state
@@ -31,6 +31,10 @@ function AdminProfile() {
   const [pwStatus, setPwStatus] = useState({ type: '', text: '' });
   const [pwLoading, setPwLoading] = useState(false);
 
+  // Logout All state
+  const [logoutAllLoading, setLogoutAllLoading] = useState(false);
+  const [logoutAllMsg, setLogoutAllMsg] = useState({ type: '', text: '' });
+
   const handlePasswordSubmit = async (e) => {
     e.preventDefault();
     setPwStatus({ type: '', text: '' });
@@ -43,8 +47,8 @@ function AdminProfile() {
       setPwStatus({ type: 'error', text: 'Please enter a new password.' });
       return;
     }
-    if (newPassword.length < 6) {
-      setPwStatus({ type: 'error', text: 'New password must be at least 6 characters long.' });
+    if (newPassword.length < 8) {
+      setPwStatus({ type: 'error', text: 'New password must be at least 8 characters long.' });
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -64,7 +68,10 @@ function AdminProfile() {
         localStorage.setItem('adminToken', response.data.token);
       }
 
-      setPwStatus({ type: 'success', text: response.data.message || 'Password changed successfully!' });
+      setPwStatus({ 
+        type: 'success', 
+        text: response.data.message || 'Password changed successfully! All other sessions logged out.' 
+      });
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
@@ -73,6 +80,21 @@ function AdminProfile() {
       setPwStatus({ type: 'error', text: errorMsg });
     } finally {
       setPwLoading(false);
+    }
+  };
+
+  const handleLogoutAll = async () => {
+    if (!window.confirm("Are you sure you want to log out from all devices? All other sessions will be terminated and you will need to log back in.")) {
+      return;
+    }
+    setLogoutAllLoading(true);
+    setLogoutAllMsg({ type: '', text: '' });
+    try {
+      await logoutAll();
+      window.location.href = '/admin/login';
+    } catch (error) {
+      setLogoutAllMsg({ type: 'error', text: error.response?.data?.error || 'Failed to terminate all sessions.' });
+      setLogoutAllLoading(false);
     }
   };
 
@@ -289,6 +311,42 @@ function AdminProfile() {
                     </button>
                   </div>
                 </form>
+
+                {/* Session & Device Management */}
+                <div className="mt-10 pt-8 border-t border-gray-100 dark:border-gray-800 space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl bg-rose-50/60 dark:bg-rose-950/20 border border-rose-100 dark:border-rose-900/40">
+                    <div className="space-y-1">
+                      <div className="flex items-center space-x-2 text-rose-600 dark:text-rose-400 font-bold text-sm">
+                        <Shield size={18} />
+                        <span>Global Session Security</span>
+                      </div>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 max-w-md">
+                        Terminate all active administrative sessions and revoke access tokens across every device, phone, and browser where you are currently logged in.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleLogoutAll}
+                      disabled={logoutAllLoading}
+                      className="flex items-center justify-center space-x-2 px-6 py-3 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-bold uppercase tracking-wider text-xs transition-all shadow-lg shadow-rose-600/20 disabled:opacity-50 cursor-pointer shrink-0"
+                    >
+                      {logoutAllLoading ? (
+                        <>
+                          <Loader2 size={15} className="animate-spin" />
+                          <span>Revoking Sessions...</span>
+                        </>
+                      ) : (
+                        <>
+                          <LogOut size={15} />
+                          <span>Log Out Everywhere</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                  {logoutAllMsg.text && (
+                    <p className="text-xs text-rose-600 dark:text-rose-400 font-medium pl-1">{logoutAllMsg.text}</p>
+                  )}
+                </div>
               </motion.div>
             )}
 

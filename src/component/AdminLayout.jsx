@@ -140,11 +140,14 @@ const AdminLayout = ({ children }) => {
           </button>
           
           <button
-            onClick={logout}
-            className="w-full flex items-center p-3 mt-2 rounded-xl text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors"
+            onClick={async () => {
+              await logout();
+              navigate('/admin/login');
+            }}
+            className="w-full flex items-center p-3 mt-2 rounded-xl text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors cursor-pointer"
           >
             <LogOut size={20} className={!isSidebarOpen ? 'mx-auto' : ''} />
-            {isSidebarOpen && <span className="ml-3">Logout</span>}
+            {isSidebarOpen && <span className="ml-3 font-semibold">Logout</span>}
           </button>
         </div>
       </motion.aside>
@@ -153,7 +156,7 @@ const AdminLayout = ({ children }) => {
       <div className="lg:hidden fixed bottom-6 right-6 z-50">
         <button
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          className="w-14 h-14 bg-indigo-600 text-white rounded-full shadow-2xl flex items-center justify-center"
+          className="w-14 h-14 bg-indigo-600 text-white rounded-full shadow-2xl flex items-center justify-center cursor-pointer"
         >
           {isMobileMenuOpen ? <X /> : <Menu />}
         </button>
@@ -196,11 +199,15 @@ const AdminLayout = ({ children }) => {
                 </nav>
                 <div className="mt-auto pt-10 border-t border-gray-100 dark:border-gray-800">
                   <button
-                    onClick={logout}
-                    className="w-full flex items-center p-4 rounded-xl text-red-500 hover:bg-red-50"
+                    onClick={async () => {
+                      setIsMobileMenuOpen(false);
+                      await logout();
+                      navigate('/admin/login');
+                    }}
+                    className="w-full flex items-center p-4 rounded-xl text-red-500 hover:bg-red-50 cursor-pointer"
                   >
                     <LogOut size={20} />
-                    <span className="ml-3">Logout</span>
+                    <span className="ml-3 font-semibold">Logout</span>
                   </button>
                 </div>
               </div>
