@@ -87,6 +87,20 @@ const OTPLoginModal = ({ isOpen, onClose, onSuccess }) => {
 
   const handleDigitChange = (index, value) => {
     const val = value.replace(/[^0-9]/g, '');
+    
+    if (val.length > 1) {
+      const digits = val.slice(0, 6).split('');
+      const newDigits = [...otpDigits];
+      digits.forEach((d, i) => {
+        if (i < 6) newDigits[i] = d;
+      });
+      setOtpDigits(newDigits);
+      setError('');
+      const nextFocus = Math.min(digits.length, 5);
+      inputRefs.current[nextFocus]?.focus();
+      return;
+    }
+
     if (!val && value !== '') return;
 
     const newDigits = [...otpDigits];
