@@ -158,8 +158,8 @@ function ContactForm() {
                   </div>
                   <div>
                     <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Email Address</p>
-                    <a href="mailto:admin@kppcs.com" className="text-sm font-bold text-white hover:text-orange-400 transition-colors block mt-0.5">
-                      admin@kppcs.com
+                    <a href="mailto:eacyclic@gmail.com" className="text-sm font-bold text-white hover:text-orange-400 transition-colors block mt-0.5">
+                      eacyclic@gmail.com
                     </a>
                   </div>
                 </div>

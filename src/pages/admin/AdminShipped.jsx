@@ -8,10 +8,11 @@ import {
 import { deliveryAPI, ordersAPI } from '../../utils/api';
 import { BaseTable } from '../../components/shadcn-custom/BaseTable';
 import { BaseDropdown } from '../../components/shadcn-custom/BaseDropdown';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import AdminStatCard from '../../component/AdminStatCard';
 
 function AdminShipped() {
+  const navigate = useNavigate();
   const [deliveries, setDeliveries] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -290,8 +291,14 @@ function AdminShipped() {
                   {/* Actions */}
                   <td className="px-4 py-6 align-middle text-center flex justify-center">
                     <BaseDropdown 
-                      label="Update"
+                      label="Manage"
                       items={[
+                        { 
+                          label: 'View Order Details', 
+                          onClick: () => navigate(`/admin/orders/${delivery.order_id}`),
+                          icon: <Package size={14} className="mr-2" />
+                        },
+                        { type: 'separator' },
                         { 
                           label: 'In Transit', 
                           onClick: () => handleStatusUpdate(delivery.id, 'in_transit'),

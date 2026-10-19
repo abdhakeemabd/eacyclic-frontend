@@ -8,10 +8,11 @@ import {
 import { deliveryAPI, ordersAPI } from '../../utils/api';
 import { BaseTable } from '../../components/shadcn-custom/BaseTable';
 import { BaseDropdown } from '../../components/shadcn-custom/BaseDropdown';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import AdminStatCard from '../../component/AdminStatCard';
 
 function AdminDelivery() {
+  const navigate = useNavigate();
   const [deliveries, setDeliveries] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -56,7 +57,7 @@ function AdminDelivery() {
           order_id: order.id,
           customer_name: order.customer_name,
           shipping_address: order.shipping_address,
-          status: order.status === 'delivered' ? 'delivered' : 'in_transit',
+          status: order.status === 'delivered' ? 'delivered' : 'failed',
           tracking_number: order.tracking_number || `TRK${order.id}`,
           estimated_delivery: order.estimated_delivery,
           created_at: order.created_at,
@@ -77,11 +78,14 @@ function AdminDelivery() {
 
   const handleStatusUpdate = async (deliveryId, newStatus) => {
     try {
-      await deliveryAPI.updateStatus(deliveryId, newStatus);
+      try {
+        await ordersAPI.updateStatus(deliveryId, newStatus);
+      } catch {
+        await deliveryAPI.updateStatus(deliveryId, newStatus);
+      }
       fetchDeliveries();
     } catch (error) {
       console.error('Error updating delivery status:', error);
-
     }
   };
 
@@ -281,12 +285,27 @@ function AdminDelivery() {
                   {/* Actions */}
                   <td className="px-4 py-6 align-middle text-center flex justify-center">
                     <BaseDropdown 
-                      label="Update"
+                      label="Manage"
                       items={[
+                        { 
+                          label: 'View Order Details', 
+                          onClick: () => navigate(`/admin/orders/${delivery.order_id}`),
+                          icon: <Package size={14} className="mr-2" />
+                        },
+                        { 
+                          label: 'Mark as Delivered', 
+                          onClick: () => handleStatusUpdate(delivery.id, 'delivered'),
+                          icon: <CheckCircle size={14} className="mr-2 text-emerald-500" />
+                        },
                         { 
                           label: 'Revert to Shipped', 
                           onClick: () => handleStatusUpdate(delivery.id, 'shipped'),
-                          icon: <Truck size={14} className="mr-2" />
+                          icon: <Truck size={14} className="mr-2 text-blue-500" />
+                        },
+                        { 
+                          label: 'Mark as Failed', 
+                          onClick: () => handleStatusUpdate(delivery.id, 'failed'),
+                          icon: <AlertCircle size={14} className="mr-2 text-rose-500" />
                         }
                       ]}
                     />

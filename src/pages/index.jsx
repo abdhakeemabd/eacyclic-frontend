@@ -1,87 +1,22 @@
-import React from 'react'
-import { Link } from 'react-router-dom'
-import HomeBanner from '../component/home-banner'
-import HomeProduct from '../component/home-product'
-import HomeFeatures from '../component/home-features'
-import SEO from '../component/SEO'
+import React from 'react';
+import HomeBanner from '../component/home-banner';
+import HomeProduct from '../component/home-product';
+import SEO from '../component/SEO';
 
-const Home = () => {
-
+export default function Home() {
   return (
-    <main>
+    <main className="w-full bg-white">
       <SEO 
-        title="Eacyclic – Easy to Buy Near You | Online Store" 
-        description="Eacyclic is an online shopping store where you can discover and buy quality products easily in one click. Shop online across India." 
-        keywords="Eacyclic, online shopping, Kerala, India, buy products online, e-commerce"
+        title="Eacyclic – A little better. Every day. | Thoughtful Home & Lifestyle" 
+        description="Eacyclic is your neighbourhood online shopping store for thoughtful home finds, utilities, plants, and everyday essentials. Free delivery across Kerala & India." 
+        keywords="Eacyclic, online shopping, home decor, utilities, appliances, Kerala, India"
       />
 
-
+      {/* Hero Banner + Trust Features Strip (Screenshot 1) */}
       <HomeBanner />
-      
-     <section className="py-12 bg-orange-600 border-b border-gray-100">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            <div className="flex flex-col items-center text-center">
-              <div className="w-14 h-14 bg-orange-50 rounded-2xl flex items-center justify-center mb-4 text-orange-600">
-                <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-              </div>
-              <h4 className="font-bold text-white text-sm md:text-base">Fast Delivery</h4>
-              <p className="text-xs text-white mt-1">Across Kerala & India</p>
-            </div>
-            <div className="flex flex-col items-center text-center">
-              <div className="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center mb-4 text-blue-600">
-                <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-              </div>
-              <h4 className="font-bold text-white text-sm md:text-base">Secure Payments</h4>
-              <p className="text-xs text-white mt-1">100% Protected</p>
-            </div>
-            <div className="flex flex-col items-center text-center">
-              <div className="w-14 h-14 bg-green-50 rounded-2xl flex items-center justify-center mb-4 text-green-600">
-                <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
-              </div>
-              <h4 className="font-bold text-white text-sm md:text-base">Quality Assured</h4>
-              <p className="text-xs text-white mt-1">Best Local Products</p>
-            </div>
-            <div className="flex flex-col items-center text-center">
-              <div className="w-14 h-14 bg-purple-50 rounded-2xl flex items-center justify-center mb-4 text-purple-600">
-                <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 11-7.6-10.6 8.5 8.5 0 013 0c1.4.3 2.6 1 3.6 2s1.7 2.2 2 3.8z"/><path d="M21 3v8h-8"/></svg>
-              </div>
-              <h4 className="font-bold text-white text-sm md:text-base">Easy Returns</h4>
-              <p className="text-xs text-white mt-1">7-Day Guarantee</p>
-            </div>
-          </div>
-        </div>
-      </section>
 
+      {/* Category Discovery + Curated Product Showcase (Screenshot 2 & 4) */}
       <HomeProduct />
-      <HomeFeatures />
-
-      {/* SEO Brand Content Section - Visually hidden but readable by search engines */}
-      <section className="sr-only">
-        <div className="container mx-auto max-w-3xl">
-          <h1 className="text-3xl font-bold text-gray-900 mb-4">Eacyclic – Easy to Buy Near You | Online Store</h1>
-          <p className="text-lg text-gray-700 mb-10">
-            Eacyclic is an online shopping store where you can discover and buy products easily in one click.
-          </p>
-
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Why Shop on Eacyclic?</h2>
-          <p className="text-lg text-gray-700">
-            Eacyclic makes online shopping simple, convenient and easy.
-            Discover products and buy online from Eacyclic.
-          </p>
-        </div>
-      </section>
-      
-      <section className="bg-gray-50 py-8 border-t border-gray-200">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="text-xl font-bold text-gray-800">Eacyclic</h2>
-          <p className="text-gray-600 mt-2 font-medium">
-            Eacyclic – Easy to Buy Near You. Shop online securely and conveniently.
-          </p>
-        </div>
-      </section>
     </main>
-  )
+  );
 }
-
-export default Home

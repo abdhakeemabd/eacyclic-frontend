@@ -1,128 +1,122 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { productsAPI } from '../utils/api';
 import { products as initialProducts } from '../data/products';
 
 const ProductContext = createContext();
 
+// Clean strings for fuzzy matching
+const cleanStr = (s) => (s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+
+// Normalize initial products so every property is directly accessible
+const normalizedInitialProducts = initialProducts.map((p, idx) => {
+  const img = (p.gallery && p.gallery[0]) || p.image_url || p.image || '';
+  const gal = (p.gallery && p.gallery.length > 0) ? p.gallery : (img ? [img] : []);
+  return {
+    ...p,
+    id: p.id || (idx + 1),
+    name: p.name || p.title || 'Product',
+    title: p.title || p.name || 'Product',
+    price: p.offerPrice || p.price || 0,
+    offerPrice: p.offerPrice || p.price || 0,
+    oldPrice: p.oldPrice || null,
+    image: img,
+    image_url: img,
+    gallery: gal,
+    category: p.category || 'Store Pick',
+    freeShipping: p.freeShipping === true
+  };
+});
+
+// Sort initial local products descending by ID (matching DB LIFO order)
+const initialSortedProducts = [...normalizedInitialProducts].sort(
+  (a, b) => (parseInt(b.id) || 0) - (parseInt(a.id) || 0)
+);
+
 export const ProductProvider = ({ children }) => {
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
+  // 1. Instant loading: Initialize with normalized local products so UI renders in 0ms with all images working
+  const [products, setProducts] = useState(() => initialSortedProducts);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const isSeedingRef = useRef(false);
 
   // Helper for LIFO sorting (Newest ID First)
   const getSortedProducts = (productList) => {
     return [...productList].sort((a, b) => {
       const dateA = new Date(a.created_at || 0);
       const dateB = new Date(b.created_at || 0);
-      return dateB - dateA; // Sort by newest created_at first
+      if (dateB - dateA !== 0) return dateB - dateA;
+      return (parseInt(b.id) || 0) - (parseInt(a.id) || 0);
     });
   };
 
-  const seedDatabaseIfNeeded = async (existingProducts) => {
-    if (existingProducts.length === 0) {
-      console.log('Seeding database with initial products...');
-      const seededProducts = [];
-      for (const p of initialProducts) {
-        try {
-          const payload = {
-            name: p.title || p.name || 'Unnamed Product',
-            description: p.description || p.content || '',
-            price: p.price || p.oldPrice || p.offerPrice ? parseFloat(p.offerPrice || p.price || p.oldPrice) : 0,
-            category: p.category || 'Uncategorized',
-            stock: p.count || p.stock || 10,
-            image_url: p.image_url || (p.gallery && p.gallery[0]) || p.image || '',
-            discount: p.offer ? parseFloat(p.offer.replace('%', '')) : 0
-          };
-          const res = await productsAPI.create(payload);
-          seededProducts.push(res.data);
-        } catch (e) {
-          console.error('Failed to seed product:', p.title, e);
-        }
-      }
-      return seededProducts;
-    }
-    return existingProducts;
+  // Helper to merge database products with rich local asset imports
+  const mergeProductsWithLocalAssets = (fetchedProducts) => {
+    return fetchedProducts.map((fp) => {
+      const fpClean = cleanStr(fp.name || fp.title);
+      
+      // Match by title/name ONLY.
+      // (Do NOT match by numeric ID because DB sequence 1..57 does not match local data IDs 29..85)
+      const matched = normalizedInitialProducts.find(
+        (ip) => cleanStr(ip.title || ip.name) === fpClean
+      );
+
+      // Local imported asset from products.js is ALWAYS valid and never 404s
+      const localImage = matched?.gallery?.[0] || matched?.image || matched?.image_url;
+      const localGallery = (matched?.gallery && matched.gallery.length > 0) ? matched.gallery : (localImage ? [localImage] : []);
+
+      // If backend has an uploaded URL (http/https/data:), use it. Otherwise, use the reliable local imported asset!
+      const isExternalUpload = typeof fp.image_url === 'string' && (fp.image_url.startsWith('http://') || fp.image_url.startsWith('https://') || fp.image_url.startsWith('data:'));
+      
+      const resolvedImage = isExternalUpload ? fp.image_url : (localImage || fp.image_url || '');
+      const resolvedGallery = localGallery.length > 0 ? localGallery : (fp.gallery && fp.gallery.length > 0 ? fp.gallery : (resolvedImage ? [resolvedImage] : []));
+
+      return {
+        ...matched,
+        ...fp,
+        title: fp.name || fp.title || matched?.title,
+        name: fp.name || fp.title || matched?.name,
+        price: fp.price || matched?.offerPrice || matched?.price,
+        offerPrice: fp.price || matched?.offerPrice || matched?.price,
+        oldPrice: fp.oldPrice || matched?.oldPrice,
+        image_url: resolvedImage,
+        image: resolvedImage,
+        gallery: resolvedGallery,
+        category: fp.category || matched?.category || 'Store Pick',
+        freeShipping: fp.freeShipping !== undefined ? fp.freeShipping : (matched?.freeShipping === true),
+        sizes: fp.sizes && fp.sizes.length > 0 ? fp.sizes : (matched?.sizes || []),
+        colors: fp.colors && fp.colors.length > 0 ? fp.colors : (matched?.colors || []),
+        variants: fp.variants && fp.variants.length > 0 ? fp.variants : (matched?.variants || [])
+      };
+    });
   };
 
   const fetchProducts = async () => {
     try {
-      setLoading(true);
       setError(null);
       const response = await productsAPI.getAll();
-      
-      let fetchedProducts = response.data;
-      
-      // MIGRATION: Ensure all initialProducts are in the database
-      let newlySeeded = [];
-      for (const p of initialProducts) {
-         try {
-             const nameToMatch = p.title || p.name || 'Unnamed Product';
-             if (!fetchedProducts.find(fp => fp.name === nameToMatch)) {
-                 const payload = {
-                    name: nameToMatch,
-                    description: p.description || p.content || '',
-                    price: p.price || p.oldPrice || p.offerPrice ? parseFloat(p.offerPrice || p.price || p.oldPrice) : 0,
-                    category: p.category || 'Uncategorized',
-                    stock: p.count || p.stock || 10,
-                    image_url: p.image_url || (p.gallery && p.gallery[0]) || p.image || '',
-                    discount: p.offer ? parseFloat(typeof p.offer === 'string' ? p.offer.replace('%', '') : p.offer) : 0
-                 };
-                 // Fix: Ensure NaN doesn't break the API
-                 if (isNaN(payload.price)) payload.price = 0;
-                 if (isNaN(payload.discount)) payload.discount = 0;
-                 if (isNaN(payload.stock)) payload.stock = 0;
-                 
-                 const res = await productsAPI.create(payload);
-                 newlySeeded.push(res.data);
-             }
-         } catch (e) {
-             console.error("Seed error for product:", p.title || p.name, e);
-         }
+      let fetchedProducts = response.data || [];
+
+      if (fetchedProducts.length > 0) {
+        const enriched = mergeProductsWithLocalAssets(fetchedProducts);
+        
+        // Include any local products not yet in DB so nothing is ever missing
+        const existingCleanNames = new Set(enriched.map(p => cleanStr(p.name || p.title)));
+        const missingInitial = normalizedInitialProducts.filter(
+          ip => !existingCleanNames.has(cleanStr(ip.title || ip.name))
+        );
+
+        const allCombined = [...enriched, ...missingInitial];
+        setProducts(getSortedProducts(allCombined));
+      } else {
+        // If DB returned empty, use normalized local products
+        setProducts(initialSortedProducts);
       }
-      if (newlySeeded.length > 0) {
-          fetchedProducts = [...fetchedProducts, ...newlySeeded];
-      }
-      
-      // MIGRATION: Recover products from localStorage
-      try {
-        const localData = localStorage.getItem('adminProducts');
-        if (localData) {
-          const localProducts = JSON.parse(localData);
-          const initialIds = new Set(initialProducts.map(p => p.id?.toString()));
-          // Find user-added products (long timestamps or not in initialProducts)
-          const userAddedLocalProducts = localProducts.filter(p => !initialIds.has(p.id?.toString()));
-          
-          let newlyMigrated = [];
-          for (const lp of userAddedLocalProducts) {
-             // Check if we already migrated it (by name match)
-             if (!fetchedProducts.find(fp => fp.name === (lp.title || lp.name))) {
-                 const payload = {
-                    name: lp.title || lp.name || 'Unnamed Product',
-                    description: lp.description || lp.content || '',
-                    price: lp.price || lp.oldPrice || lp.offerPrice ? parseFloat(lp.offerPrice || lp.price || lp.oldPrice) : 0,
-                    category: lp.category || 'Uncategorized',
-                    stock: lp.count || lp.stock || 10,
-                    image_url: lp.image_url || (lp.gallery && lp.gallery[0]) || lp.image || '',
-                    discount: lp.offer ? parseFloat(typeof lp.offer === 'string' ? lp.offer.replace('%', '') : lp.offer) : 0
-                 };
-                 const res = await productsAPI.create(payload);
-                 newlyMigrated.push(res.data);
-             }
-          }
-          if (newlyMigrated.length > 0) {
-             fetchedProducts = [...newlyMigrated, ...fetchedProducts];
-          }
-          // Optional: clear local storage so it doesn't run again, but leaving it is safe since we check by name
-        }
-      } catch (err) {
-        console.error("Migration error:", err);
-      }
-      
-      setProducts(getSortedProducts(fetchedProducts));
-      return { success: true, data: fetchedProducts };
+
+      return { success: true };
     } catch (err) {
-      console.error('Error fetching products:', err);
-      setError(err.message);
+      console.warn('API fetch fallback to local products:', err);
+      // Fallback: keep normalized local products
+      setProducts(initialSortedProducts);
       return { success: false, error: err.message };
     } finally {
       setLoading(false);
@@ -145,7 +139,10 @@ export const ProductProvider = ({ children }) => {
         image_url: productData.image || productData.image_url || '',
         discount: parseFloat(productData.discount) || 0,
         freeShipping: productData.freeShipping !== undefined ? productData.freeShipping : true,
-        gallery: productData.gallery || []
+        gallery: productData.gallery || [],
+        sizes: productData.sizes || [],
+        colors: productData.colors || [],
+        variants: productData.variants || []
       };
       
       const response = await productsAPI.create(payload);
@@ -163,7 +160,6 @@ export const ProductProvider = ({ children }) => {
   const updateProduct = async (productId, productData) => {
     try {
       setLoading(true);
-      
       const payload = {};
       if (productData.name !== undefined || productData.title !== undefined) payload.name = productData.name || productData.title;
       if (productData.description !== undefined) payload.description = productData.description;
@@ -175,6 +171,9 @@ export const ProductProvider = ({ children }) => {
       if (productData.isActive !== undefined) payload.isActive = productData.isActive;
       if (productData.freeShipping !== undefined) payload.freeShipping = productData.freeShipping;
       if (productData.gallery !== undefined) payload.gallery = productData.gallery;
+      if (productData.sizes !== undefined) payload.sizes = productData.sizes;
+      if (productData.colors !== undefined) payload.colors = productData.colors;
+      if (productData.variants !== undefined) payload.variants = productData.variants;
       
       const response = await productsAPI.update(productId, payload);
       setProducts(prev => 
@@ -206,7 +205,7 @@ export const ProductProvider = ({ children }) => {
   };
 
   const getProductById = (productId) => {
-    return products.find(p => p.id.toString() === productId.toString());
+    return products.find(p => p.id?.toString() === productId?.toString());
   };
 
   const getProductsByCategory = (category) => {
@@ -218,14 +217,12 @@ export const ProductProvider = ({ children }) => {
   const searchProducts = (query) => {
     const lowerQuery = query.toLowerCase();
     return products.filter(p =>
-      p.name?.toLowerCase().includes(lowerQuery) ||
-      p.description?.toLowerCase().includes(lowerQuery)
+      (p.name || p.title || '')?.toLowerCase().includes(lowerQuery) ||
+      (p.description || p.content || '')?.toLowerCase().includes(lowerQuery)
     );
   };
 
   const resetProducts = async () => {
-     // Optionally implement a clear and re-seed logic
-     // But for now, just fetch products.
      await fetchProducts();
   };
 

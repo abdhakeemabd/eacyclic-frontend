@@ -1,117 +1,96 @@
-import React from 'react'
+import React from 'react';
+import { Link } from 'react-router-dom';
 import Logo from '../assets/images/logo/logo.png';
-import { MdLocationOn } from "react-icons/md";
-import { FaPhone } from "react-icons/fa6";
-import { IoIosMail } from "react-icons/io";
-import { FaFacebookF, FaInstagram, FaLinkedinIn } from "react-icons/fa";
-import { BsTwitterX } from "react-icons/bs";
 
-
-import { Link } from 'react-router-dom'
-function Footer() {
+export default function Footer() {
   return (
-    <footer className='bg-[#0f1b2e] text-white'>
-      <div className="container">
-        <div className='flex flex-wrap'>
-          <div className='w-full lg:w-1/4 md:w-1/3 sm:w-1/2 ps-3 lg:pe-6 pe-3 mb-3 lg:mb-0'>
-            <img className='max-w-30 mb-3' src={Logo} alt="Logo" />
-            <div className='font-medium text-justify text-white'>
-              Eacyclic helps you find the best products near you and buy instantly. The Eacyclic platform makes it easy to start shopping smarter today!            
-            </div>
-            <div className="flex gap-2 mt-3">
-              <a href="#" aria-label="Facebook">
-                <div className='border-white border-1 rounded-full p-3'>
-                  <FaFacebookF />
-                </div>
-              </a>
-              <a href="#" aria-label="Instagram">
-                <div className='border-white border-1 rounded-full p-3'>
-                  <FaInstagram />
-                </div>
-              </a>
-              <a href="#" aria-label="Twitter">
-                <div className='border-white border-1 rounded-full p-3'>
-                  <BsTwitterX />
-                </div>
-              </a>
-              <a href="#" aria-label="LinkedIn">
-                <div className='border-white border-1 rounded-full p-3'>
-                  <FaLinkedinIn />
-                </div>
-              </a>
-            </div>
+    <footer className="w-full">
+      {/* 1. "Closer to You" Banner (Screenshot 3) */}
+      <section className="bg-[#eaf4ee] py-14 sm:py-20 border-t border-b border-[#dde9e2]">
+        <div className="container mx-auto px-6 sm:px-8 lg:px-16 max-w-4xl text-left sm:text-left">
+          <div className="text-[11px] font-bold text-[#3d5a49] tracking-[0.2em] uppercase mb-2">
+            CLOSER TO YOU
           </div>
-          <div className='w-full lg:w-1/4 md:w-1/3 sm:w-1/2 lg:px-5 px-3 mt-2 mb-3 lg:mb-0'>
-            <div className='poppins-semibold text-xl text-white'>Quick links</div>
-            <ul className=''>
-              <li className="hover:font-medium transition duration-200 my-3">
-                <Link to="/about" className="text-base text-white hover:text-amber-500">
-                  About
-                </Link>
-              </li>
-              <li className="hover:font-medium transition duration-200 my-3">
-                <Link to="/product" className="text-base text-white hover:text-amber-500">
-                  Product
-                </Link>
-              </li>
-              <li className="hover:font-medium transition duration-200 my-3">
-                <Link to="/contact" className="text-base text-white hover:text-amber-500">
-                  Contact
-                </Link>
-              </li>
-              <li className="hover:font-medium transition duration-200 my-3">
-                <Link to="/faq" className="text-base text-white hover:text-amber-500">
-                  Faq
-                </Link>
-              </li>
-            </ul>
-          </div>
-          <div className='w-full lg:w-1/4 md:w-1/3 sm:w-1/2 lg:px-5 px-3 mt-2 mb-3 lg:mb-0'>
-            <div className="poppins-semibold text-xl text-white">Categories</div>
-            <ul className=''>
-              <li className="hover:font-medium transition duration-200 my-3">
-                <Link to="/product" className="text-base text-white hover:text-amber-500">
-                  Chair
-                </Link>
-              </li>
-              <li className="hover:font-medium transition duration-200 my-3">
-                <Link to="/product" className="text-base text-white hover:text-amber-500">
-                  Stool
-                </Link>
-              </li>
-              <li className="hover:font-medium transition duration-200 my-3">
-                <Link to="/product" className="text-base text-white hover:text-amber-500">
-                  Table
-                </Link>
-              </li>
-              <li className="hover:font-medium transition duration-200 my-3">
-                <Link to="/product" className="text-base text-white hover:text-amber-500">
-                  Cupboard
-                </Link>
-              </li>
-            </ul>
-          </div>
-          <div className='w-full lg:w-1/4 md:w-1/3 sm:w-1/2 lg:px-5 px-3 mt-2'>
-            <div className="poppins-semibold text-xl text-white">Address</div>
-            <ul>
-              <li className='flex mt-3 gap-3'>
-                <div className='text-1xl'>edavannappara, malappuram district, kerala</div>
-              </li>
-              <li className="flex mt-3 gap-3 content-start">
-                <div className='mt-1 text-xl'><FaPhone /></div>
-                <a className='text-1xl text-base text-white hover:text-amber-500' href="tel:98460 07257">+91 98460 07257</a>
-              </li>
-              <li className="flex mt-3 gap-3 content-start">
-                <div className='mt-1 text-xl'><IoIosMail /></div>
-                <a className='text-1xl text-base text-white hover:text-amber-500' href="mailto:admin@kppcs.com">admin@kppcs.com</a>
-              </li>
-            </ul>
-          </div>
-
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-[#14261c] tracking-tight mb-3">
+            Local roots. Endless possibilities.
+          </h2>
+          <p className="text-xs sm:text-sm text-[#486354] leading-relaxed max-w-xl">
+            Discover the best of local and national products, delivered wherever you call home.
+          </p>
         </div>
-      </div>
-    </footer >
-  )
-}
+      </section>
 
-export default Footer
+      {/* 2. Main Footer Body (Screenshot 3) */}
+      <section className="bg-white py-12 sm:py-16">
+        <div className="container mx-auto px-6 sm:px-8 lg:px-16">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-12">
+            
+            {/* Left Brand Column */}
+            <div className="md:col-span-6 space-y-4">
+              <Link to="/" className="inline-block" aria-label="Eacyclic">
+                <img src={Logo} alt="Eacyclic" className="h-7 sm:h-9 object-contain max-w-[140px]" />
+              </Link>
+              <div className="text-xs sm:text-sm text-gray-500 max-w-sm leading-relaxed">
+                <p className="font-medium text-gray-700">Thoughtfully chosen. Easily delivered.</p>
+                <p className="mt-1">Good things for your everyday, from closer to home.</p>
+              </div>
+            </div>
+
+            {/* Explore Column */}
+            <div className="md:col-span-3 space-y-3">
+              <h4 className="text-xs font-bold text-gray-900 tracking-wider uppercase">
+                Explore
+              </h4>
+              <ul className="space-y-2 text-xs sm:text-sm text-gray-600">
+                <li>
+                  <Link to="/product" className="hover:text-[#134e35] transition-colors">
+                    All products
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/product?category=Home%20Decor" className="hover:text-[#134e35] transition-colors">
+                    Home decor
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/product?category=Home%20Utilities" className="hover:text-[#134e35] transition-colors">
+                    Home utilities
+                  </Link>
+                </li>
+              </ul>
+            </div>
+
+            {/* Let's talk Column */}
+            <div className="md:col-span-3 space-y-3">
+              <h4 className="text-xs font-bold text-gray-900 tracking-wider uppercase">
+                Let's talk
+              </h4>
+              <ul className="space-y-2 text-xs sm:text-sm text-gray-600">
+                <li>
+                  <Link to="/contact" className="hover:text-[#134e35] transition-colors">
+                    Contact us
+                  </Link>
+                </li>
+                <li>
+                  <a href="tel:+919846007257" className="hover:text-[#134e35] transition-colors">
+                    +91 98460 07257
+                  </a>
+                </li>
+                <li>
+                  <a href="mailto:eacyclic@gmail.com" className="hover:text-[#134e35] transition-colors">
+                    eacyclic@gmail.com
+                  </a>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          {/* Copyright Line */}
+          <div className="mt-12 pt-6 border-t border-gray-100 flex items-center justify-between text-xs text-gray-400">
+            <p>© 2026 Eacyclic. All rights reserved.</p>
+          </div>
+        </div>
+      </section>
+    </footer>
+  );
+}
