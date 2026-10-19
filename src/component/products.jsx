@@ -1,30 +1,32 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { BiLike, BiSolidLike, BiCart, BiSolidCart, BiSearch } from 'react-icons/bi';
-import { PiShareFat } from 'react-icons/pi';
+import { Search, Heart, Plus, Sparkles, X } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useProducts } from '../context/ProductContext';
 import ImageLoader from './image-loader';
 import ProductSkeleton from './product-skeleton';
+import QuickViewModal from './QuickViewModal';
 
-function Products() {
-  const [likes, setLikes] = useState({});
-  const [carts, setCarts] = useState({});
+export default function Products() {
   const [activeTab, setActiveTab] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
-  const [visibleCount, setVisibleCount] = useState(18);
-  const { addToCart, toggleLike: toggleWishlistLike, isLiked } = useCart();
+  const [visibleCount, setVisibleCount] = useState(16);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const { addToCart, toggleLike, isLiked } = useCart();
   const { products, loading } = useProducts();
 
   const location = useLocation();
   const navigate = useNavigate();
   const observer = useRef();
-  const loaderRef = useRef();
 
-  // Group categories for tabs
+  // Extract unique categories from real products
   const categories = useMemo(() => {
     const cats = products.reduce((acc, p) => {
-      if (p.category && !acc.includes(p.category)) acc.push(p.category);
+      if (p.category && !acc.includes(p.category.trim())) {
+        acc.push(p.category.trim());
+      }
       return acc;
     }, []);
     return ['All', ...cats];
@@ -32,10 +34,12 @@ function Products() {
 
   // Filter products based on search and tab
   const filteredProducts = useMemo(() => {
-    return products.filter(product => {
-      const titleName = product.name || product.title || '';
-      const matchesSearch = titleName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (product.description || product.content || '').toLowerCase().includes(searchTerm.toLowerCase());
+    return products.filter((product) => {
+      const titleName = (product.name || product.title || '').toLowerCase();
+      const desc = (product.description || product.content || '').toLowerCase();
+      const term = searchTerm.toLowerCase();
+
+      const matchesSearch = !term || titleName.includes(term) || desc.includes(term);
       const matchesTab = activeTab === 'All' || product.category === activeTab;
       return matchesSearch && matchesTab;
     });
@@ -50,221 +54,264 @@ function Products() {
     if (category) setActiveTab(category);
   }, [location.search]);
 
-  // Infinite Scroll Observer — loads 18 more items at bottom
-  const lastProductElementRef = useCallback(node => {
+  // Infinite Scroll Observer
+  const lastProductElementRef = useCallback((node) => {
     if (observer.current) observer.current.disconnect();
-    observer.current = new IntersectionObserver(entries => {
+    observer.current = new IntersectionObserver((entries) => {
       if (entries[0].isIntersecting && visibleCount < filteredProducts.length) {
-        setVisibleCount(prevCount => prevCount + 18);
+        setVisibleCount((prevCount) => prevCount + 16);
       }
     }, { rootMargin: '200px' });
     if (node) observer.current.observe(node);
-  }, [visibleCount, filteredProducts.length, searchTerm, activeTab]);
+  }, [visibleCount, filteredProducts.length]);
 
-  const toggleLike = (id) => {
-    setLikes((prev) => ({ ...prev, [id]: !prev[id] }));
+  const handleOpenAddToCartModal = (e, item) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setSelectedProduct(item);
+    setIsModalOpen(true);
   };
 
-  const toggleCart = async (product) => {
-    const isInCart = carts[product.id];
-    if (!isInCart) {
-      const result = await addToCart({
-        id: product.id,
-        title: product.name || product.title,
-        content: product.description || product.content,
-        price: product.price || product.offerPrice,
-        offerPrice: product.offerPrice || product.price,
-        image: product.image_url || product.image || (product.gallery && product.gallery[0]),
-        gallery: product.gallery || [product.image],
-      });
-      if (result.success) {
-        setCarts((prev) => ({ ...prev, [product.id]: true }));
-      }
-    } else {
-      setCarts((prev) => ({ ...prev, [product.id]: false }));
-    }
+  const handleGoToProductDetails = (product) => {
+    navigate(`/product-view/${product.id}`, { state: { product } });
   };
 
-  const handleBuyNow = (product) => {
+  const handleBuyNow = (e, product) => {
+    e.preventDefault();
+    e.stopPropagation();
     navigate('/checkout', { state: { product, quantity: 1 } });
   };
 
   const displayedProducts = filteredProducts.slice(0, visibleCount);
+  const badgeLabels = ['Best seller', 'Everyday essential', 'Popular pick', 'New arrival', 'Top rated'];
 
   return (
-    <section className="product_main_sec py-12 bg-gray-50">
-      <div className="container mx-auto px-4">
-        <div className="max-w-7xl mx-auto">
-          {/* Desktop Categories List */}
-          <div className="hidden md:flex flex-wrap pb-4 w-full md:w-auto gap-2 justify-center">
-            {categories.map((cat) => (
-              <button
-                key={cat}
-                onClick={() => { setActiveTab(cat); setVisibleCount(18); }}
-                className={`px-6 py-2 rounded-lg text-sm font-semibold transition-all duration-300 whitespace-nowrap shadow-sm cursor-pointer
-101:                     ${activeTab === cat ? 'bg-orange-600 text-white shadow-md' : 'bg-white text-gray-700 hover:bg-gray-100'}`}
-              >
-                {cat}
-              </button>
-            ))}
-          </div>
-
-          {/* Mobile Category Carousel Selector */}
-          <div className="flex md:hidden items-center justify-between w-full max-w-md mx-auto mb-6 bg-gray-100 rounded-full px-4 py-2 shadow-sm border border-gray-200">
-            <button
-              onClick={() => {
-                const currentIndex = categories.indexOf(activeTab);
-                const prevIdx = (currentIndex - 1 + categories.length) % categories.length;
-                setActiveTab(categories[prevIdx]);
-                setVisibleCount(18);
-              }}
-              className="p-2 text-gray-800 hover:bg-gray-200 rounded-full transition-colors flex items-center justify-center cursor-pointer"
-              aria-label="Previous category"
-            >
-              <svg className="w-4 h-4 stroke-[3]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
-              </svg>
-            </button>
-            
-            <span className="font-bold text-gray-900 text-sm tracking-wide">
-              {activeTab}
-            </span>
-            
-            <button
-              onClick={() => {
-                const currentIndex = categories.indexOf(activeTab);
-                const nextIdx = (currentIndex + 1) % categories.length;
-                setActiveTab(categories[nextIdx]);
-                setVisibleCount(18);
-              }}
-              className="p-2 text-gray-800 hover:bg-gray-200 rounded-full transition-colors flex items-center justify-center cursor-pointer"
-              aria-label="Next category"
-            >
-              <svg className="w-4 h-4 stroke-[3]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-              </svg>
-            </button>
-          </div>
-
-          <div className="relative w-full md:w-[500px] mx-auto my-8 flex justify-center">
+    <section className="py-12 bg-white min-h-screen">
+      <div className="container mx-auto px-6 sm:px-8 lg:px-16">
+        
+        {/* Controls: Search & Category Pills */}
+        <div className="max-w-4xl mx-auto mb-10 space-y-6">
+          
+          {/* Search Input */}
+          <div className="relative max-w-xl mx-auto">
+            <Search className="w-4 h-4 text-gray-400 absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               type="text"
-              placeholder="Filter these results..."
+              placeholder="Search in all products..."
               value={searchTerm}
               onChange={(e) => {
                 setSearchTerm(e.target.value);
-                setVisibleCount(18);
+                setVisibleCount(16);
               }}
-              className="w-full pl-6 pr-14 py-3 bg-white text-black border border-gray-100 rounded-xl focus:ring-2 focus:ring-black focus:outline-none transition-all shadow-sm placeholder-gray-400"
+              className="w-full pl-11 pr-10 py-3 bg-[#f8f9f8] border border-gray-200/80 rounded-full text-xs sm:text-sm text-gray-900 placeholder-gray-400 outline-none focus:border-[#134e35] focus:bg-white transition-all shadow-2xs"
             />
-
-            <button className="absolute right-2 top-1/2 -translate-y-1/2 bg-black p-2.5 rounded-lg hover:bg-gray-800 transition shadow-lg">
-              <BiSearch className="text-white text-xl" />
-            </button>
+            {searchTerm && (
+              <button
+                onClick={() => setSearchTerm('')}
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-black p-1"
+                aria-label="Clear search"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
 
-          {/* Product Grid */}
-          {loading && displayedProducts.length === 0 ? (
-            <ProductSkeleton count={8} />
-          ) : displayedProducts.length > 0 ? (
-            <>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {displayedProducts.map((product, index) => (
+          {/* Category Filter Pills */}
+          <div className="flex flex-wrap items-center justify-center gap-2 overflow-x-auto py-1 no-scrollbar">
+            {categories.map((cat) => {
+              const count = cat === 'All' 
+                ? products.length 
+                : products.filter(p => p.category === cat).length;
+              const isActive = activeTab === cat;
+
+              return (
+                <button
+                  key={cat}
+                  onClick={() => {
+                    setActiveTab(cat);
+                    setVisibleCount(16);
+                  }}
+                  className={`px-4 py-2 rounded-full text-xs font-semibold transition-all duration-200 flex items-center gap-1.5 cursor-pointer ${
+                    isActive
+                      ? 'bg-[#134e35] text-white shadow-xs'
+                      : 'bg-[#f4f6f4] text-gray-700 hover:bg-gray-200/80'
+                  }`}
+                >
+                  <span>{cat}</span>
+                  <span className={`text-[10px] ${isActive ? 'text-white/80' : 'text-gray-400'}`}>
+                    ({count})
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Results Counter */}
+        <div className="flex items-center justify-between text-xs text-gray-500 mb-6 border-b border-gray-100 pb-3">
+          <span>Showing <strong className="text-gray-900">{displayedProducts.length}</strong> of {filteredProducts.length} items</span>
+          {activeTab !== 'All' && (
+            <button
+              onClick={() => setActiveTab('All')}
+              className="text-[#134e35] font-semibold hover:underline"
+            >
+              Reset filter
+            </button>
+          )}
+        </div>
+
+        {/* Product Grid */}
+        {loading && displayedProducts.length === 0 ? (
+          <ProductSkeleton count={8} />
+        ) : displayedProducts.length > 0 ? (
+          <>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+              {displayedProducts.map((product, index) => {
+                const liked = isLiked(product.id);
+                const tag = product.offer ? `-${product.offer.toString().replace(/[^0-9]/g, '')}%` : badgeLabels[index % badgeLabels.length];
+                const price = product.offerPrice || product.price || 0;
+                const oldPrice = product.oldPrice;
+                const imageSrc = product.image_url || product.image || (product.gallery && product.gallery[0]);
+                const title = product.name || product.title || 'Product';
+
+                return (
                   <div
-                    key={product.id}
-                    className="group bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-300 flex flex-col h-full overflow-hidden relative"
+                    key={product.id || index}
+                    onClick={() => handleGoToProductDetails(product)}
+                    className="group bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-lg transition-all duration-300 flex flex-col relative cursor-pointer"
                   >
-                    <Link to={`/product-view/${product.id}`} state={{ product }} className="absolute inset-0 z-0"></Link>
-
-                    {/* Badge */}
-                    {product.offer && (
-                      <div className="absolute top-3 left-3 z-10 bg-red-600 text-white text-[13px] font-bold px-1.5 py-0.5 rounded uppercase shadow-sm">
-                        -{product.offer.replace(/[^0-9]/g, '')}%
-                      </div>
-                    )}
-
-                    <Link
-                      to={`/product-view/${product.id}`}
-                      state={{ product }}
-                      className="block overflow-hidden aspect-[4/3] bg-gray-50 relative z-10 cursor-pointer"
+                    {/* Image Area */}
+                    <div
+                      className="aspect-square bg-[#f5f6f5] relative flex items-center justify-center p-4 overflow-hidden"
                     >
-                      <ImageLoader
-                        src={product.image_url || product.image || (product.gallery && product.gallery[0])}
-                        alt={product.name || product.title}
-                        className="transition-transform duration-500 group-hover:scale-110"
-                      />
-                    </Link>
+                      {/* Top Left Tag */}
+                      <span className="absolute top-3 left-3 z-10 text-[10px] font-semibold text-gray-700 bg-white/90 backdrop-blur-xs px-2.5 py-1 rounded-full shadow-2xs">
+                        {tag}
+                      </span>
 
-                    <div className="p-4 flex flex-col flex-1 relative z-20 pointer-events-none">
-                      <div className="flex-1">
-                        <div className="text-gray-400 text-[9px] uppercase font-bold tracking-widest mb-1">{product.category || 'Shop'}</div>
-                        <h3 className="font-semibold text-gray-900 text-base mb-1 line-clamp-1 group-hover:text-orange-600 transition-colors pointer-events-auto leading-snug">
-                          <Link to={`/product-view/${product.id}`} state={{ product }}>{product.name || product.title}</Link>
-                        </h3>
-                        <p className="text-gray-500 text-xs mb-3 line-clamp-2 min-h-[32px]">{product.content || product.description}</p>
+                      {/* Top Right Wishlist Button */}
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          toggleLike(product);
+                        }}
+                        className="absolute top-3 right-3 z-10 w-8 h-8 rounded-full bg-white/90 backdrop-blur-xs shadow-2xs flex items-center justify-center hover:scale-110 transition-transform cursor-pointer"
+                        aria-label="Save to wishlist"
+                      >
+                        <Heart
+                          className={`w-4 h-4 ${
+                            liked ? 'text-red-500 fill-red-500' : 'text-gray-600'
+                          }`}
+                        />
+                      </button>
 
-                        <div className="flex items-baseline gap-2 mb-3">
-                          <div className="text-xl font-semibold text-gray-900 leading-none">₹{product.offerPrice || product.price}</div>
-                          {product.oldPrice && (
-                            <div className="text-xs text-gray-400 line-through">₹{product.oldPrice}</div>
-                          )}
+                      {/* Image */}
+                      <div className="w-full h-full flex items-center justify-center transition-transform duration-500 group-hover:scale-105">
+                        <ImageLoader
+                          src={imageSrc}
+                          alt={title}
+                          className="w-full h-full object-contain mix-blend-multiply"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Content Details */}
+                    <div className="p-4 sm:p-5 flex flex-col flex-1 justify-between">
+                      <div>
+                        <div className="text-[10px] font-semibold text-gray-400 tracking-wider uppercase mb-1 truncate">
+                          {product.category || 'STORE PICK'}
                         </div>
+
+                        <h3
+                          className="font-bold text-gray-900 text-xs sm:text-sm line-clamp-1 group-hover:text-[#134e35] transition-colors mb-3"
+                          title={title}
+                        >
+                          {title}
+                        </h3>
                       </div>
 
-                      <div className="flex items-center justify-between pt-3 border-t border-gray-50 pointer-events-auto">
-                        <div className="flex gap-3">
-                          <button onClick={() => toggleWishlistLike(product)} className="text-gray-400 hover:text-red-500 transition-colors" title="Like / Save to Wishlist">
-                            {isLiked(product.id) ? <BiSolidLike className="text-red-500 text-lg" /> : <BiLike className="text-lg" />}
-                          </button>
+                      {/* Price, Action & Buy */}
+                      <div>
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-baseline gap-1.5">
+                            <span className="text-base sm:text-lg font-bold text-gray-900">
+                              ₹{price}
+                            </span>
+                            {oldPrice && (
+                              <span className="text-xs text-gray-400 line-through">
+                                ₹{oldPrice}
+                              </span>
+                            )}
+                          </div>
 
-                          <button onClick={() => toggleCart(product)} className={`transition-colors ${carts[product.id] ? 'text-orange-600' : 'text-gray-400 hover:text-orange-500'}`}>
-                            {carts[product.id] ? <BiSolidCart className="text-xl" /> : <BiCart className="text-xl" />}
+                          <button
+                            onClick={(e) => handleOpenAddToCartModal(e, product)}
+                            className="w-8 h-8 rounded-lg border border-gray-200 hover:border-[#134e35] hover:bg-[#134e35] hover:text-white flex items-center justify-center text-gray-700 transition-all active:scale-95 shadow-2xs cursor-pointer z-10"
+                            title="Add to Cart (Choose Variants)"
+                            aria-label={`Add ${title} to Cart`}
+                          >
+                            <Plus className="w-4 h-4" />
                           </button>
                         </div>
-                        <button
-                          onClick={() => handleBuyNow(product)}
-                          className="bg-black text-white text-xs font-semibold py-2 px-5 cursor-pointer transition-colors duration-300 uppercase tracking-wider"
-                        >
-                          Buy
-                        </button>
+
+                        <div className="flex items-center justify-between pt-2.5 border-t border-gray-100">
+                          {product.freeShipping ? (
+                            <span className="text-[11px] text-[#134e35] font-medium">
+                              🚚 Free delivery
+                            </span>
+                          ) : (
+                            <span className="text-[11px] text-gray-400 font-medium">
+                              📦 Standard delivery
+                            </span>
+                          )}
+                          <button
+                            onClick={(e) => handleBuyNow(e, product)}
+                            className="text-xs font-semibold text-[#134e35] hover:text-[#0b2b1d] px-2 py-1 rounded transition-colors uppercase tracking-wider cursor-pointer z-10"
+                          >
+                            Buy →
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
-                ))}
-              </div>
-
-              {/* Loading indicator at bottom for infinite scroll */}
-              {visibleCount < filteredProducts.length && (
-                <div ref={lastProductElementRef} className="flex justify-center mt-12 py-4">
-                  <div className="flex flex-col items-center gap-3">
-                    <div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
-                    <p className="text-xs text-gray-400 font-medium">Loading more products...</p>
-                  </div>
-                </div>
-              )}
-              {visibleCount >= filteredProducts.length && filteredProducts.length > 18 && (
-                <div className="flex justify-center mt-10 py-4">
-                  <p className="text-xs text-gray-400 font-semibold uppercase tracking-widest">✓ All {filteredProducts.length} products shown</p>
-                </div>
-              )}
-            </>
-          ) : (
-            <div className="text-center py-20 bg-white rounded-3xl shadow-sm border border-dashed border-gray-300">
-              <div className="text-gray-400 text-6xl mb-4 flex justify-center"><BiSearch /></div>
-              <h3 className="text-xl font-bold text-gray-800">No products found</h3>
-              <p className="text-gray-500 mt-2">Try adjusting your search or category filter</p>
-              <button
-                onClick={() => { setSearchTerm(''); setActiveTab('All'); }}
-                className="mt-6 text-orange-600 font-bold hover:underline"
-              >
-                Clear all filters
-              </button>
+                );
+              })}
             </div>
-          )}
-        </div>
+
+            {/* Infinite Scroll Loader */}
+            {visibleCount < filteredProducts.length && (
+              <div ref={lastProductElementRef} className="flex justify-center mt-12 py-4">
+                <div className="w-7 h-7 border-3 border-[#134e35] border-t-transparent rounded-full animate-spin" />
+              </div>
+            )}
+          </>
+        ) : (
+          <div className="text-center py-20 bg-gray-50 rounded-2xl border border-dashed border-gray-200 max-w-lg mx-auto">
+            <Search className="w-8 h-8 text-gray-400 mx-auto mb-3" />
+            <h3 className="text-base font-bold text-gray-900">No products found</h3>
+            <p className="text-xs text-gray-500 mt-1">
+              Try adjusting your search terms or selecting another category.
+            </p>
+            <button
+              onClick={() => {
+                setSearchTerm('');
+                setActiveTab('All');
+              }}
+              className="mt-4 px-4 py-2 bg-[#134e35] text-white text-xs font-semibold rounded-full hover:bg-[#0e3a27] transition-all cursor-pointer"
+            >
+              Clear filters
+            </button>
+          </div>
+        )}
       </div>
+
+      {/* Quick View Modal */}
+      <QuickViewModal
+        product={selectedProduct}
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+      />
     </section>
   );
 }
-
-export default Products;

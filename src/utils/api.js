@@ -99,7 +99,8 @@ export const analyticsAPI = {
 // Cart API
 export const cartAPI = {
   getCart: () => api.get('/cart'),
-  addToCart: (productId, quantity = 1) => api.post('/cart/add', { product_id: productId, quantity }),
+  addToCart: (productId, quantity = 1, selected_size = '', selected_color = '') => 
+    api.post('/cart/add', { product_id: productId, quantity, selected_size, selected_color }),
   updateCartItem: (productId, quantity) => api.put(`/cart/${productId}`, { quantity }),
   removeFromCart: (productId) => api.delete(`/cart/${productId}`),
   clearCart: () => api.delete('/cart/clear'),

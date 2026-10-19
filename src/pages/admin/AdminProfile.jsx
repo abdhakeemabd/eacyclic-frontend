@@ -1,15 +1,29 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   User, Mail, Shield, Key, Camera, 
-  Settings, Bell, LogOut, CheckCircle, Eye, EyeOff, AlertCircle, Loader2
+  Settings, Bell, LogOut, CheckCircle, Eye, EyeOff, AlertCircle, Loader2, Sparkles, Check
 } from 'lucide-react';
 import { useAdmin } from '../../context/AdminContext';
 import { adminAPI, userAPI } from '../../utils/api';
 
 function AdminProfile() {
   const { adminUser, logout, logoutAll } = useAdmin();
-  const [activeTab, setActiveTab] = useState('security'); // default to security/password view
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tabParam = searchParams.get('tab');
+  const [activeTab, setActiveTab] = useState(tabParam === 'general' ? 'general' : 'security');
+
+  useEffect(() => {
+    if (tabParam === 'general' || tabParam === 'security') {
+      setActiveTab(tabParam);
+    }
+  }, [tabParam]);
+
+  const handleSelectTab = (tab) => {
+    setActiveTab(tab);
+    setSearchParams({ tab }, { replace: true });
+  };
 
   // Profile info state
   const [username, setUsername] = useState(adminUser?.username || '');
@@ -113,120 +127,137 @@ function AdminProfile() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8 pb-12">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="max-w-5xl mx-auto space-y-6 pb-16 animate-fadeIn">
+      {/* Top Header Card */}
+      <div className="bg-card text-card-foreground p-6 rounded-2xl shadow-xs border border-border flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold dark:text-white">Admin Profile & Settings</h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-1">Manage your account security and admin settings</p>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground uppercase font-semibold">Admin Center</span>
+            <span className="text-xs text-muted-foreground">/</span>
+            <span className="text-xs font-bold text-primary">Account & Security</span>
+          </div>
+          <h1 className="text-2xl font-bold text-foreground mt-1 flex items-center">
+            <Shield className="mr-2 text-primary" size={24} />
+            Admin Security & Profile
+          </h1>
+          <p className="text-muted-foreground text-xs mt-0.5">
+            Manage your credentials, password updates, and global administrative sessions.
+          </p>
         </div>
+
         <button
           onClick={logout}
-          className="flex items-center justify-center space-x-2 px-6 py-3 bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 rounded-2xl hover:bg-rose-100 dark:hover:bg-rose-900/40 transition-all font-bold"
+          className="flex items-center justify-center space-x-2 px-5 py-2.5 bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20 rounded-xl hover:bg-rose-500/20 transition-all font-bold text-xs cursor-pointer self-start sm:self-auto"
         >
-          <LogOut size={18} />
-          <span>Logout Account</span>
+          <LogOut size={15} />
+          <span>Sign Out</span>
         </button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column - Navigation Cards */}
-        <div className="lg:col-span-1 space-y-8">
+        <div className="lg:col-span-1 space-y-6">
           <motion.div 
-            initial={{ opacity: 0, scale: 0.95 }}
+            initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="glass-card rounded-[2.5rem] p-8 text-center"
+            className="bg-card text-card-foreground border border-border rounded-2xl p-6 text-center shadow-xs"
           >
-            <div className="relative inline-block mb-6">
-              <div className="w-32 h-32 rounded-[2.5rem] bg-gradient-to-br from-indigo-500 to-purple-500 p-1 shadow-2xl shadow-indigo-500/20">
-                <div className="w-full h-full rounded-[2.2rem] bg-white dark:bg-gray-900 flex items-center justify-center overflow-hidden">
-                  <User size={64} className="text-indigo-500" />
+            <div className="relative inline-block mb-4">
+              <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-primary/30 to-primary/10 p-1 border border-primary/20 shadow-sm mx-auto">
+                <div className="w-full h-full rounded-xl bg-background flex items-center justify-center overflow-hidden">
+                  <User size={44} className="text-primary" />
                 </div>
               </div>
-              <button className="absolute bottom-0 right-0 p-2.5 bg-white dark:bg-gray-800 rounded-2xl shadow-xl text-indigo-600 border border-gray-100 dark:border-gray-700 hover:scale-110 transition-transform">
-                <Camera size={18} />
-              </button>
             </div>
-            <h2 className="text-2xl font-black dark:text-white uppercase tracking-tight">{adminUser?.username || 'Admin'}</h2>
-            <p className="text-indigo-500 font-bold uppercase tracking-widest text-[10px] mt-2">
-              {adminUser?.role === 'superadmin' ? 'Super Administrator' : 'Administrator'}
+            
+            <h2 className="text-lg font-bold text-foreground tracking-tight">
+              {adminUser?.username || 'Administrator'}
+            </h2>
+            <div className="flex items-center justify-center gap-1.5 mt-1.5">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-[11px] font-bold uppercase tracking-wider text-primary">
+                {adminUser?.role === 'superadmin' ? 'Super Administrator' : 'Admin'}
+              </span>
+            </div>
+            <p className="text-xs text-muted-foreground mt-2 font-mono bg-muted/40 py-1 px-3 rounded-lg border border-border/50 inline-block">
+              {adminUser?.email || 'admin@eacyclic.com'}
             </p>
           </motion.div>
 
           <motion.div 
-            initial={{ opacity: 0, x: -20 }}
+            initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.1 }}
-            className="glass-card rounded-[2.5rem] p-4 space-y-2"
+            transition={{ delay: 0.05 }}
+            className="bg-card text-card-foreground border border-border rounded-2xl p-3 space-y-1.5 shadow-xs"
           >
             <button 
-              onClick={() => setActiveTab('security')}
-              className={`w-full flex items-center justify-between p-4 rounded-2xl transition-all font-bold ${
+              onClick={() => handleSelectTab('security')}
+              className={`w-full flex items-center justify-between p-3 rounded-xl transition-all text-xs font-bold cursor-pointer ${
                 activeTab === 'security' 
-                  ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/20' 
-                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
+                  ? 'bg-primary text-primary-foreground shadow-xs' 
+                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'
               }`}
             >
               <div className="flex items-center space-x-3">
-                <Key size={20} />
+                <Key size={17} />
                 <span>Security & Password</span>
               </div>
-              {activeTab === 'security' && <CheckCircle size={18} />}
+              {activeTab === 'security' && <Check size={16} />}
             </button>
 
             <button 
-              onClick={() => setActiveTab('general')}
-              className={`w-full flex items-center justify-between p-4 rounded-2xl transition-all font-bold ${
+              onClick={() => handleSelectTab('general')}
+              className={`w-full flex items-center justify-between p-3 rounded-xl transition-all text-xs font-bold cursor-pointer ${
                 activeTab === 'general' 
-                  ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' 
-                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
+                  ? 'bg-primary text-primary-foreground shadow-xs' 
+                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'
               }`}
             >
               <div className="flex items-center space-x-3">
-                <User size={20} />
-                <span>General Info</span>
+                <User size={17} />
+                <span>Account Information</span>
               </div>
-              {activeTab === 'general' && <CheckCircle size={18} />}
+              {activeTab === 'general' && <Check size={16} />}
             </button>
           </motion.div>
         </div>
 
         {/* Right Column - Active Tab Form */}
-        <div className="lg:col-span-2 space-y-8">
+        <div className="lg:col-span-2 space-y-6">
           <AnimatePresence mode="wait">
             {activeTab === 'security' && (
               <motion.div 
                 key="security-tab"
-                initial={{ opacity: 0, y: 15 }}
+                initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -15 }}
-                className="glass-card rounded-[2.5rem] p-8 space-y-8"
+                exit={{ opacity: 0, y: -10 }}
+                className="bg-card text-card-foreground border border-border rounded-2xl p-6 space-y-6 shadow-xs"
               >
-                <div className="flex items-center space-x-3 border-b border-gray-100 dark:border-gray-800 pb-6">
-                  <div className="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-2xl text-amber-600 dark:text-amber-400">
-                    <Key size={24} />
+                <div className="flex items-center space-x-3 border-b border-border pb-4">
+                  <div className="p-2.5 bg-primary/10 rounded-xl text-primary">
+                    <Key size={20} />
                   </div>
                   <div>
-                    <h3 className="text-xl font-black dark:text-white">Change Admin Password</h3>
-                    <p className="text-xs text-gray-400">Update your account password safely</p>
+                    <h3 className="text-base font-bold text-foreground">Change Password</h3>
+                    <p className="text-xs text-muted-foreground">Keep your administrative credentials safe and updated</p>
                   </div>
                 </div>
 
                 {pwStatus.text && (
-                  <div className={`p-4 rounded-2xl flex items-center space-x-3 text-sm font-medium ${
+                  <div className={`p-4 rounded-xl flex items-center space-x-3 text-xs font-medium ${
                     pwStatus.type === 'success' 
-                      ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800' 
-                      : 'bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800'
+                      ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20' 
+                      : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20'
                   }`}>
-                    {pwStatus.type === 'success' ? <CheckCircle size={20} className="shrink-0" /> : <AlertCircle size={20} className="shrink-0" />}
+                    {pwStatus.type === 'success' ? <CheckCircle size={18} className="shrink-0" /> : <AlertCircle size={18} className="shrink-0" />}
                     <span>{pwStatus.text}</span>
                   </div>
                 )}
 
-                <form onSubmit={handlePasswordSubmit} className="space-y-6">
+                <form onSubmit={handlePasswordSubmit} className="space-y-4">
                   {/* Current Password */}
-                  <div className="space-y-2">
-                    <label className="text-[11px] uppercase font-black text-gray-500 dark:text-gray-400 tracking-wider ml-1">
+                  <div className="space-y-1.5">
+                    <label className="text-xs uppercase font-bold text-muted-foreground block">
                       Current Password
                     </label>
                     <div className="relative">
@@ -235,22 +266,22 @@ function AdminProfile() {
                         value={currentPassword}
                         onChange={(e) => setCurrentPassword(e.target.value)}
                         placeholder="Enter your current password"
-                        className="w-full pl-5 pr-12 py-3.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl focus:ring-2 focus:ring-amber-500 focus:border-transparent dark:text-white text-sm font-medium transition-all"
+                        className="w-full pl-4 pr-11 py-2.5 bg-background border border-border rounded-xl focus:ring-2 focus:ring-primary text-foreground text-sm font-medium transition-all outline-none"
                       />
                       <button
                         type="button"
                         onClick={() => setShowCurrent(!showCurrent)}
-                        className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
                       >
-                        {showCurrent ? <EyeOff size={18} /> : <Eye size={18} />}
+                        {showCurrent ? <EyeOff size={16} /> : <Eye size={16} />}
                       </button>
                     </div>
                   </div>
 
                   {/* New Password & Confirm Password */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <label className="text-[11px] uppercase font-black text-gray-500 dark:text-gray-400 tracking-wider ml-1">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-xs uppercase font-bold text-muted-foreground block">
                         New Password
                       </label>
                       <div className="relative">
@@ -258,21 +289,21 @@ function AdminProfile() {
                           type={showNew ? 'text' : 'password'}
                           value={newPassword}
                           onChange={(e) => setNewPassword(e.target.value)}
-                          placeholder="Min 6 characters"
-                          className="w-full pl-5 pr-12 py-3.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl focus:ring-2 focus:ring-amber-500 focus:border-transparent dark:text-white text-sm font-medium transition-all"
+                          placeholder="Min 8 characters"
+                          className="w-full pl-4 pr-11 py-2.5 bg-background border border-border rounded-xl focus:ring-2 focus:ring-primary text-foreground text-sm font-medium transition-all outline-none"
                         />
                         <button
                           type="button"
                           onClick={() => setShowNew(!showNew)}
-                          className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+                          className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
                         >
-                          {showNew ? <EyeOff size={18} /> : <Eye size={18} />}
+                          {showNew ? <EyeOff size={16} /> : <Eye size={16} />}
                         </button>
                       </div>
                     </div>
 
-                    <div className="space-y-2">
-                      <label className="text-[11px] uppercase font-black text-gray-500 dark:text-gray-400 tracking-wider ml-1">
+                    <div className="space-y-1.5">
+                      <label className="text-xs uppercase font-bold text-muted-foreground block">
                         Confirm New Password
                       </label>
                       <div className="relative">
@@ -281,28 +312,28 @@ function AdminProfile() {
                           value={confirmPassword}
                           onChange={(e) => setConfirmPassword(e.target.value)}
                           placeholder="Re-enter new password"
-                          className="w-full pl-5 pr-12 py-3.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl focus:ring-2 focus:ring-amber-500 focus:border-transparent dark:text-white text-sm font-medium transition-all"
+                          className="w-full pl-4 pr-11 py-2.5 bg-background border border-border rounded-xl focus:ring-2 focus:ring-primary text-foreground text-sm font-medium transition-all outline-none"
                         />
                         <button
                           type="button"
                           onClick={() => setShowConfirm(!showConfirm)}
-                          className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+                          className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
                         >
-                          {showConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
+                          {showConfirm ? <EyeOff size={16} /> : <Eye size={16} />}
                         </button>
                       </div>
                     </div>
                   </div>
 
-                  <div className="flex justify-end pt-4">
+                  <div className="flex justify-end pt-2">
                     <button 
                       type="submit"
                       disabled={pwLoading}
-                      className="flex items-center space-x-2 px-8 py-4 bg-amber-500 hover:bg-amber-600 text-white rounded-2xl font-black uppercase tracking-wider text-xs transition-all shadow-xl shadow-amber-500/20 disabled:opacity-50 cursor-pointer"
+                      className="flex items-center space-x-2 px-6 py-2.5 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl font-bold text-xs transition-all shadow-sm disabled:opacity-50 cursor-pointer"
                     >
                       {pwLoading ? (
                         <>
-                          <Loader2 size={16} className="animate-spin" />
+                          <Loader2 size={15} className="animate-spin" />
                           <span>Updating...</span>
                         </>
                       ) : (
@@ -313,31 +344,31 @@ function AdminProfile() {
                 </form>
 
                 {/* Session & Device Management */}
-                <div className="mt-10 pt-8 border-t border-gray-100 dark:border-gray-800 space-y-4">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl bg-rose-50/60 dark:bg-rose-950/20 border border-rose-100 dark:border-rose-900/40">
+                <div className="mt-8 pt-6 border-t border-border space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl bg-rose-500/5 border border-rose-500/20">
                     <div className="space-y-1">
-                      <div className="flex items-center space-x-2 text-rose-600 dark:text-rose-400 font-bold text-sm">
-                        <Shield size={18} />
-                        <span>Global Session Security</span>
+                      <div className="flex items-center space-x-2 text-rose-600 dark:text-rose-400 font-bold text-xs">
+                        <Shield size={16} />
+                        <span>Global Session Invalidation</span>
                       </div>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 max-w-md">
-                        Terminate all active administrative sessions and revoke access tokens across every device, phone, and browser where you are currently logged in.
+                      <p className="text-[11px] text-muted-foreground max-w-md">
+                        Terminate all active administrative sessions and revoke access tokens across every device where you are currently signed in.
                       </p>
                     </div>
                     <button
                       type="button"
                       onClick={handleLogoutAll}
                       disabled={logoutAllLoading}
-                      className="flex items-center justify-center space-x-2 px-6 py-3 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-bold uppercase tracking-wider text-xs transition-all shadow-lg shadow-rose-600/20 disabled:opacity-50 cursor-pointer shrink-0"
+                      className="flex items-center justify-center space-x-2 px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg font-bold text-xs transition-all shadow-xs disabled:opacity-50 cursor-pointer shrink-0"
                     >
                       {logoutAllLoading ? (
                         <>
-                          <Loader2 size={15} className="animate-spin" />
-                          <span>Revoking Sessions...</span>
+                          <Loader2 size={14} className="animate-spin" />
+                          <span>Revoking...</span>
                         </>
                       ) : (
                         <>
-                          <LogOut size={15} />
+                          <LogOut size={14} />
                           <span>Log Out Everywhere</span>
                         </>
                       )}
@@ -353,70 +384,70 @@ function AdminProfile() {
             {activeTab === 'general' && (
               <motion.div 
                 key="general-tab"
-                initial={{ opacity: 0, y: 15 }}
+                initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -15 }}
-                className="glass-card rounded-[2.5rem] p-8 space-y-8"
+                exit={{ opacity: 0, y: -10 }}
+                className="bg-card text-card-foreground border border-border rounded-2xl p-6 space-y-6 shadow-xs"
               >
-                <div className="flex items-center space-x-3 border-b border-gray-100 dark:border-gray-800 pb-6">
-                  <div className="p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-2xl text-indigo-600 dark:text-indigo-400">
-                    <Settings size={24} />
+                <div className="flex items-center space-x-3 border-b border-border pb-4">
+                  <div className="p-2.5 bg-primary/10 rounded-xl text-primary">
+                    <Settings size={20} />
                   </div>
                   <div>
-                    <h3 className="text-xl font-black dark:text-white">Account Information</h3>
-                    <p className="text-xs text-gray-400">Update your basic profile details here</p>
+                    <h3 className="text-base font-bold text-foreground">Account Information</h3>
+                    <p className="text-xs text-muted-foreground">Update your administrative profile details</p>
                   </div>
                 </div>
 
                 {profileMsg.text && (
-                  <div className={`p-4 rounded-2xl flex items-center space-x-3 text-sm font-medium ${
+                  <div className={`p-4 rounded-xl flex items-center space-x-3 text-xs font-medium ${
                     profileMsg.type === 'success' 
-                      ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800' 
-                      : 'bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800'
+                      ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20' 
+                      : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20'
                   }`}>
-                    {profileMsg.type === 'success' ? <CheckCircle size={20} className="shrink-0" /> : <AlertCircle size={20} className="shrink-0" />}
+                    {profileMsg.type === 'success' ? <CheckCircle size={18} className="shrink-0" /> : <AlertCircle size={18} className="shrink-0" />}
                     <span>{profileMsg.text}</span>
                   </div>
                 )}
 
-                <form onSubmit={handleProfileSubmit} className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <label className="text-[11px] uppercase font-black text-gray-500 dark:text-gray-400 tracking-wider ml-1">Username</label>
+                <form onSubmit={handleProfileSubmit} className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-xs uppercase font-bold text-muted-foreground block">Username</label>
                       <div className="relative">
-                        <User className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                        <User className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
                         <input 
                           type="text" 
                           value={username}
                           onChange={(e) => setUsername(e.target.value)}
-                          className="w-full pl-12 pr-6 py-3.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl focus:ring-2 focus:ring-indigo-500 dark:text-white font-medium text-sm transition-all"
+                          className="w-full pl-10 pr-4 py-2.5 bg-background border border-border rounded-xl focus:ring-2 focus:ring-primary text-foreground font-medium text-sm transition-all outline-none"
                         />
                       </div>
                     </div>
 
-                    <div className="space-y-2">
-                      <label className="text-[11px] uppercase font-black text-gray-500 dark:text-gray-400 tracking-wider ml-1">Email Address</label>
+                    <div className="space-y-1.5">
+                      <label className="text-xs uppercase font-bold text-muted-foreground block">Email Address</label>
                       <div className="relative">
-                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                        <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
                         <input 
                           type="email" 
                           value={email}
                           onChange={(e) => setEmail(e.target.value)}
-                          className="w-full pl-12 pr-6 py-3.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl focus:ring-2 focus:ring-indigo-500 dark:text-white font-medium text-sm transition-all"
+                          className="w-full pl-10 pr-4 py-2.5 bg-background border border-border rounded-xl focus:ring-2 focus:ring-primary text-foreground font-medium text-sm transition-all outline-none"
                         />
                       </div>
                     </div>
                   </div>
 
-                  <div className="flex justify-end pt-4">
+                  <div className="flex justify-end pt-2">
                     <button 
                       type="submit"
                       disabled={profileLoading}
-                      className="flex items-center space-x-2 px-8 py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-black uppercase tracking-wider text-xs transition-all shadow-xl shadow-indigo-600/20 disabled:opacity-50 cursor-pointer"
+                      className="flex items-center space-x-2 px-6 py-2.5 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl font-bold text-xs transition-all shadow-sm disabled:opacity-50 cursor-pointer"
                     >
                       {profileLoading ? (
                         <>
-                          <Loader2 size={16} className="animate-spin" />
+                          <Loader2 size={15} className="animate-spin" />
                           <span>Saving...</span>
                         </>
                       ) : (

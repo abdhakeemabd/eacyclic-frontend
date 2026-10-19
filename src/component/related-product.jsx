@@ -1,113 +1,227 @@
 import React, { useState } from 'react';
 import Slider from "react-slick";
-import { PiShareFat } from "react-icons/pi";
-import { BiSolidLike, BiLike, BiCart, BiSolidCart } from "react-icons/bi";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import { Link, useParams } from 'react-router-dom';
+import { Heart, Plus, ArrowRight } from 'lucide-react';
 import { useProducts } from '../context/ProductContext';
+import { useCart } from '../context/CartContext';
 import ImageLoader from './image-loader';
 import ProductSkeleton from './product-skeleton';
+import QuickViewModal from './QuickViewModal';
 
-function RelatedProduct() {
+export default function RelatedProduct() {
   const { id } = useParams();
   const { products, loading } = useProducts();
-  const [likes, setLikes] = useState({});
-  const [carts, setCarts] = useState({});
+  const { toggleLike, isLiked } = useCart();
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Filter out the current product and show others as "related"
-  // In a real app, we might filter by category
-  const relatedProducts = products.filter(p => p.id.toString() !== id?.toString()).slice(0, 8);
+  // Filter out current product and prioritize products in the same category or general catalog
+  const currentProduct = products.find(p => p.id?.toString() === id?.toString());
+  const relatedProducts = products
+    .filter(p => p.id?.toString() !== id?.toString())
+    .sort((a, b) => {
+      if (currentProduct && a.category === currentProduct.category) return -1;
+      if (currentProduct && b.category === currentProduct.category) return 1;
+      return 0;
+    })
+    .slice(0, 8);
 
-  const toggleLike = (id) => {
-    setLikes(prev => ({ ...prev, [id]: !prev[id] }));
+  const handleOpenQuickView = (e, item) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setSelectedProduct(item);
+    setIsModalOpen(true);
   };
-  const toggleCart = (id) => {
-    setCarts(prev => ({ ...prev, [id]: !prev[id] }));
-  };
-
 
   const settings = {
     dots: false,
-    infinite: true,
-    speed: 800,
+    infinite: relatedProducts.length > 4,
+    speed: 700,
     slidesToShow: 4,
     slidesToScroll: 1,
     autoplay: true,
     arrows: true,
-    autoplaySpeed: 3000,
+    autoplaySpeed: 4000,
     responsive: [
-      { breakpoint: 1199, settings: { slidesToShow: 3 } },
-      { breakpoint: 1024, settings: { slidesToShow: 2 } },
-      { breakpoint: 768, settings: { slidesToShow: 1 } }
+      { breakpoint: 1280, settings: { slidesToShow: 3 } },
+      { breakpoint: 768, settings: { slidesToShow: 2 } },
+      { breakpoint: 480, settings: { slidesToShow: 1 } }
     ]
   };
 
+  const badgeLabels = ['Best seller', 'Everyday essential', 'Popular pick', 'New arrival', 'Staff pick'];
+
+  if (!loading && relatedProducts.length === 0) return null;
+
   return (
-    <section className='related_product_sec py-16 bg-white overflow-hidden border-t border-gray-100'>
-      <div className="container mx-auto px-4">
-        <div className="mb-10">
-          <h2 className="text-2xl font-semibold text-gray-900 uppercase tracking-tight">Best Product</h2>
-          <div className="w-16 h-1 bg-black mt-3 rounded-full"></div>
-        </div>
+    <section className="py-14 sm:py-20 bg-[#fafbfa] border-t border-gray-100 overflow-hidden">
+      <div className="container mx-auto px-6 sm:px-8 lg:px-16 max-w-7xl">
         
+        {/* Section Header */}
+        <div className="flex items-end justify-between mb-8 sm:mb-10">
+          <div>
+            <div className="text-[11px] font-bold text-[#5c6e61] tracking-[0.2em] uppercase mb-1">
+              DISCOVER MORE
+            </div>
+            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight font-serif">
+              You might also love.
+            </h2>
+            <p className="text-xs sm:text-sm text-gray-500 mt-1">
+              Handpicked thoughtful finds from our collection.
+            </p>
+          </div>
+
+          <Link
+            to="/product"
+            className="text-xs sm:text-sm font-semibold text-gray-700 hover:text-[#134e35] flex items-center gap-1 transition-colors group"
+          >
+            <span>View all</span>
+            <span className="transition-transform group-hover:translate-x-1">→</span>
+          </Link>
+        </div>
+
+        {/* Carousel or Grid */}
         {loading && relatedProducts.length === 0 ? (
           <ProductSkeleton count={4} />
         ) : (
-          <div className="features_slider -mx-3">
+          <div className="features_slider -mx-2.5">
             <Slider {...settings}>
-              {relatedProducts.map(item => (
-                <div className='px-3 pb-8' key={item.id}>
-                  <div className='bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-300 flex flex-col h-full overflow-hidden relative group'>
-                    <Link to={`/product-view/${item.id}`} state={{ product: item }} className="absolute inset-0 z-0"></Link>
-                    
-                    <div className='aspect-[4/3] overflow-hidden bg-gray-50 relative z-10'>
-                       {item.offer && (
-                          <div className="absolute top-2 left-2 z-10 bg-red-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-sm">
-                            -{item.offer.replace(/[^0-9]/g, '')}%
-                          </div>
-                        )}
-                      <ImageLoader className='transition-transform duration-500 group-hover:scale-110' src={item.image_url || item.image || (item.gallery && item.gallery[0])} alt={item.title} />
-                    </div>
+              {relatedProducts.map((item, idx) => {
+                const liked = isLiked(item.id);
+                const tag = item.offer ? `-${item.offer.toString().replace(/[^0-9]/g, '')}%` : badgeLabels[idx % badgeLabels.length];
+                const price = item.offerPrice || item.price || 0;
+                const oldPrice = item.oldPrice;
+                const imageSrc = item.image_url || item.image || (item.gallery && item.gallery[0]);
+                const title = item.name || item.title || 'Product';
+                const description = item.description || item.content || '';
+                const category = item.category || 'STORE PICK';
 
-                  <div className="p-4 flex flex-col flex-1 relative z-20 pointer-events-none">
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-gray-800 text-base mb-1 line-clamp-1 group-hover:text-orange-600 transition-colors leading-snug">{item.title}</h3>
-                      <div className="flex items-baseline gap-2 mb-3">
-                        <div className="text-xl font-semibold text-gray-900 leading-none">₹{item.offerPrice || item.price}</div>
-                        {item.oldPrice && (
-                          <div className="text-xs text-gray-400 line-through">₹{item.oldPrice}</div>
-                        )}
-                      </div>
-                    </div>
-                    
-                    <div className="pt-3 border-t border-gray-50 flex justify-between items-center pointer-events-auto">
-                       <div className="flex gap-3">
-                          <button onClick={() => toggleLike(item.id)} className="text-gray-400 hover:text-red-500 transition-colors">
-                            {likes[item.id] ? <BiSolidLike className="text-red-500 text-lg" /> : <BiLike className="text-lg" />}
-                          </button>
-                          <button onClick={() => toggleCart(item.id)} className={`transition-colors ${carts[item.id] ? 'text-orange-600' : 'text-gray-400 hover:text-orange-500'}`}>
-                            {carts[item.id] ? <BiSolidCart className="text-xl" /> : <BiCart className="text-xl" />}
-                          </button>
-                        </div>
-                        <Link
-                          to={`/product-view/${item.id}`}
-                          state={{ product: item }}
-                          className="bg-black text-white text-[10px] font-semibold py-1.5 px-4 rounded hover:bg-gray-800 transition-colors uppercase tracking-wider"
+                return (
+                  <div key={item.id || idx} className="px-2.5 pb-6">
+                    <div className="group bg-white rounded-2xl border border-gray-100/90 overflow-hidden hover:shadow-lg transition-all duration-300 flex flex-col relative h-full">
+                      
+                      {/* Image Area */}
+                      <div
+                        onClick={(e) => handleOpenQuickView(e, item)}
+                        className="aspect-square bg-[#f5f6f5] relative flex items-center justify-center p-4 cursor-pointer overflow-hidden"
+                      >
+                        {/* Top Left Tag */}
+                        <span className="absolute top-3 left-3 z-10 text-[10px] font-semibold text-gray-700 bg-white/90 backdrop-blur-xs px-2.5 py-1 rounded-full shadow-2xs">
+                          {tag}
+                        </span>
+
+                        {/* Top Right Wishlist */}
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            toggleLike(item);
+                          }}
+                          className="absolute top-3 right-3 z-10 w-8 h-8 rounded-full bg-white/90 backdrop-blur-xs shadow-2xs flex items-center justify-center hover:scale-110 transition-transform"
+                          aria-label="Save to wishlist"
                         >
-                          Buy
-                        </Link>
+                          <Heart
+                            className={`w-4 h-4 ${
+                              liked ? 'text-red-500 fill-red-500' : 'text-gray-600'
+                            }`}
+                          />
+                        </button>
+
+                        {/* Image */}
+                        <div className="w-full h-full flex items-center justify-center transition-transform duration-500 group-hover:scale-105">
+                          <ImageLoader
+                            src={imageSrc}
+                            alt={title}
+                            className="w-full h-full object-contain mix-blend-multiply"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Content Details */}
+                      <div className="p-4 sm:p-5 flex flex-col flex-1 justify-between">
+                        <div>
+                          <div className="text-[10px] font-semibold text-gray-400 tracking-wider uppercase mb-1 truncate">
+                            {category}
+                          </div>
+
+                          <h3
+                            onClick={(e) => handleOpenQuickView(e, item)}
+                            className="font-bold text-gray-900 text-xs sm:text-sm line-clamp-1 group-hover:text-[#134e35] transition-colors cursor-pointer mb-1.5"
+                            title={title}
+                          >
+                            {title}
+                          </h3>
+
+                          {description && (
+                            <p className="text-xs text-gray-500 line-clamp-2 leading-relaxed mb-3">
+                              {description}
+                            </p>
+                          )}
+                        </div>
+
+                        {/* Price & Action Row */}
+                        <div>
+                          <div className="flex items-center justify-between mb-2.5">
+                            <div className="flex items-baseline gap-1.5">
+                              <span className="text-base sm:text-lg font-bold text-gray-900">
+                                ₹{price}
+                              </span>
+                              {oldPrice && (
+                                <span className="text-xs text-gray-400 line-through">
+                                  ₹{oldPrice}
+                                </span>
+                              )}
+                            </div>
+
+                            <button
+                              onClick={(e) => handleOpenQuickView(e, item)}
+                              className="w-8 h-8 rounded-lg border border-gray-200 hover:border-[#134e35] hover:bg-[#134e35] hover:text-white flex items-center justify-center text-gray-700 transition-all active:scale-95 shadow-2xs cursor-pointer"
+                              title="Quick View"
+                              aria-label={`Quick view ${title}`}
+                            >
+                              <Plus className="w-4 h-4" />
+                            </button>
+                          </div>
+
+                          <div className="flex items-center justify-between pt-2.5 border-t border-gray-100">
+                            {item.freeShipping ? (
+                              <span className="text-[11px] text-[#134e35] font-medium">
+                                🚚 Free delivery
+                              </span>
+                            ) : (
+                              <span className="text-[11px] text-gray-400 font-medium">
+                                📦 Standard delivery
+                              </span>
+                            )}
+                            <Link
+                              to={`/product-view/${item.id}`}
+                              state={{ product: item }}
+                              className="text-xs font-semibold text-[#134e35] hover:text-[#0b2b1d] px-1 transition-colors uppercase tracking-wider"
+                            >
+                              View →
+                            </Link>
+                          </div>
+                        </div>
+
+                      </div>
+
                     </div>
                   </div>
-                </div>
-              </div>
-            ))}
-          </Slider>
-        </div>
+                );
+              })}
+            </Slider>
+          </div>
         )}
       </div>
+
+      {/* Quick View Modal */}
+      <QuickViewModal
+        product={selectedProduct}
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+      />
     </section>
   );
 }
-
-export default RelatedProduct;

@@ -33,6 +33,7 @@ const Checkout = lazy(() => import('./pages/checkout'));
 const AdminLogin = lazy(() => import('./pages/admin/AdminLogin'));
 const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
 const AdminProducts = lazy(() => import('./pages/admin/AdminProducts'));
+const AdminProductEditor = lazy(() => import('./pages/admin/AdminProductEditor'));
 const AdminOrders = lazy(() => import('./pages/admin/AdminOrders'));
 const AdminDelivery = lazy(() => import('./pages/admin/AdminDelivery'));
 const AdminShipped = lazy(() => import('./pages/admin/AdminShipped'));
@@ -40,15 +41,18 @@ const AdminContacts = lazy(() => import('./pages/admin/AdminContacts'));
 const AdminProfile = lazy(() => import('./pages/admin/AdminProfile'));
 const OrderDetails = lazy(() => import('./pages/admin/OrderDetails'));
 
+import AskCyWidget from './component/AskCyWidget';
+
 // Layout wrapper for public pages
 function PublicLayout({ children }) {
   return (
     <>
       <Header />
-      <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="w-10 h-10 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div></div>}>
+      <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="w-10 h-10 border-4 border-[#134e35] border-t-transparent rounded-full animate-spin"></div></div>}>
         {children}
       </Suspense>
       <Footer />
+      <AskCyWidget />
     </>
   );
 }
@@ -84,6 +88,10 @@ function HomeRoutes() {
                   <Route element={<AdminLayoutWrapper />}>
                     <Route path='/admin/dashboard' element={<AdminDashboard />} />
                     <Route path='/admin/products' element={<AdminProducts />} />
+                    <Route path='/admin/products/add' element={<AdminProductEditor />} />
+                    <Route path='/admin/products/create' element={<AdminProductEditor />} />
+                    <Route path='/admin/products/new' element={<AdminProductEditor />} />
+                    <Route path='/admin/products/edit/:id' element={<AdminProductEditor />} />
                     <Route path='/admin/orders' element={<AdminOrders />} />
                     <Route path='/admin/shipped' element={<AdminShipped />} />
                     <Route path='/admin/orders/:orderId' element={<OrderDetails />} />

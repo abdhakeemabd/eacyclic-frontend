@@ -41,6 +41,9 @@ export const CartProvider = ({ children }) => {
           if (response.data && response.data.items) {
             const apiCart = response.data.items.map(item => ({
               ...item.product_details,
+              cart_item_key: `${item.product}_${item.selected_size || ''}_${item.selected_color || ''}`,
+              selectedSize: item.selected_size || '',
+              selectedColor: item.selected_color || '',
               quantity: item.quantity
             }));
             if (apiCart.length > 0) {
@@ -84,14 +87,21 @@ export const CartProvider = ({ children }) => {
   };
 
 
-  // Add item to cart
-  const addToCart = async (product, quantity = 1) => {
+  // Add item to cart (with optional variant: size, color)
+  const addToCart = async (product, quantity = 1, variantOptions = {}) => {
     try {
       setLoading(true);
       setError(null);
 
-      // Check if product already exists in cart
-      const existingItemIndex = cart.findIndex(item => item.id === product.id);
+      const size = variantOptions.size || variantOptions.selectedSize || product.selectedSize || '';
+      const color = variantOptions.color || variantOptions.selectedColor || product.selectedColor || '';
+      const itemKey = `${product.id}_${size}_${color}`;
+
+      // Check if product with identical variant already exists in cart
+      const existingItemIndex = cart.findIndex(item => {
+        if (item.cart_item_key) return item.cart_item_key === itemKey;
+        return item.id === product.id && (item.selectedSize || '') === size && (item.selectedColor || '') === color;
+      });
 
       if (existingItemIndex > -1) {
         // Update quantity if item exists
@@ -99,13 +109,19 @@ export const CartProvider = ({ children }) => {
         updatedCart[existingItemIndex].quantity += quantity;
         setCart(updatedCart);
       } else {
-        // Add new item to cart
-        setCart([...cart, { ...product, quantity }]);
+        // Add new item with variant key to cart
+        setCart([...cart, { 
+          ...product, 
+          cart_item_key: itemKey,
+          selectedSize: size,
+          selectedColor: color,
+          quantity 
+        }]);
       }
 
       // Sync with backend API if authenticated
       if (isAuthenticated) {
-        await cartAPI.addToCart(product.id, quantity);
+        await cartAPI.addToCart(product.id, quantity, size, color);
       }
 
       return { success: true };
@@ -117,17 +133,18 @@ export const CartProvider = ({ children }) => {
     }
   };
 
-  // Remove item from cart
-  const removeFromCart = async (productId) => {
+  // Remove item from cart (supports cart_item_key or productId)
+  const removeFromCart = async (keyOrId) => {
     try {
       setLoading(true);
       setError(null);
 
-      setCart(cart.filter(item => item.id !== productId));
+      const itemToRemove = cart.find(item => (item.cart_item_key && item.cart_item_key === keyOrId) || item.id === keyOrId);
+      setCart(cart.filter(item => (item.cart_item_key ? item.cart_item_key !== keyOrId : item.id !== keyOrId)));
 
       // Sync with backend API
-      if (isAuthenticated) {
-        await cartAPI.removeFromCart(productId);
+      if (isAuthenticated && itemToRemove) {
+        await cartAPI.removeFromCart(itemToRemove.id);
       }
 
       return { success: true };
@@ -140,23 +157,26 @@ export const CartProvider = ({ children }) => {
   };
 
   // Update item quantity
-  const updateQuantity = async (productId, quantity) => {
+  const updateQuantity = async (keyOrId, quantity) => {
     try {
       setLoading(true);
       setError(null);
 
       if (quantity <= 0) {
-        return removeFromCart(productId);
+        return removeFromCart(keyOrId);
       }
 
       const updatedCart = cart.map(item =>
-        item.id === productId ? { ...item, quantity } : item
+        ((item.cart_item_key && item.cart_item_key === keyOrId) || item.id === keyOrId)
+          ? { ...item, quantity } 
+          : item
       );
       setCart(updatedCart);
 
+      const targetItem = cart.find(item => (item.cart_item_key && item.cart_item_key === keyOrId) || item.id === keyOrId);
       // Sync with backend API
-      if (isAuthenticated) {
-        await cartAPI.updateCartItem(productId, quantity);
+      if (isAuthenticated && targetItem) {
+        await cartAPI.updateCartItem(targetItem.id, quantity);
       }
 
       return { success: true };

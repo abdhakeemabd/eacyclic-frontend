@@ -85,93 +85,118 @@ function Cart() {
 
               {/* Cart Items List */}
               <div className="divide-y divide-gray-200">
-                {cart.map((item) => (
-                  <div key={item.id} className="p-6 hover:bg-gray-50 transition-colors duration-200">
-                    <div className="flex gap-6">
-                      {/* Product Image */}
-                      <div className="w-32 h-32 flex-shrink-0 bg-gray-100 rounded-lg overflow-hidden border border-gray-200">
-                        <img
-                          src={item.image_url || item.image || item.gallery?.[0]}
-                          alt={item.title}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-
-                      {/* Product Details */}
-                      <div className="flex-1 flex flex-col justify-between">
-                        <div>
-                          <Link
-                            to={`/product-view/${item.id}`}
-                            className="text-xl font-semibold text-gray-800 hover:text-orange-600 transition-colors duration-200"
-                          >
-                            {item.title}
-                          </Link>
-                          <p className="text-gray-600 text-sm mt-1 line-clamp-2">
-                            {item.content || item.description}
-                          </p>
+                {cart.map((item) => {
+                  const itemKey = item.cart_item_key || item.id;
+                  return (
+                    <div key={itemKey} className="p-6 hover:bg-gray-50 transition-colors duration-200">
+                      <div className="flex gap-6">
+                        {/* Product Image */}
+                        <div className="w-32 h-32 flex-shrink-0 bg-gray-100 rounded-lg overflow-hidden border border-gray-200">
+                          <img
+                            src={item.image_url || item.image || item.gallery?.[0]}
+                            alt={item.title}
+                            className="w-full h-full object-cover"
+                          />
                         </div>
 
-                        <div className="flex items-center justify-between mt-4">
-                          {/* Quantity Controls */}
-                          <div className="flex items-center gap-3">
-                            <button
-                              onClick={() => handleQuantityChange(item.id, item.quantity - 1)}
-                              className="w-10 h-10 rounded-lg bg-gray-200 hover:bg-gray-300 flex items-center justify-center transition-colors duration-200"
-                              disabled={item.quantity <= 1}
+                        {/* Product Details */}
+                        <div className="flex-1 flex flex-col justify-between">
+                          <div>
+                            <Link
+                              to={`/product-view/${item.id}`}
+                              className="text-xl font-semibold text-gray-800 hover:text-orange-600 transition-colors duration-200"
                             >
-                              <FaMinus className="text-gray-700" />
-                            </button>
-                            <span className="w-16 text-center font-semibold text-lg text-gray-800">
-                              {item.quantity}
-                            </span>
-                            <button
-                              onClick={() => handleQuantityChange(item.id, item.quantity + 1)}
-                              className="w-10 h-10 rounded-lg bg-orange-500 hover:bg-orange-600 flex items-center justify-center transition-colors duration-200"
-                            >
-                              <FaPlus className="text-white" />
-                            </button>
-                          </div>
-
-                          {/* Price */}
-                          <div className="text-right">
-                            <div className="flex flex-col items-end">
-                              <div className="flex items-center gap-2">
-                                {item.offer && (
-                                  <span className="text-xl text-[#CC0C39] font-light">
-                                    -{item.offer.replace(/[^0-9]/g, '')}%
+                              {item.title}
+                            </Link>
+                            
+                            {/* Selected Variants (Size / Color) */}
+                            {(item.selectedSize || item.selectedColor) && (
+                              <div className="flex flex-wrap items-center gap-2 mt-2">
+                                {item.selectedSize && (
+                                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-xs font-semibold bg-gray-100 text-gray-800 border border-gray-200">
+                                    <span className="text-gray-500 font-normal">Size:</span> {item.selectedSize}
                                   </span>
                                 )}
-                                <div className="flex items-start text-black">
-                                  <span className="text-xs mt-1 font-medium italic">₹</span>
-                                  <span className="text-2xl font-bold leading-none">
-                                    {((item.offerPrice || item.price) * item.quantity).toFixed(2)}
+                                {item.selectedColor && (
+                                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-semibold bg-gray-100 text-gray-800 border border-gray-200">
+                                    <span className="text-gray-500 font-normal">Color:</span>
+                                    <span 
+                                      className="w-2.5 h-2.5 rounded-full border border-gray-300 inline-block shadow-2xs"
+                                      style={{ backgroundColor: item.selectedColor.toLowerCase() }}
+                                    />
+                                    {item.selectedColor}
                                   </span>
-                                </div>
+                                )}
                               </div>
-                              {item.oldPrice && (
-                                <div className="text-xs text-gray-500 mt-1">
-                                  M.R.P.: <span className="line-through">₹{(item.oldPrice * item.quantity).toFixed(2)}</span>
+                            )}
+
+                            <p className="text-gray-600 text-sm mt-1.5 line-clamp-2">
+                              {item.content || item.description}
+                            </p>
+                          </div>
+
+                          <div className="flex items-center justify-between mt-4">
+                            {/* Quantity Controls */}
+                            <div className="flex items-center gap-3">
+                              <button
+                                onClick={() => handleQuantityChange(itemKey, item.quantity - 1)}
+                                className="w-10 h-10 rounded-lg bg-gray-200 hover:bg-gray-300 flex items-center justify-center transition-colors duration-200 cursor-pointer"
+                                disabled={item.quantity <= 1}
+                              >
+                                <FaMinus className="text-gray-700" />
+                              </button>
+                              <span className="w-16 text-center font-semibold text-lg text-gray-800">
+                                {item.quantity}
+                              </span>
+                              <button
+                                onClick={() => handleQuantityChange(itemKey, item.quantity + 1)}
+                                className="w-10 h-10 rounded-lg bg-orange-500 hover:bg-orange-600 flex items-center justify-center transition-colors duration-200 cursor-pointer"
+                              >
+                                <FaPlus className="text-white" />
+                              </button>
+                            </div>
+
+                            {/* Price */}
+                            <div className="text-right">
+                              <div className="flex flex-col items-end">
+                                <div className="flex items-center gap-2">
+                                  {item.offer && (
+                                    <span className="text-xl text-[#CC0C39] font-light">
+                                      -{item.offer.replace(/[^0-9]/g, '')}%
+                                    </span>
+                                  )}
+                                  <div className="flex items-start text-black">
+                                    <span className="text-xs mt-1 font-medium italic">₹</span>
+                                    <span className="text-2xl font-bold leading-none">
+                                      {((item.offerPrice || item.price) * item.quantity).toFixed(2)}
+                                    </span>
+                                  </div>
                                 </div>
-                              )}
-                              <div className="text-[10px] text-gray-400 mt-1">
-                                ₹{item.offerPrice || item.price} each
+                                {item.oldPrice && (
+                                  <div className="text-xs text-gray-500 mt-1">
+                                    M.R.P.: <span className="line-through">₹{(item.oldPrice * item.quantity).toFixed(2)}</span>
+                                  </div>
+                                )}
+                                <div className="text-[10px] text-gray-400 mt-1">
+                                  ₹{item.offerPrice || item.price} each
+                                </div>
                               </div>
                             </div>
                           </div>
                         </div>
-                      </div>
 
-                      {/* Remove Button */}
-                      <button
-                        onClick={() => removeFromCart(item.id)}
-                        className="text-red-500 hover:text-red-700 transition-colors duration-200 p-2"
-                        title="Remove from cart"
-                      >
-                        <FaTrash className="text-xl" />
-                      </button>
+                        {/* Remove Button */}
+                        <button
+                          onClick={() => removeFromCart(itemKey)}
+                          className="text-red-500 hover:text-red-700 transition-colors duration-200 p-2 cursor-pointer"
+                          title="Remove from cart"
+                        >
+                          <FaTrash className="text-xl" />
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
 
