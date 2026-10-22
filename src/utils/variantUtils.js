@@ -120,18 +120,28 @@ export function getProductCategoryType(product) {
   if (!product) return 'general';
   const cat = (product.category || '').toLowerCase();
   const title = (product.title || product.name || '').toLowerCase();
-  const desc = (product.description || product.content || '').toLowerCase();
-  const text = `${cat} ${title} ${desc}`;
 
-  if (text.includes('bed') || text.includes('cot') || text.includes('mattress')) return 'furniture_bed';
-  if (text.includes('dining table') || (text.includes('table') && !text.includes('chair'))) return 'furniture_table';
-  if (text.includes('chair') || text.includes('seating') || text.includes('stool')) return 'furniture_chair';
-  if (text.includes('wardrobe') || text.includes('cupboard') || text.includes('almirah') || text.includes('closet')) return 'furniture_wardrobe';
-  if (cat.includes('furniture') || text.includes('sofa') || text.includes('wood') || text.includes('teak') || text.includes('akeshya')) return 'furniture_general';
-  if (cat.includes('apparel') || cat.includes('cloth') || cat.includes('fashion') || cat.includes('dress') || text.includes('shirt') || text.includes('kurti') || text.includes('saree') || text.includes('wear') || text.includes('pant') || text.includes('t-shirt') || text.includes('salwar')) return 'apparel';
-  if (cat.includes('grocery') || cat.includes('spice') || cat.includes('food') || text.includes('podi') || text.includes('powder') || text.includes('masala')) return 'grocery';
-  if (cat.includes('jewel') || text.includes('gold') || text.includes('bangle') || text.includes('necklace') || text.includes('ring')) return 'jewellery';
-  if (cat.includes('plant') || text.includes('plant') || text.includes('flower') || text.includes('garden')) return 'plant';
+  // 1. Explicit Category prioritization
+  if (cat.includes('kid') || cat.includes('toy')) return 'toys';
+  if (cat.includes('apparel') || cat.includes('cloth') || cat.includes('fashion') || cat.includes('dress')) return 'apparel';
+  if (cat.includes('grocery') || cat.includes('spice') || cat.includes('food')) return 'grocery';
+  if (cat.includes('jewel')) return 'jewellery';
+  if (cat.includes('plant')) return 'plant';
+  if (cat.includes('perfume') || cat.includes('fragrance')) return 'perfume';
+  if (cat.includes('utility') || cat.includes('utilities') || cat.includes('clean') || cat.includes('organizer')) return 'utilities';
+
+  // 2. Strict whole-word matching for furniture (to avoid 'bedtime', 'tabletop', etc.)
+  const hasWord = (word) => new RegExp(`\\b${word}\\b`, 'i').test(title);
+
+  if (hasWord('bed') || hasWord('cot') || hasWord('mattress')) return 'furniture_bed';
+  if (title.includes('dining table') || (hasWord('table') && !hasWord('chair'))) return 'furniture_table';
+  if (hasWord('chair') || hasWord('stool') || title.includes('seating')) return 'furniture_chair';
+  if (hasWord('wardrobe') || hasWord('cupboard') || hasWord('almirah') || hasWord('closet')) return 'furniture_wardrobe';
+  if (cat.includes('furniture') || hasWord('sofa') || title.includes('wood') || title.includes('teak')) return 'furniture_general';
+
+  if (hasWord('dress') || hasWord('shirt') || hasWord('kurti') || hasWord('saree') || hasWord('salwar') || hasWord('pant') || hasWord('t-shirt')) return 'apparel';
+  if (hasWord('podi') || hasWord('powder') || hasWord('masala')) return 'grocery';
+  if (hasWord('ring') || hasWord('bangle') || hasWord('chain') || hasWord('necklace')) return 'jewellery';
 
   return 'general';
 }
@@ -282,8 +292,9 @@ export function getInitialVariants(product) {
 export function getVariantTitle(product, selectedSize, selectedColor) {
   if (!product) return '';
   const baseTitle = product.title || product.name || '';
+  const titleLower = baseTitle.toLowerCase();
   const type = getProductCategoryType(product);
-  if (type === 'furniture_bed') {
+  if (type === 'furniture_bed' && titleLower.includes('aakeshya') && (titleLower.includes('bed') || titleLower.includes('cot'))) {
     const isTeak = (selectedColor || '').toLowerCase().includes('teak');
     const is6x6 = (selectedSize || '').toLowerCase().includes('6.25 x 6') || (selectedSize || '').toLowerCase().includes('6 ft');
     const finish = isTeak ? 'Teak' : 'Akeshya';
@@ -339,8 +350,9 @@ export function calculateVariantPrice(product, selectedSize, selectedColor) {
     }
   }
 
-  // Specific Bed Pricing matching exactly the 4 catalog products from https://eacyclic.com/product
-  if (type === 'furniture_bed') {
+  // Specific Bed Pricing matching ONLY Aakeshya Bed if not using explicit variants array
+  const titleLower = (product.title || product.name || '').toLowerCase();
+  if (type === 'furniture_bed' && titleLower.includes('aakeshya') && (titleLower.includes('bed') || titleLower.includes('cot'))) {
     // 1. Aakeshya Upholstered Wooden Bed (6.25 x 5 ft - Akeshya) -> Rs 14,000 (old Rs 16,500)
     // 2. Aakeshya Upholstered Wooden Bed (6.25 x 6 ft - Akeshya) -> Rs 19,000 (old Rs 22,500)
     // 3. Aakeshya Upholstered Wooden Bed (6.25 x 5 ft - Teak) -> Rs 17,000 (old Rs 20,000)

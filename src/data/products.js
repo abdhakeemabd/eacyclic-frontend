@@ -192,9 +192,9 @@ export const products = [
     },
     {
         id: "32",
-        title: 'Aakeshya Upholstered Wooden Bed (6.25 x 5 ft - Akeshya)',
+        title: 'Aakeshya Upholstered Wooden Bed',
         category: 'Furniture',
-        content: '6.25 x 5 ft | Premium Akeshya Wood',
+        content: 'Solid Wood Bed with Cushioned Headboard',
         oldPrice: '16500',
         offer: "15%",
         offerPrice: "14000",
@@ -202,6 +202,12 @@ export const products = [
         gallery: [Bed1],
         sizes: ['6.25 x 5 ft', '6.25 x 6 ft'],
         colors: ['Akeshya Wood', 'Teak Wood'],
+        variants: [
+            { size: '6.25 x 5 ft', color: 'Akeshya Wood', price: 14000, oldPrice: 16500 },
+            { size: '6.25 x 6 ft', color: 'Akeshya Wood', price: 19000, oldPrice: 22500 },
+            { size: '6.25 x 5 ft', color: 'Teak Wood', price: 17000, oldPrice: 20000 },
+            { size: '6.25 x 6 ft', color: 'Teak Wood', price: 24000, oldPrice: 28500 }
+        ],
         freeShipping: true,
         isReturnable: true,
         deliveryPolicy: "Free Delivery in Kerala",
@@ -212,83 +218,8 @@ export const products = [
             "100% Quality Assurance"
         ],
         description: "Aakeshya Upholstered Wooden Bed features a solid wooden frame paired with a softly tufted cushioned headboard for enhanced comfort and elegance. Its smooth rounded edges and sturdy base provide lasting durability while maintaining a warm, modern aesthetic. Designed to complement contemporary and classic interiors alike, this bed offers excellent support and a refined finish, making it ideal for stylish and comfortable bedrooms.",
-        subDescription: "Crafted with precision using high-quality Akeshya wood, this bed combines structural integrity with a luxurious upholstered finish. The headboard is designed for ergonomic support, perfect for reading or relaxing.",
-        subContent: "6.25 x 5 ft Capacity | Upholstered Headboard | Akeshya Wood"
-    },
-    {
-        id: "33",
-        title: 'Aakeshya Upholstered Wooden Bed (6.25 x 6 ft - Akeshya)',
-        category: 'Furniture',
-        content: '6.25 x 6 ft | Premium Akeshya Wood',
-        oldPrice: '22500',
-        offer: "16%",
-        offerPrice: "19000",
-        count: 38,
-        gallery: [Bed1],
-        sizes: ['6.25 x 5 ft', '6.25 x 6 ft'],
-        colors: ['Akeshya Wood', 'Teak Wood'],
-        freeShipping: true,
-        isReturnable: true,
-        deliveryPolicy: "Free Delivery in Kerala",
-        highlights: [
-            "Free Shipping",
-            "Easy Returns",
-            "Easy to Order",
-            "100% Quality Assurance"
-        ],
-        description: "Aakeshya Upholstered Wooden Bed features a solid wooden frame paired with a softly tufted cushioned headboard for enhanced comfort and elegance. Its smooth rounded edges and sturdy base provide lasting durability while maintaining a warm, modern aesthetic. Designed to complement contemporary and classic interiors alike, this bed offers excellent support and a refined finish, making it ideal for stylish and comfortable bedrooms.",
-        subDescription: "The 6.25 x 6 ft version offers extra space for ultimate comfort. Made from durable Akeshya wood with a premium fabric-tufted headboard.",
-        subContent: "6.25 x 6 ft Capacity | Upholstered Headboard | Akeshya Wood"
-    },
-    {
-        id: "34",
-        title: 'Aakeshya Upholstered Wooden Bed (6.25 x 5 ft - Teak)',
-        category: 'Furniture',
-        content: '6.25 x 5 ft | Genuine Teak Wood',
-        oldPrice: '20000',
-        offer: "15%",
-        offerPrice: "17000",
-        count: 25,
-        gallery: [Bed1],
-        sizes: ['6.25 x 5 ft', '6.25 x 6 ft'],
-        colors: ['Akeshya Wood', 'Teak Wood'],
-        freeShipping: true,
-        isReturnable: true,
-        deliveryPolicy: "Free Delivery in Kerala",
-        highlights: [
-            "Free Shipping",
-            "Easy Returns",
-            "Easy to Order",
-            "100% Quality Assurance"
-        ],
-        description: "Aakeshya Upholstered Wooden Bed features a solid wooden frame paired with a softly tufted cushioned headboard for enhanced comfort and elegance. Its smooth rounded edges and sturdy base provide lasting durability while maintaining a warm, modern aesthetic. Designed to complement contemporary and classic interiors alike, this bed offers excellent support and a refined finish, making it ideal for stylish and comfortable bedrooms.",
-        subDescription: "Experience the timeless luxury of genuine Teak wood. This variant offers superior durability and a rich natural grain, complemented by a soft tufted headboard.",
-        subContent: "6.25 x 5 ft Capacity | Upholstered Headboard | Genuine Teak"
-    },
-    {
-        id: "35",
-        title: 'Aakeshya Upholstered Wooden Bed (6.25 x 6 ft - Teak)',
-        category: 'Furniture',
-        content: '6.25 x 6 ft | Genuine Teak Wood',
-        oldPrice: '28500',
-        offer: "16%",
-        offerPrice: "24000",
-        count: 30,
-        gallery: [Bed1],
-        sizes: ['6.25 x 5 ft', '6.25 x 6 ft'],
-        colors: ['Akeshya Wood', 'Teak Wood'],
-        freeShipping: true,
-        isReturnable: true,
-        deliveryPolicy: "Free Delivery in Kerala",
-        highlights: [
-            "Free Shipping",
-            "Easy Returns",
-            "Easy to Order",
-            "100% Quality Assurance"
-        ],
-        description: "Aakeshya Upholstered Wooden Bed features a solid wooden frame paired with a softly tufted cushioned headboard for enhanced comfort and elegance. Its smooth rounded edges and sturdy base provide lasting durability while maintaining a warm, modern aesthetic. Designed to complement contemporary and classic interiors alike, this bed offers excellent support and a refined finish, making it ideal for stylish and comfortable bedrooms.",
-        subDescription: "Our premium offering: Large size 6.25 x 6 ft bed crafted from the finest Teak wood. Unmatched strength and elegance with a plush, comfortable headboard.",
-        subContent: "6.25 x 6 ft Capacity | Upholstered Headboard | Genuine Teak"
+        subDescription: "Crafted with precision using high-quality Akeshya and Teak wood, this bed combines structural integrity with a luxurious upholstered finish. The headboard is designed for ergonomic support, perfect for reading or relaxing.",
+        subContent: "Solid Wood Frame | Tufted Upholstered Headboard | Available in 2 Sizes & 2 Finishes"
     },
     {
         id: "36",
