@@ -163,25 +163,25 @@ export default function RelatedProduct() {
 
                         {/* Price & Action Row */}
                         <div>
-                          <div className="flex items-center justify-between mb-2.5">
-                            <div className="flex items-baseline gap-1.5">
-                              <span className="text-base sm:text-lg font-bold text-gray-900">
-                                ₹{price}
+                          <div className="flex items-center justify-between gap-1.5 mb-2.5">
+                            <div className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5 min-w-0 flex-1">
+                              <span className="text-sm sm:text-base md:text-lg font-bold text-gray-900 whitespace-nowrap">
+                                ₹{Math.round(Number(price) || 0).toLocaleString('en-IN')}
                               </span>
                               {oldPrice && (
-                                <span className="text-xs text-gray-400 line-through">
-                                  ₹{oldPrice}
+                                <span className="text-[11px] sm:text-xs text-gray-400 line-through whitespace-nowrap">
+                                  ₹{Math.round(Number(oldPrice) || 0).toLocaleString('en-IN')}
                                 </span>
                               )}
                             </div>
 
                             <button
                               onClick={(e) => handleOpenQuickView(e, item)}
-                              className="w-8 h-8 rounded-lg border border-gray-200 hover:border-[#134e35] hover:bg-[#134e35] hover:text-white flex items-center justify-center text-gray-700 transition-all active:scale-95 shadow-2xs cursor-pointer"
+                              className="shrink-0 w-7 h-7 sm:w-8 sm:h-8 rounded-lg border border-gray-200 hover:border-[#134e35] hover:bg-[#134e35] hover:text-white flex items-center justify-center text-gray-700 transition-all active:scale-95 shadow-2xs cursor-pointer"
                               title="Quick View"
                               aria-label={`Quick view ${title}`}
                             >
-                              <Plus className="w-4 h-4" />
+                              <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                             </button>
                           </div>
 

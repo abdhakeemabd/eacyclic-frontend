@@ -53,6 +53,7 @@ export default function QuickViewModal({ product, isOpen, onClose }) {
   const currentOffer = pricing.offer;
 
   const currentTitle = getVariantTitle(product, selectedSize, selectedColor);
+  const title = currentTitle || product?.name || product?.title || 'Product';
   const category = (product.category || 'Collection').toUpperCase();
 
   const handleAdd = async () => {
@@ -115,20 +116,20 @@ export default function QuickViewModal({ product, isOpen, onClose }) {
       />
 
       {/* Modal Card */}
-      <div className="relative bg-white rounded-3xl shadow-2xl max-w-3xl w-full overflow-hidden z-10 border border-gray-100 flex flex-col md:flex-row my-auto max-h-[92vh]">
+      <div className="relative bg-white rounded-3xl shadow-2xl max-w-3xl w-full overflow-y-auto md:overflow-hidden z-10 border border-gray-100 flex flex-col md:flex-row my-auto max-h-[90vh]">
         
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 z-20 p-2.5 text-gray-500 hover:text-gray-900 bg-white/90 backdrop-blur-md rounded-full shadow-xs hover:bg-white transition-all cursor-pointer"
+          className="absolute top-3 right-3 sm:top-4 sm:right-4 z-30 p-2 sm:p-2.5 text-gray-500 hover:text-gray-900 bg-white/90 backdrop-blur-md rounded-full shadow-xs hover:bg-white transition-all cursor-pointer border border-gray-100"
           aria-label="Close dialog"
         >
-          <X className="w-5 h-5" />
+          <X className="w-4 h-4 sm:w-5 sm:h-5" />
         </button>
 
         {/* Left Side: Product Showcase Gallery */}
-        <div className="md:w-5/12 bg-[#f6f7f6] p-5 sm:p-6 flex flex-col justify-between items-center border-b md:border-b-0 md:border-r border-gray-100">
-          <div className="w-full aspect-square relative rounded-2xl overflow-hidden bg-white/80 p-4 shadow-xs flex items-center justify-center">
+        <div className="md:w-5/12 bg-[#f6f7f6] p-4 sm:p-5 md:p-6 flex flex-col justify-between items-center border-b md:border-b-0 md:border-r border-gray-100 shrink-0">
+          <div className="w-full h-48 sm:h-64 md:h-auto md:aspect-square relative rounded-2xl overflow-hidden bg-white/80 p-3 sm:p-4 shadow-xs flex items-center justify-center">
             {currentOffer && (
               <span className="absolute top-3 left-3 z-10 text-[10px] font-bold text-white bg-[#134e35] px-2.5 py-1 rounded-full shadow-2xs">
                 {currentOffer}
@@ -143,12 +144,12 @@ export default function QuickViewModal({ product, isOpen, onClose }) {
 
           {/* Gallery Thumbnails */}
           {gallery.length > 1 && (
-            <div className="flex items-center gap-2 mt-4 overflow-x-auto w-full justify-center py-1">
+            <div className="flex items-center gap-2 mt-3 sm:mt-4 overflow-x-auto w-full justify-center py-1">
               {gallery.map((img, idx) => (
                 <button
                   key={idx}
                   onClick={() => setActiveImageIndex(idx)}
-                  className={`w-12 h-12 rounded-lg bg-white p-1 border-2 transition-all cursor-pointer overflow-hidden ${
+                  className={`w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-white p-1 border-2 transition-all cursor-pointer overflow-hidden shrink-0 ${
                     activeImageIndex === idx ? 'border-[#134e35] shadow-xs' : 'border-transparent hover:border-gray-200'
                   }`}
                 >
@@ -161,7 +162,7 @@ export default function QuickViewModal({ product, isOpen, onClose }) {
           {/* View Full Page Link */}
           <button
             onClick={handleGoToDetails}
-            className="mt-4 inline-flex items-center gap-1.5 text-xs font-semibold text-[#134e35] hover:text-[#0b2b1d] hover:underline cursor-pointer"
+            className="mt-3 sm:mt-4 inline-flex items-center gap-1.5 text-xs font-semibold text-[#134e35] hover:text-[#0b2b1d] hover:underline cursor-pointer"
           >
             <span>View Full Product Page</span>
             <ExternalLink className="w-3.5 h-3.5" />
@@ -169,20 +170,21 @@ export default function QuickViewModal({ product, isOpen, onClose }) {
         </div>
 
         {/* Right Side: Options & Variant Selectors */}
-        <div className="md:w-7/12 p-6 sm:p-8 flex flex-col justify-between overflow-y-auto">
+        <div className="md:w-7/12 p-4 sm:p-6 md:p-8 flex flex-col justify-between md:overflow-y-auto">
           <div className="space-y-4">
             {/* Header info */}
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
+            <div className="pr-8 sm:pr-10 md:pr-12">
+              <div className="flex items-center gap-2.5 mb-1.5 flex-wrap">
                 <span className="text-[10px] font-bold text-gray-400 tracking-widest uppercase">
                   {category}
                 </span>
-                <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200/60">
-                  ● In Stock
+                <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200/60 inline-flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  In Stock
                 </span>
               </div>
               
-              <h2 className="text-lg sm:text-xl font-bold text-gray-900 leading-snug line-clamp-2">
+              <h2 className="text-base sm:text-lg md:text-xl font-bold text-gray-900 leading-snug line-clamp-2">
                 {currentTitle}
               </h2>
 
@@ -195,26 +197,38 @@ export default function QuickViewModal({ product, isOpen, onClose }) {
               )}
             </div>
 
-            {/* Price section (Dynamic Real-time Flipkart & Amazon updates) */}
-            <div className="flex items-baseline gap-3 pb-3 border-b border-gray-100">
-              <span className="text-2xl sm:text-3xl font-extrabold text-gray-900 font-sans">
-                ₹{currentPrice.toLocaleString('en-IN')}
-              </span>
-              {currentOldPrice && (
-                <span className="text-sm text-gray-400 line-through">
-                  ₹{currentOldPrice.toLocaleString('en-IN')}
+            {/* Price section (Dynamic Real-time Flipkart & Amazon updates - Multi-line clean layout) */}
+            <div className="space-y-2 pb-3.5 border-b border-gray-100">
+              {/* Line 1: Main Price & Discount Badges */}
+              <div className="flex items-baseline gap-2.5 flex-wrap">
+                <span className="text-2xl sm:text-3xl font-extrabold text-gray-900 font-sans tracking-tight">
+                  ₹{currentPrice.toLocaleString('en-IN')}
                 </span>
-              )}
-              {currentOffer && (
-                <span className="text-xs font-bold text-emerald-800 bg-emerald-100/70 px-2.5 py-0.5 rounded-md">
-                  {currentOffer}
-                </span>
-              )}
-              {product.freeShipping && (
-                <span className="text-[11px] font-medium text-[#134e35] bg-[#eaf4ee] px-2 py-0.5 rounded-md ml-auto">
-                  🚚 Free Delivery
-                </span>
-              )}
+                {currentOldPrice && (
+                  <span className="text-sm sm:text-base text-gray-400 line-through">
+                    ₹{currentOldPrice.toLocaleString('en-IN')}
+                  </span>
+                )}
+                {currentOffer && (
+                  <span className="text-xs font-bold text-emerald-800 bg-emerald-100/80 px-2.5 py-0.5 rounded-md">
+                    {currentOffer}
+                  </span>
+                )}
+              </div>
+
+              {/* Line 2: Delivery & Savings Highlights */}
+              <div className="flex items-center gap-2 flex-wrap">
+                {product.freeShipping && (
+                  <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#134e35] bg-[#eaf4ee] px-2.5 py-1 rounded-md">
+                    <span>🚚</span> Free Delivery
+                  </span>
+                )}
+                {currentOldPrice && currentOldPrice > currentPrice && (
+                  <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md">
+                    Save ₹{(currentOldPrice - currentPrice).toLocaleString('en-IN')}
+                  </span>
+                )}
+              </div>
             </div>
 
             {/* Size / Dimension Variants (Flipkart / Amazon Style) */}

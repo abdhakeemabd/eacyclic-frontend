@@ -245,26 +245,38 @@ export default function ProductDetails() {
                 )}
               </div>
 
-              {/* Price & Discounts (Flipkart & Amazon dynamic updates) */}
-              <div className="flex items-baseline gap-3 border-b border-gray-100 pb-5">
-                <span className="text-3xl font-extrabold text-gray-900 font-sans">
-                  ₹{currentPrice.toLocaleString('en-IN')}
-                </span>
-                {currentOldPrice && (
-                  <span className="text-base text-gray-400 line-through">
-                    ₹{currentOldPrice.toLocaleString('en-IN')}
+              {/* Price & Discounts (Flipkart & Amazon dynamic updates - Multi-line clean layout) */}
+              <div className="space-y-2 border-b border-gray-100 pb-5">
+                {/* Line 1: Main Price & Discount Badges */}
+                <div className="flex items-baseline gap-3 flex-wrap">
+                  <span className="text-3xl font-extrabold text-gray-900 font-sans tracking-tight">
+                    ₹{currentPrice.toLocaleString('en-IN')}
                   </span>
-                )}
-                {currentOffer && (
-                  <span className="text-xs font-bold text-emerald-800 bg-emerald-100/70 px-2.5 py-1 rounded-full">
-                    {currentOffer}
-                  </span>
-                )}
-                {product.freeShipping && (
-                  <span className="text-xs font-semibold text-[#134e35] bg-[#eaf4ee] px-2.5 py-1 rounded-md ml-auto">
-                    🚚 Free Delivery
-                  </span>
-                )}
+                  {currentOldPrice && (
+                    <span className="text-base text-gray-400 line-through">
+                      ₹{currentOldPrice.toLocaleString('en-IN')}
+                    </span>
+                  )}
+                  {currentOffer && (
+                    <span className="text-xs font-bold text-emerald-800 bg-emerald-100/80 px-2.5 py-1 rounded-full">
+                      {currentOffer}
+                    </span>
+                  )}
+                </div>
+
+                {/* Line 2: Delivery & Savings Info */}
+                <div className="flex items-center gap-2.5 flex-wrap">
+                  {product.freeShipping && (
+                    <span className="text-xs font-semibold text-[#134e35] bg-[#eaf4ee] px-2.5 py-1 rounded-md">
+                      🚚 Free Delivery
+                    </span>
+                  )}
+                  {currentOldPrice && currentOldPrice > currentPrice && (
+                    <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-md">
+                      You Save ₹{(currentOldPrice - currentPrice).toLocaleString('en-IN')}
+                    </span>
+                  )}
+                </div>
               </div>
 
               {/* Summary Description */}
@@ -379,11 +391,11 @@ export default function ProductDetails() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                <div className="grid grid-cols-2 gap-2.5 sm:gap-3 pt-2">
                   {/* Add to Bag Button */}
                   <button
                     onClick={handleAddToCart}
-                    className={`py-3.5 px-6 rounded-full font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all duration-200 cursor-pointer shadow-xs ${
+                    className={`py-3 sm:py-3.5 px-3 sm:px-6 rounded-full font-semibold text-xs sm:text-sm flex items-center justify-center gap-1.5 sm:gap-2 transition-all duration-200 cursor-pointer shadow-xs whitespace-nowrap ${
                       isAdded
                         ? 'bg-emerald-700 text-white'
                         : 'bg-[#134e35] hover:bg-[#0e3a27] text-white active:scale-95'
@@ -391,12 +403,12 @@ export default function ProductDetails() {
                   >
                     {isAdded ? (
                       <>
-                        <Check className="w-4 h-4" />
+                        <Check className="w-4 h-4 shrink-0" />
                         <span>Added to bag!</span>
                       </>
                     ) : (
                       <>
-                        <ShoppingBag className="w-4 h-4" />
+                        <ShoppingBag className="w-4 h-4 shrink-0" />
                         <span>Add to bag</span>
                       </>
                     )}
@@ -405,10 +417,10 @@ export default function ProductDetails() {
                   {/* Buy Now Button */}
                   <button
                     onClick={handleBuyNow}
-                    className="py-3.5 px-6 rounded-full font-semibold text-xs sm:text-sm bg-[#14261c] hover:bg-black text-white flex items-center justify-center gap-2 transition-all duration-200 cursor-pointer shadow-xs active:scale-95"
+                    className="py-3 sm:py-3.5 px-3 sm:px-6 rounded-full font-semibold text-xs sm:text-sm bg-[#14261c] hover:bg-black text-white flex items-center justify-center gap-1.5 sm:gap-2 transition-all duration-200 cursor-pointer shadow-xs active:scale-95 whitespace-nowrap"
                   >
                     <span>Buy Now</span>
-                    <ArrowRight className="w-4 h-4" />
+                    <ArrowRight className="w-4 h-4 shrink-0" />
                   </button>
                 </div>
               </div>
