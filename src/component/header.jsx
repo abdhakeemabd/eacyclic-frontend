@@ -102,7 +102,7 @@ export default function Header() {
 
           {/* Brand Logo */}
           <Link to="/" className="shrink-0 flex items-center" aria-label="Eacyclic Home">
-            <img src={Logo} alt="Eacyclic" className="h-7 sm:h-9 object-contain max-w-[140px]" />
+            <img src={Logo} alt="Eacyclic" className="h-12 object-contain max-w-[140px]" />
           </Link>
 
           {/* Desktop Navigation Links */}
