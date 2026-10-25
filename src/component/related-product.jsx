@@ -2,16 +2,18 @@ import React, { useState } from 'react';
 import Slider from "react-slick";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
-import { Link, useParams } from 'react-router-dom';
-import { Heart, Plus, ArrowRight } from 'lucide-react';
+import { Link, useParams, useNavigate } from 'react-router-dom';
+import { Heart, Plus, ArrowRight, Truck } from 'lucide-react';
 import { useProducts } from '../context/ProductContext';
 import { useCart } from '../context/CartContext';
+import { getProductVariants } from '../utils/variantUtils';
 import ImageLoader from './image-loader';
 import ProductSkeleton from './product-skeleton';
 import QuickViewModal from './QuickViewModal';
 
 export default function RelatedProduct() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const { products, loading } = useProducts();
   const { toggleLike, isLiked } = useCart();
   const [selectedProduct, setSelectedProduct] = useState(null);
@@ -33,6 +35,18 @@ export default function RelatedProduct() {
     e.stopPropagation();
     setSelectedProduct(item);
     setIsModalOpen(true);
+  };
+
+  const handleBuyNow = (e, item) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const { sizes, colors } = getProductVariants(item);
+    if ((sizes && sizes.length > 0) || (colors && colors.length > 0)) {
+      setSelectedProduct(item);
+      setIsModalOpen(true);
+      return;
+    }
+    navigate('/checkout', { state: { product: item, quantity: 1 } });
   };
 
   const settings = {
@@ -142,6 +156,7 @@ export default function RelatedProduct() {
                       {/* Content Details */}
                       <div className="p-4 sm:p-5 flex flex-col flex-1 justify-between">
                         <div>
+                          {/* Top Category */}
                           <div className="text-[10px] font-semibold text-gray-400 tracking-wider uppercase mb-1 truncate">
                             {category}
                           </div>
@@ -161,47 +176,53 @@ export default function RelatedProduct() {
                           )}
                         </div>
 
-                        {/* Price & Action Row */}
-                        <div>
-                          <div className="flex items-center justify-between gap-1.5 mb-2.5">
-                            <div className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5 min-w-0 flex-1">
-                              <span className="text-sm sm:text-base md:text-lg font-bold text-gray-900 whitespace-nowrap">
-                                ₹{Math.round(Number(price) || 0).toLocaleString('en-IN')}
-                              </span>
-                              {oldPrice && (
-                                <span className="text-[11px] sm:text-xs text-gray-400 line-through whitespace-nowrap">
-                                  ₹{Math.round(Number(oldPrice) || 0).toLocaleString('en-IN')}
-                                </span>
-                              )}
-                            </div>
-
-                            <button
-                              onClick={(e) => handleOpenQuickView(e, item)}
-                              className="shrink-0 w-7 h-7 sm:w-8 sm:h-8 rounded-lg border border-gray-200 hover:border-[#134e35] hover:bg-[#134e35] hover:text-white flex items-center justify-center text-gray-700 transition-all active:scale-95 shadow-2xs cursor-pointer"
-                              title="Quick View"
-                              aria-label={`Quick view ${title}`}
-                            >
-                              <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                            </button>
-                          </div>
-
-                          <div className="flex items-center justify-between pt-2.5 border-t border-gray-100">
-                            {item.freeShipping ? (
-                              <span className="text-[11px] text-[#134e35] font-medium">
-                                🚚 Free delivery
-                              </span>
-                            ) : (
-                              <span className="text-[11px] text-gray-400 font-medium">
-                                📦 Standard delivery
+                        {/* Price, Free Delivery & Actions */}
+                        <div className="mt-auto pt-2 border-t border-gray-100">
+                          {/* Price Row */}
+                          <div className="flex items-baseline gap-1.5 flex-wrap">
+                            <span className="text-sm sm:text-base md:text-lg font-black text-gray-900 tracking-tight whitespace-nowrap">
+                              ₹{Math.round(Number(price) || 0).toLocaleString('en-IN')}
+                            </span>
+                            {oldPrice && (
+                              <span className="text-[11px] sm:text-xs text-gray-400 line-through whitespace-nowrap">
+                                ₹{Math.round(Number(oldPrice) || 0).toLocaleString('en-IN')}
                               </span>
                             )}
-                            <Link
-                              to={`/product-view/${item.id}`}
-                              state={{ product: item }}
-                              className="text-xs font-semibold text-[#134e35] hover:text-[#0b2b1d] px-1 transition-colors uppercase tracking-wider"
+                          </div>
+
+                          {/* Free Delivery on ONE LINE below price */}
+                          <div className="mt-1.5 mb-2.5 flex items-center">
+                            {item.freeShipping !== false ? (
+                              <span className="inline-flex items-center gap-1.5 text-[10px] sm:text-[11px] font-semibold text-[#134e35] bg-[#edf6f1] px-2 py-0.5 rounded-md whitespace-nowrap">
+                                <Truck className="w-3 h-3 text-[#134e35] shrink-0" />
+                                <span>Free delivery</span>
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1.5 text-[10px] sm:text-[11px] font-medium text-gray-500 bg-gray-100 px-2 py-0.5 rounded-md whitespace-nowrap">
+                                <Truck className="w-3 h-3 text-gray-400 shrink-0" />
+                                <span>Standard delivery</span>
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Actions on ONE line: Add to Cart (+) & Buy Now */}
+                          <div className="flex items-center gap-1.5 sm:gap-2">
+                            <button
+                              onClick={(e) => handleOpenQuickView(e, item)}
+                              className="shrink-0 w-8 h-8 rounded-lg border border-gray-200 hover:border-[#134e35] hover:bg-[#edf6f1] hover:text-[#134e35] flex items-center justify-center text-gray-700 transition-all duration-200 active:scale-95 shadow-2xs cursor-pointer z-10"
+                              title="Add to Cart / Select Options"
+                              aria-label={`Add ${title} to Cart`}
                             >
-                              View →
-                            </Link>
+                              <Plus className="w-4 h-4" />
+                            </button>
+
+                            <button
+                              onClick={(e) => handleBuyNow(e, item)}
+                              className="flex-1 h-8 px-2.5 rounded-lg bg-[#134e35] hover:bg-[#0c3322] active:bg-[#082216] text-white text-xs font-bold flex items-center justify-center gap-1 shadow-xs hover:shadow-md transition-all duration-200 active:scale-95 cursor-pointer z-10 whitespace-nowrap group/buy"
+                            >
+                              <span>Buy Now</span>
+                              <ArrowRight className="w-3.5 h-3.5 shrink-0 transition-transform duration-200 group-hover/buy:translate-x-0.5" />
+                            </button>
                           </div>
                         </div>
 
