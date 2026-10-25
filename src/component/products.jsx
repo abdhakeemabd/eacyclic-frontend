@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { Search, Heart, Plus, Sparkles, X } from 'lucide-react';
+import { Search, Heart, Plus, Sparkles, X, Truck, ArrowRight } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useProducts } from '../context/ProductContext';
+import { getProductVariants } from '../utils/variantUtils';
 import ImageLoader from './image-loader';
 import ProductSkeleton from './product-skeleton';
 import QuickViewModal from './QuickViewModal';
@@ -79,6 +80,12 @@ export default function Products() {
   const handleBuyNow = (e, product) => {
     e.preventDefault();
     e.stopPropagation();
+    const { sizes, colors } = getProductVariants(product);
+    if ((sizes && sizes.length > 0) || (colors && colors.length > 0)) {
+      setSelectedProduct(product);
+      setIsModalOpen(true);
+      return;
+    }
     navigate('/checkout', { state: { product, quantity: 1 } });
   };
 
@@ -219,6 +226,7 @@ export default function Products() {
                     {/* Content Details */}
                     <div className="p-3 sm:p-4 md:p-5 flex flex-col flex-1 justify-between">
                       <div>
+                        {/* Top Category */}
                         <div className="text-[10px] font-semibold text-gray-400 tracking-wider uppercase mb-1 truncate">
                           {product.category || 'STORE PICK'}
                         </div>
@@ -231,45 +239,52 @@ export default function Products() {
                         </h3>
                       </div>
 
-                      {/* Price, Action & Buy */}
-                      <div>
-                        <div className="flex items-center justify-between gap-1.5 mb-2.5">
-                          <div className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5 min-w-0 flex-1">
-                            <span className="text-sm sm:text-base md:text-lg font-bold text-gray-900 whitespace-nowrap">
-                              ₹{Math.round(Number(price) || 0).toLocaleString('en-IN')}
-                            </span>
-                            {oldPrice && (
-                              <span className="text-[11px] sm:text-xs text-gray-400 line-through whitespace-nowrap">
-                                ₹{Math.round(Number(oldPrice) || 0).toLocaleString('en-IN')}
-                              </span>
-                            )}
-                          </div>
-
-                          <button
-                            onClick={(e) => handleOpenAddToCartModal(e, product)}
-                            className="shrink-0 w-7 h-7 sm:w-8 sm:h-8 rounded-lg border border-gray-200 hover:border-[#134e35] hover:bg-[#134e35] hover:text-white flex items-center justify-center text-gray-700 transition-all active:scale-95 shadow-2xs cursor-pointer z-10"
-                            title="Add to Cart (Choose Variants)"
-                            aria-label={`Add ${title} to Cart`}
-                          >
-                            <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                          </button>
-                        </div>
-
-                        <div className="flex items-center justify-between pt-2.5 border-t border-gray-100">
-                          {product.freeShipping ? (
-                            <span className="text-[11px] text-[#134e35] font-medium">
-                              🚚 Free delivery
-                            </span>
-                          ) : (
-                            <span className="text-[11px] text-gray-400 font-medium">
-                              📦 Standard delivery
+                      {/* Price, Free Delivery & Actions */}
+                      <div className="mt-auto pt-2 border-t border-gray-100">
+                        {/* Price Row */}
+                        <div className="flex items-baseline gap-1.5 flex-wrap">
+                          <span className="text-sm sm:text-base md:text-lg font-black text-gray-900 tracking-tight whitespace-nowrap">
+                            ₹{Math.round(Number(price) || 0).toLocaleString('en-IN')}
+                          </span>
+                          {oldPrice && (
+                            <span className="text-[11px] sm:text-xs text-gray-400 line-through whitespace-nowrap">
+                              ₹{Math.round(Number(oldPrice) || 0).toLocaleString('en-IN')}
                             </span>
                           )}
+                        </div>
+
+                        {/* Free Delivery on ONE LINE below price */}
+                        <div className="mt-1.5 mb-2.5 flex items-center">
+                          {product.freeShipping !== false ? (
+                            <span className="inline-flex items-center gap-1.5 text-[10px] sm:text-[11px] font-semibold text-[#134e35] bg-[#edf6f1] px-2 py-0.5 rounded-md whitespace-nowrap">
+                              <Truck className="w-3 h-3 text-[#134e35] shrink-0" />
+                              <span>Free delivery</span>
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1.5 text-[10px] sm:text-[11px] font-medium text-gray-500 bg-gray-100 px-2 py-0.5 rounded-md whitespace-nowrap">
+                              <Truck className="w-3 h-3 text-gray-400 shrink-0" />
+                              <span>Standard delivery</span>
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Actions on ONE line: Add to Cart (+) & Buy Now */}
+                        <div className="flex items-center gap-1.5 sm:gap-2">
+                          <button
+                            onClick={(e) => handleOpenAddToCartModal(e, product)}
+                            className="shrink-0 w-8 h-8 rounded-lg border border-gray-200 hover:border-[#134e35] hover:bg-[#edf6f1] hover:text-[#134e35] flex items-center justify-center text-gray-700 transition-all duration-200 active:scale-95 shadow-2xs cursor-pointer z-10"
+                            title="Add to Cart / Select Options"
+                            aria-label={`Add ${title} to Cart`}
+                          >
+                            <Plus className="w-4 h-4" />
+                          </button>
+
                           <button
                             onClick={(e) => handleBuyNow(e, product)}
-                            className="text-xs font-semibold text-[#134e35] hover:text-[#0b2b1d] px-2 py-1 rounded transition-colors uppercase tracking-wider cursor-pointer z-10"
+                            className="flex-1 h-8 px-2.5 rounded-lg bg-[#134e35] hover:bg-[#0c3322] active:bg-[#082216] text-white text-xs font-bold flex items-center justify-center gap-1 shadow-xs hover:shadow-md transition-all duration-200 active:scale-95 cursor-pointer z-10 whitespace-nowrap group/buy"
                           >
-                            Buy →
+                            <span>Buy Now</span>
+                            <ArrowRight className="w-3.5 h-3.5 shrink-0 transition-transform duration-200 group-hover/buy:translate-x-0.5" />
                           </button>
                         </div>
                       </div>
