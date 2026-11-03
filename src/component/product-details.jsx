@@ -72,7 +72,7 @@ export default function ProductDetails() {
 
   const currentImage = gallery[activeImage] || product.image_url || product.image;
   const price = product.offerPrice || product.price || 0;
-  const oldPrice = product.oldPrice || (product.discount > 0 ? Math.round((parseFloat(price) * 100) / (100 - parseFloat(product.discount))) : null);
+  const oldPrice = product.oldPrice || product.old_price || (product.discount > 0 ? Math.round((parseFloat(price) * 100) / (100 - parseFloat(product.discount))) : (price > 0 ? Math.round(parseFloat(price) * 1.2) : null));
   const title = product.name || product.title || 'Product';
   const category = product.category || 'Store Collection';
   const liked = isLiked(product.id);
@@ -252,7 +252,7 @@ export default function ProductDetails() {
                   <span className="text-3xl font-extrabold text-gray-900 font-sans tracking-tight">
                     ₹{currentPrice.toLocaleString('en-IN')}
                   </span>
-                  {currentOldPrice && (
+                  {currentOldPrice && currentOldPrice > currentPrice && (
                     <span className="text-base text-gray-400 line-through">
                       ₹{currentOldPrice.toLocaleString('en-IN')}
                     </span>

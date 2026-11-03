@@ -11,14 +11,17 @@ const cleanStr = (s) => (s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
 const normalizedInitialProducts = initialProducts.map((p, idx) => {
   const img = (p.gallery && p.gallery[0]) || p.image_url || p.image || '';
   const gal = (p.gallery && p.gallery.length > 0) ? p.gallery : (img ? [img] : []);
+  const baseP = parseFloat(p.offerPrice || p.price || 0);
+  const oldP = p.oldPrice ? parseFloat(p.oldPrice) : (p.discount > 0 ? Math.round((baseP * 100) / (100 - parseFloat(p.discount))) : (baseP > 0 ? Math.round(baseP * 1.2) : null));
   return {
     ...p,
     id: p.id || (idx + 1),
     name: p.name || p.title || 'Product',
     title: p.title || p.name || 'Product',
-    price: p.offerPrice || p.price || 0,
-    offerPrice: p.offerPrice || p.price || 0,
-    oldPrice: p.oldPrice || null,
+    price: baseP,
+    offerPrice: baseP,
+    oldPrice: oldP,
+    old_price: oldP,
     image: img,
     image_url: img,
     gallery: gal,
@@ -70,6 +73,16 @@ export const ProductProvider = ({ children }) => {
       const resolvedImage = isExternalUpload ? fp.image_url : (localImage || fp.image_url || '');
       const resolvedGallery = localGallery.length > 0 ? localGallery : (fp.gallery && fp.gallery.length > 0 ? fp.gallery : (resolvedImage ? [resolvedImage] : []));
 
+      const resolvedOldPrice = fp.old_price !== undefined && fp.old_price !== null 
+        ? parseFloat(fp.old_price) 
+        : (fp.oldPrice !== undefined && fp.oldPrice !== null 
+          ? parseFloat(fp.oldPrice) 
+          : (matched?.oldPrice 
+            ? parseFloat(matched.oldPrice) 
+            : (fp.discount > 0 
+              ? Math.round((parseFloat(fp.price) * 100) / (100 - parseFloat(fp.discount))) 
+              : (fp.price ? Math.round(parseFloat(fp.price) * 1.2) : null))));
+
       return {
         ...matched,
         ...fp,
@@ -77,7 +90,8 @@ export const ProductProvider = ({ children }) => {
         name: fp.name || fp.title || matched?.name,
         price: fp.price || matched?.offerPrice || matched?.price,
         offerPrice: fp.price || matched?.offerPrice || matched?.price,
-        oldPrice: fp.oldPrice || matched?.oldPrice,
+        oldPrice: resolvedOldPrice,
+        old_price: resolvedOldPrice,
         image_url: resolvedImage,
         image: resolvedImage,
         gallery: resolvedGallery,
@@ -130,14 +144,26 @@ export const ProductProvider = ({ children }) => {
   const addProduct = async (productData) => {
     try {
       setLoading(true);
+      const rawPrice = parseFloat(productData.price) || 0;
+      const rawOld = productData.oldPrice !== undefined ? productData.oldPrice : productData.old_price;
+      const parsedOld = rawOld !== null && rawOld !== undefined && rawOld !== '' 
+        ? parseFloat(rawOld) 
+        : (productData.discount > 0 
+          ? Math.round((rawPrice * 100) / (100 - parseFloat(productData.discount))) 
+          : (rawPrice > 0 ? Math.round(rawPrice * 1.2) : null));
+      const parsedDiscount = parseFloat(productData.discount) || (parsedOld && parsedOld > rawPrice ? Math.round(((parsedOld - rawPrice) / parsedOld) * 100) : 0);
+
       const payload = {
         name: productData.name || productData.title,
         description: productData.description || '',
-        price: parseFloat(productData.price) || 0,
+        price: rawPrice,
+        old_price: parsedOld,
+        oldPrice: parsedOld,
         category: productData.category || 'Uncategorized',
         stock: parseInt(productData.stock) || 0,
         image_url: productData.image || productData.image_url || '',
-        discount: parseFloat(productData.discount) || 0,
+        discount: parsedDiscount,
+        isActive: productData.isActive !== false,
         freeShipping: productData.freeShipping !== undefined ? productData.freeShipping : true,
         gallery: productData.gallery || [],
         sizes: productData.sizes || [],
@@ -146,8 +172,14 @@ export const ProductProvider = ({ children }) => {
       };
       
       const response = await productsAPI.create(payload);
-      setProducts(prev => getSortedProducts([response.data, ...prev]));
-      return { success: true, data: response.data };
+      const createdItem = {
+        ...response.data,
+        oldPrice: response.data.oldPrice || response.data.old_price || parsedOld,
+        old_price: response.data.old_price || response.data.oldPrice || parsedOld,
+        discount: response.data.discount || parsedDiscount
+      };
+      setProducts(prev => getSortedProducts([createdItem, ...prev]));
+      return { success: true, data: createdItem };
     } catch (err) {
       console.error('Error adding product:', err);
       setError(err.message);
@@ -164,6 +196,12 @@ export const ProductProvider = ({ children }) => {
       if (productData.name !== undefined || productData.title !== undefined) payload.name = productData.name || productData.title;
       if (productData.description !== undefined) payload.description = productData.description;
       if (productData.price !== undefined) payload.price = parseFloat(productData.price) || 0;
+      if (productData.oldPrice !== undefined || productData.old_price !== undefined) {
+        const rawOld = productData.oldPrice !== undefined ? productData.oldPrice : productData.old_price;
+        const val = rawOld !== null && rawOld !== '' ? parseFloat(rawOld) : null;
+        payload.old_price = val;
+        payload.oldPrice = val;
+      }
       if (productData.category !== undefined) payload.category = productData.category;
       if (productData.stock !== undefined) payload.stock = parseInt(productData.stock) || 0;
       if (productData.image !== undefined || productData.image_url !== undefined) payload.image_url = productData.image || productData.image_url;
@@ -176,10 +214,15 @@ export const ProductProvider = ({ children }) => {
       if (productData.variants !== undefined) payload.variants = productData.variants;
       
       const response = await productsAPI.update(productId, payload);
+      const updatedItem = {
+        ...response.data,
+        oldPrice: response.data.oldPrice || response.data.old_price || payload.old_price,
+        old_price: response.data.old_price || response.data.oldPrice || payload.old_price
+      };
       setProducts(prev => 
-        getSortedProducts(prev.map(p => p.id === productId ? response.data : p))
+        getSortedProducts(prev.map(p => p.id === productId ? { ...p, ...updatedItem } : p))
       );
-      return { success: true, data: response.data };
+      return { success: true, data: updatedItem };
     } catch (err) {
       console.error('Error updating product:', err);
       setError(err.message);

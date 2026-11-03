@@ -172,9 +172,9 @@ function Cart() {
                                     </span>
                                   </div>
                                 </div>
-                                {item.oldPrice && (
+                                {(item.oldPrice || item.old_price || item.product_details?.oldPrice || item.product_details?.old_price) && (
                                   <div className="text-xs text-gray-500 mt-1">
-                                    M.R.P.: <span className="line-through">₹{(item.oldPrice * item.quantity).toFixed(2)}</span>
+                                    M.R.P.: <span className="line-through">₹{(((parseFloat(item.oldPrice || item.old_price || item.product_details?.oldPrice || item.product_details?.old_price) || 0) * item.quantity)).toFixed(2)}</span>
                                   </div>
                                 )}
                                 <div className="text-[10px] text-gray-400 mt-1">

@@ -228,10 +228,17 @@ function AdminProducts() {
     e.preventDefault();
     setIsSubmitting(true);
     try {
+      const baseSellingPrice = parseFloat(formData.price) || 0;
+      const baseMrpPrice = formData.oldPrice ? parseFloat(formData.oldPrice) : (baseSellingPrice > 0 ? Math.round(baseSellingPrice * 1.2) : 0);
+      const computedDiscount = parseFloat(formData.discount) || (baseMrpPrice > baseSellingPrice ? Math.round(((baseMrpPrice - baseSellingPrice) / baseMrpPrice) * 100) : 0);
+
       const payload = {
         ...formData,
         name: formData.title,
-        price: parseFloat(formData.price) || 0,
+        price: baseSellingPrice,
+        oldPrice: baseMrpPrice,
+        old_price: baseMrpPrice,
+        discount: computedDiscount,
         stock: parseInt(formData.stock) || 0,
         image: formData.image_url,
         sizes: formData.sizes || [],
@@ -1347,9 +1354,16 @@ function AdminProducts() {
                     </span>
                   </td>
                   <td className="px-4 py-4 align-middle">
-                    <span className="font-bold text-foreground text-sm">
-                      ₹{(parseFloat(product.price || product.offerPrice || 0)).toLocaleString('en-IN')}
-                    </span>
+                    <div className="flex flex-col">
+                      <span className="font-bold text-foreground text-sm">
+                        ₹{(parseFloat(product.price || product.offerPrice || 0)).toLocaleString('en-IN')}
+                      </span>
+                      {(product.oldPrice || product.old_price) && (
+                        <span className="text-[11px] text-muted-foreground line-through">
+                          MRP: ₹{(parseFloat(product.oldPrice || product.old_price || 0)).toLocaleString('en-IN')}
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td className="px-4 py-4 align-middle">
                     <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded bg-muted text-muted-foreground">
