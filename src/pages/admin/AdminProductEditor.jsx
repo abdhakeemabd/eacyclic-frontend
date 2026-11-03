@@ -171,7 +171,7 @@ function AdminProductEditor() {
     const cList = colors && colors.length > 0 ? colors : ['Default'];
 
     const basePrice = basePriceVal !== null ? parseFloat(basePriceVal) || 0 : (parseFloat(formData.price) || 0);
-    const baseOldPrice = baseOldPriceVal !== null ? parseFloat(baseOldPriceVal) || 0 : (parseFloat(formData.oldPrice) || (basePrice > 0 ? Math.round(basePrice * 1.2) : 0));
+    const baseOldPrice = baseOldPriceVal !== null ? parseFloat(baseOldPriceVal) || 0 : (parseFloat(formData.oldPrice) || 0);
 
     const rows = [];
     for (const s of sList) {
@@ -181,31 +181,18 @@ function AdminProductEditor() {
         );
 
         if (existing) {
-          rows.push(existing);
+          rows.push({
+            ...existing,
+            price: existing.price !== undefined && existing.price !== '' && parseFloat(existing.price) > 0 ? existing.price : basePrice,
+            oldPrice: existing.oldPrice !== undefined && existing.oldPrice !== '' && parseFloat(existing.oldPrice) > 0 ? existing.oldPrice : baseOldPrice
+          });
         } else {
-          let vPrice = basePrice;
-          let vOldPrice = baseOldPrice;
-
-          const sLower = s.toLowerCase();
-          const cLower = c.toLowerCase();
-
-          // Exact 4 catalog prices for bed products from eacyclic.com/product
-          if (sLower.includes('6.25 x 5') && cLower.includes('akesh')) {
-            vPrice = 14000; vOldPrice = 16500;
-          } else if (sLower.includes('6.25 x 6') && cLower.includes('akesh')) {
-            vPrice = 19000; vOldPrice = 22500;
-          } else if (sLower.includes('6.25 x 5') && cLower.includes('teak')) {
-            vPrice = 17000; vOldPrice = 20000;
-          } else if (sLower.includes('6.25 x 6') && cLower.includes('teak')) {
-            vPrice = 24000; vOldPrice = 28500;
-          }
-
           rows.push({
             id: `${s}_${c}`.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase(),
             size: s,
             color: c,
-            price: vPrice,
-            oldPrice: vOldPrice,
+            price: basePrice,
+            oldPrice: baseOldPrice,
             stock: parseInt(formData.stock) || 25,
             sku: `${(formData.title || 'PROD').substring(0, 4).toUpperCase()}-${s.substring(0, 3).toUpperCase()}-${c.substring(0, 3).toUpperCase()}`,
             isActive: true
@@ -214,7 +201,39 @@ function AdminProductEditor() {
       }
     }
     return rows;
-  }
+  };
+
+  // Synchronize base price changes to variant rows
+  const handleBasePriceChange = (val) => {
+    const newPriceNum = parseFloat(val) || 0;
+    const oldBasePriceNum = parseFloat(formData.price) || 0;
+    setFormData(prev => {
+      const updatedVariants = (prev.variants || []).map(v => {
+        const vP = parseFloat(v.price) || 0;
+        if (vP === 0 || vP === oldBasePriceNum) {
+          return { ...v, price: val === '' ? '' : newPriceNum };
+        }
+        return v;
+      });
+      return { ...prev, price: val, variants: updatedVariants };
+    });
+  };
+
+  // Synchronize base MRP changes to variant rows
+  const handleBaseOldPriceChange = (val) => {
+    const newMrpNum = parseFloat(val) || 0;
+    const oldBaseMrpNum = parseFloat(formData.oldPrice) || 0;
+    setFormData(prev => {
+      const updatedVariants = (prev.variants || []).map(v => {
+        const vOld = parseFloat(v.oldPrice) || 0;
+        if (vOld === 0 || vOld === oldBaseMrpNum) {
+          return { ...v, oldPrice: val === '' ? '' : newMrpNum };
+        }
+        return v;
+      });
+      return { ...prev, oldPrice: val, variants: updatedVariants };
+    });
+  };
 
   // File Handlers
   const fileToBase64 = (file) => {
@@ -419,16 +438,32 @@ function AdminProductEditor() {
     setIsSubmitting(true);
     try {
       const baseSellingPrice = parseFloat(formData.price) || 0;
-      const baseMrpPrice = formData.oldPrice ? parseFloat(formData.oldPrice) : (baseSellingPrice > 0 ? Math.round(baseSellingPrice * 1.2) : 0);
-      const computedDiscount = parseFloat(formData.discount) || (baseMrpPrice > baseSellingPrice ? Math.round(((baseMrpPrice - baseSellingPrice) / baseMrpPrice) * 100) : 0);
+      const baseMrpPrice = formData.oldPrice !== undefined && formData.oldPrice !== '' && formData.oldPrice !== null
+        ? parseFloat(formData.oldPrice) || 0
+        : (formData.discount > 0 ? Math.round((baseSellingPrice * 100) / (100 - parseFloat(formData.discount))) : 0);
+      const computedDiscount = baseMrpPrice > baseSellingPrice 
+        ? Math.round(((baseMrpPrice - baseSellingPrice) / baseMrpPrice) * 100) 
+        : (parseFloat(formData.discount) || 0);
+
+      // Ensure each variant accurately reflects base prices if not custom set
+      const cleanedVariants = (formData.variants || []).map(v => {
+        const vP = parseFloat(v.price);
+        const vOld = parseFloat(v.oldPrice);
+        return {
+          ...v,
+          price: !isNaN(vP) && vP > 0 ? vP : baseSellingPrice,
+          oldPrice: !isNaN(vOld) && vOld > 0 ? vOld : (baseMrpPrice > 0 ? baseMrpPrice : null),
+          old_price: !isNaN(vOld) && vOld > 0 ? vOld : (baseMrpPrice > 0 ? baseMrpPrice : null)
+        };
+      });
 
       const payload = {
         name: formData.title.trim(),
         title: formData.title.trim(),
         description: formData.description || '',
         price: baseSellingPrice,
-        oldPrice: baseMrpPrice,
-        old_price: baseMrpPrice,
+        oldPrice: baseMrpPrice > 0 ? baseMrpPrice : null,
+        old_price: baseMrpPrice > 0 ? baseMrpPrice : null,
         discount: computedDiscount,
         category: formData.category.trim(),
         stock: parseInt(formData.stock) || 0,
@@ -439,7 +474,7 @@ function AdminProductEditor() {
         gallery: formData.gallery || [],
         sizes: formData.sizes || [],
         colors: formData.colors || [],
-        variants: formData.variants || []
+        variants: cleanedVariants
       };
 
       if (isEditMode) {
@@ -1248,7 +1283,7 @@ function AdminProductEditor() {
                     step="0.01"
                     required
                     value={formData.price}
-                    onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                    onChange={(e) => handleBasePriceChange(e.target.value)}
                     className="w-full pl-7 pr-3 py-2 bg-background border border-border rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary text-foreground text-sm font-bold outline-none"
                     placeholder="14000"
                   />
@@ -1265,7 +1300,7 @@ function AdminProductEditor() {
                     type="number"
                     step="0.01"
                     value={formData.oldPrice}
-                    onChange={(e) => setFormData({ ...formData, oldPrice: e.target.value })}
+                    onChange={(e) => handleBaseOldPriceChange(e.target.value)}
                     className="w-full pl-7 pr-3 py-2 bg-background border border-border rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary text-foreground text-sm outline-none"
                     placeholder="16500"
                   />

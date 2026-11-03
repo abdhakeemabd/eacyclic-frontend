@@ -73,15 +73,17 @@ export const ProductProvider = ({ children }) => {
       const resolvedImage = isExternalUpload ? fp.image_url : (localImage || fp.image_url || '');
       const resolvedGallery = localGallery.length > 0 ? localGallery : (fp.gallery && fp.gallery.length > 0 ? fp.gallery : (resolvedImage ? [resolvedImage] : []));
 
-      const resolvedOldPrice = fp.old_price !== undefined && fp.old_price !== null 
-        ? parseFloat(fp.old_price) 
-        : (fp.oldPrice !== undefined && fp.oldPrice !== null 
-          ? parseFloat(fp.oldPrice) 
-          : (matched?.oldPrice 
-            ? parseFloat(matched.oldPrice) 
-            : (fp.discount > 0 
-              ? Math.round((parseFloat(fp.price) * 100) / (100 - parseFloat(fp.discount))) 
-              : (fp.price ? Math.round(parseFloat(fp.price) * 1.2) : null))));
+      const rawFpOld = fp.old_price !== undefined && fp.old_price !== null && fp.old_price !== ''
+        ? parseFloat(fp.old_price)
+        : (fp.oldPrice !== undefined && fp.oldPrice !== null && fp.oldPrice !== '' ? parseFloat(fp.oldPrice) : null);
+
+      const resolvedOldPrice = rawFpOld !== null && !isNaN(rawFpOld) && rawFpOld > 0
+        ? rawFpOld
+        : (matched?.oldPrice 
+          ? parseFloat(matched.oldPrice) 
+          : (fp.discount > 0 
+            ? Math.round((parseFloat(fp.price) * 100) / (100 - parseFloat(fp.discount))) 
+            : null));
 
       return {
         ...matched,
