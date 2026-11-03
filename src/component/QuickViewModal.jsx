@@ -46,11 +46,15 @@ export default function QuickViewModal({ product, isOpen, onClose }) {
 
   const currentImage = gallery[activeImageIndex] || product.image_url || product.image;
   
+  const rawProductOldPrice = product.oldPrice !== undefined && product.oldPrice !== null && product.oldPrice !== ''
+    ? parseFloat(product.oldPrice)
+    : (product.old_price !== undefined && product.old_price !== null && product.old_price !== '' ? parseFloat(product.old_price) : null);
+
   // Real-time Flipkart/Amazon variant pricing
   const pricing = calculateVariantPrice(product, selectedSize, selectedColor);
   const currentPrice = pricing.price;
-  const currentOldPrice = pricing.oldPrice;
-  const currentOffer = pricing.offer;
+  const currentOldPrice = pricing.oldPrice || (rawProductOldPrice && rawProductOldPrice > currentPrice ? rawProductOldPrice : null);
+  const currentOffer = pricing.offer || (currentOldPrice && currentOldPrice > currentPrice ? `${Math.round(((currentOldPrice - currentPrice) / currentOldPrice) * 100)}% OFF` : '');
 
   const currentTitle = getVariantTitle(product, selectedSize, selectedColor);
   const title = currentTitle || product?.name || product?.title || 'Product';

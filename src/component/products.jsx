@@ -176,8 +176,13 @@ export default function Products() {
               {displayedProducts.map((product, index) => {
                 const liked = isLiked(product.id);
                 const tag = product.offer ? `-${product.offer.toString().replace(/[^0-9]/g, '')}%` : badgeLabels[index % badgeLabels.length];
-                const price = product.offerPrice || product.price || 0;
-                const oldPrice = product.oldPrice || product.old_price || (product.discount > 0 ? Math.round((parseFloat(price) * 100) / (100 - parseFloat(product.discount))) : (price > 0 ? Math.round(parseFloat(price) * 1.2) : null));
+                const price = parseFloat(product.offerPrice !== undefined && product.offerPrice !== null && product.offerPrice !== '' ? product.offerPrice : (product.price || 0));
+                const rawOld = product.oldPrice !== undefined && product.oldPrice !== null && product.oldPrice !== ''
+                  ? parseFloat(product.oldPrice)
+                  : (product.old_price !== undefined && product.old_price !== null && product.old_price !== '' ? parseFloat(product.old_price) : null);
+                const oldPrice = rawOld !== null && !isNaN(rawOld) && rawOld > 0
+                  ? rawOld
+                  : (product.discount > 0 ? Math.round((price * 100) / (100 - parseFloat(product.discount))) : (price > 0 ? Math.round(price * 1.2) : null));
                 const imageSrc = product.image_url || product.image || (product.gallery && product.gallery[0]);
                 const title = product.name || product.title || 'Product';
 

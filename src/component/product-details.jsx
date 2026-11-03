@@ -71,8 +71,13 @@ export default function ProductDetails() {
     : [product.image_url || product.image].filter(Boolean);
 
   const currentImage = gallery[activeImage] || product.image_url || product.image;
-  const price = product.offerPrice || product.price || 0;
-  const oldPrice = product.oldPrice || product.old_price || (product.discount > 0 ? Math.round((parseFloat(price) * 100) / (100 - parseFloat(product.discount))) : (price > 0 ? Math.round(parseFloat(price) * 1.2) : null));
+  const price = parseFloat(product.offerPrice !== undefined && product.offerPrice !== null && product.offerPrice !== '' ? product.offerPrice : (product.price || 0));
+  const rawProductOldPrice = product.oldPrice !== undefined && product.oldPrice !== null && product.oldPrice !== ''
+    ? parseFloat(product.oldPrice)
+    : (product.old_price !== undefined && product.old_price !== null && product.old_price !== '' ? parseFloat(product.old_price) : null);
+  const oldPrice = rawProductOldPrice !== null && !isNaN(rawProductOldPrice) && rawProductOldPrice > 0
+    ? rawProductOldPrice
+    : (product.discount > 0 ? Math.round((price * 100) / (100 - parseFloat(product.discount))) : (price > 0 ? Math.round(price * 1.2) : null));
   const title = product.name || product.title || 'Product';
   const category = product.category || 'Store Collection';
   const liked = isLiked(product.id);
@@ -83,8 +88,8 @@ export default function ProductDetails() {
   // Dynamic Flipkart / Amazon variant pricing
   const pricing = calculateVariantPrice(product, selectedSize, selectedColor);
   const currentPrice = pricing.price;
-  const currentOldPrice = pricing.oldPrice;
-  const currentOffer = pricing.offer;
+  const currentOldPrice = pricing.oldPrice || (rawProductOldPrice && rawProductOldPrice > currentPrice ? rawProductOldPrice : null);
+  const currentOffer = pricing.offer || (currentOldPrice && currentOldPrice > currentPrice ? `${Math.round(((currentOldPrice - currentPrice) / currentOldPrice) * 100)}% OFF` : '');
   const currentTitle = getVariantTitle(product, selectedSize, selectedColor);
 
   const handleAddToCart = async () => {

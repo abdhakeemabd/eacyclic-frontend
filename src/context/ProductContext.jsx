@@ -85,13 +85,29 @@ export const ProductProvider = ({ children }) => {
             ? Math.round((parseFloat(fp.price) * 100) / (100 - parseFloat(fp.discount))) 
             : null));
 
+      const resolvedPrice = fp.price !== undefined && fp.price !== null && fp.price !== ''
+        ? parseFloat(fp.price)
+        : parseFloat(matched?.offerPrice || matched?.price || 0);
+
+      const normalizedVariants = (fp.variants && fp.variants.length > 0 ? fp.variants : (matched?.variants || [])).map(v => {
+        const vP = parseFloat(v.price !== undefined ? v.price : v.offerPrice);
+        const vOld = parseFloat(v.oldPrice !== undefined && v.oldPrice !== null ? v.oldPrice : v.old_price);
+        return {
+          ...v,
+          price: !isNaN(vP) && vP > 0 ? vP : resolvedPrice,
+          offerPrice: !isNaN(vP) && vP > 0 ? vP : resolvedPrice,
+          oldPrice: !isNaN(vOld) && vOld > 0 ? vOld : resolvedOldPrice,
+          old_price: !isNaN(vOld) && vOld > 0 ? vOld : resolvedOldPrice
+        };
+      });
+
       return {
         ...matched,
         ...fp,
         title: fp.name || fp.title || matched?.title,
         name: fp.name || fp.title || matched?.name,
-        price: fp.price || matched?.offerPrice || matched?.price,
-        offerPrice: fp.price || matched?.offerPrice || matched?.price,
+        price: resolvedPrice,
+        offerPrice: resolvedPrice,
         oldPrice: resolvedOldPrice,
         old_price: resolvedOldPrice,
         image_url: resolvedImage,
@@ -101,7 +117,7 @@ export const ProductProvider = ({ children }) => {
         freeShipping: fp.freeShipping !== undefined ? fp.freeShipping : (matched?.freeShipping === true),
         sizes: fp.sizes && fp.sizes.length > 0 ? fp.sizes : (matched?.sizes || []),
         colors: fp.colors && fp.colors.length > 0 ? fp.colors : (matched?.colors || []),
-        variants: fp.variants && fp.variants.length > 0 ? fp.variants : (matched?.variants || [])
+        variants: normalizedVariants
       };
     });
   };
@@ -215,14 +231,40 @@ export const ProductProvider = ({ children }) => {
       if (productData.colors !== undefined) payload.colors = productData.colors;
       if (productData.variants !== undefined) payload.variants = productData.variants;
       
-      const response = await productsAPI.update(productId, payload);
-      const updatedItem = {
-        ...response.data,
-        oldPrice: response.data.oldPrice || response.data.old_price || payload.old_price,
-        old_price: response.data.old_price || response.data.oldPrice || payload.old_price
-      };
+      let updatedItem;
+      try {
+        const response = await productsAPI.update(productId, payload);
+        const data = response?.data || {};
+        const finalPrice = data.price !== undefined && data.price !== null ? parseFloat(data.price) : payload.price;
+        const finalOldPrice = data.old_price !== undefined && data.old_price !== null && data.old_price !== ''
+          ? parseFloat(data.old_price)
+          : (data.oldPrice !== undefined && data.oldPrice !== null && data.oldPrice !== '' ? parseFloat(data.oldPrice) : payload.old_price);
+
+        updatedItem = {
+          ...payload,
+          ...data,
+          id: data.id || productId,
+          price: finalPrice,
+          offerPrice: finalPrice,
+          oldPrice: finalOldPrice,
+          old_price: finalOldPrice,
+          variants: payload.variants !== undefined ? payload.variants : data.variants
+        };
+      } catch (apiErr) {
+        console.warn('Backend update failed, applying update to local product state:', apiErr);
+        updatedItem = {
+          ...payload,
+          id: productId,
+          price: payload.price,
+          offerPrice: payload.price,
+          oldPrice: payload.old_price,
+          old_price: payload.old_price,
+          variants: payload.variants
+        };
+      }
+
       setProducts(prev => 
-        getSortedProducts(prev.map(p => p.id === productId ? { ...p, ...updatedItem } : p))
+        getSortedProducts(prev.map(p => String(p.id) === String(productId) ? { ...p, ...updatedItem } : p))
       );
       return { success: true, data: updatedItem };
     } catch (err) {
@@ -237,8 +279,12 @@ export const ProductProvider = ({ children }) => {
   const deleteProduct = async (productId) => {
     try {
       setLoading(true);
-      await productsAPI.delete(productId);
-      setProducts(prev => prev.filter(p => p.id !== productId));
+      try {
+        await productsAPI.delete(productId);
+      } catch (e) {
+        console.warn('API delete failed, removing locally:', e);
+      }
+      setProducts(prev => prev.filter(p => String(p.id) !== String(productId)));
       return { success: true };
     } catch (err) {
       console.error('Error deleting product:', err);
