@@ -105,7 +105,7 @@ const AdminLayout = ({ children }) => {
   };
 
   return (
-    <div className="min-h-screen flex bg-background text-foreground transition-colors duration-300 w-full overflow-x-hidden">
+    <div className="h-screen h-[100dvh] w-full flex overflow-hidden bg-background text-foreground transition-colors duration-300">
       
       {/* ============================================================== */}
       {/* DESKTOP SIDEBAR                                                */}
@@ -114,12 +114,12 @@ const AdminLayout = ({ children }) => {
         initial={false}
         variants={sidebarVariants}
         animate={isSidebarOpen ? 'open' : 'closed'}
-        className={`hidden lg:flex flex-col border-r border-slate-800/80 bg-[#0c1322] text-slate-200 sticky top-0 h-screen z-40 overflow-hidden shadow-2xl shrink-0 min-w-0 ${
+        className={`hidden lg:flex flex-col border-r border-slate-800/80 bg-[#0c1322] text-slate-200 h-full max-h-screen shrink-0 z-40 overflow-hidden shadow-2xl min-w-0 ${
           isSidebarOpen ? 'w-[270px]' : 'w-[80px]'
         }`}
       >
         {/* Brand Header */}
-        <div className="px-4 py-5 flex items-center justify-between border-b border-slate-800/80 shrink-0 overflow-hidden bg-[#0c1322]">
+        <div className="h-16 px-4 flex items-center justify-between border-b border-slate-800/80 shrink-0 overflow-hidden bg-[#0c1322]">
           <AnimatePresence mode="wait" initial={false}>
             {isSidebarOpen ? (
               <motion.div
@@ -299,9 +299,9 @@ const AdminLayout = ({ children }) => {
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="fixed inset-y-0 left-0 w-72 bg-[#0c1322] text-slate-200 border-r border-slate-800 z-50 lg:hidden shadow-2xl flex flex-col"
+              className="fixed inset-y-0 left-0 w-72 bg-[#0c1322] text-slate-200 border-r border-slate-800 z-50 lg:hidden shadow-2xl flex flex-col h-full h-[100dvh]"
             >
-              <div className="p-5 flex items-center justify-between border-b border-slate-800 bg-[#0c1322]">
+              <div className="h-16 px-5 flex items-center justify-between border-b border-slate-800 bg-[#0c1322] shrink-0">
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-xl bg-white border border-slate-700/60 flex items-center justify-center p-1 shadow-sm">
                     <img src={Logo} alt="Logo" className="w-full h-full object-contain" />
@@ -376,12 +376,12 @@ const AdminLayout = ({ children }) => {
       {/* ============================================================== */}
       {/* MAIN VIEWPORT & TOPBAR                                         */}
       {/* ============================================================== */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-x-hidden">
+      <div className="flex-1 flex flex-col h-full min-w-0 overflow-hidden">
         
         {/* Top Header */}
         <header 
           style={{ backgroundColor: '#0c1322', borderColor: 'rgba(30, 41, 59, 0.8)' }}
-          className="h-16 bg-[#0c1322] border-b border-slate-800/80 text-white flex items-center justify-between px-4 sm:px-6 sticky top-0 z-30 shadow-md backdrop-blur-md"
+          className="h-16 shrink-0 bg-[#0c1322] border-b border-slate-800/80 text-white flex items-center justify-between px-4 sm:px-6 z-30 shadow-md backdrop-blur-md"
         >
           
           {/* Mobile Hamburger & Breadcrumb */}
