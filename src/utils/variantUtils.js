@@ -312,11 +312,7 @@ export function calculateVariantPrice(product, selectedSize, selectedColor) {
   if (!product) return { price: 0, oldPrice: 0, offer: '0% OFF' };
 
   const rawBasePrice = parseFloat(product.offerPrice || product.price || 0) || 0;
-  const rawOldPrice = parseFloat(product.oldPrice || product.old_price || 0) || (product.discount > 0 ? Math.round((rawBasePrice * 100) / (100 - parseFloat(product.discount))) : Math.round(rawBasePrice * 1.2));
-
-  const type = getProductCategoryType(product);
-  const size = (selectedSize || '').toLowerCase();
-  const color = (selectedColor || '').toLowerCase();
+  const rawOldPrice = parseFloat(product.oldPrice || product.old_price || 0) || 0;
 
   let finalPrice = rawBasePrice;
   let finalOldPrice = rawOldPrice;
@@ -333,14 +329,18 @@ export function calculateVariantPrice(product, selectedSize, selectedColor) {
       return sizeMatch && colorMatch;
     });
 
-    if (matched && (matched.price || matched.offerPrice)) {
-      const vPrice = parseFloat(matched.price || matched.offerPrice) || rawBasePrice;
-      const vOldPrice = parseFloat(matched.oldPrice || matched.old_price) || (rawOldPrice > vPrice ? rawOldPrice : Math.round(vPrice * 1.2));
-      const discountAmount = Math.max(0, vOldPrice - vPrice);
-      const discountPercent = vOldPrice > 0 ? Math.round((discountAmount / vOldPrice) * 100) : 0;
+    if (matched) {
+      const vPrice = parseFloat(matched.price || matched.offerPrice);
+      const vOldPrice = parseFloat(matched.oldPrice || matched.old_price);
+
+      finalPrice = !isNaN(vPrice) && vPrice > 0 ? vPrice : rawBasePrice;
+      finalOldPrice = !isNaN(vOldPrice) && vOldPrice > 0 ? vOldPrice : rawOldPrice;
+
+      const discountAmount = Math.max(0, finalOldPrice - finalPrice);
+      const discountPercent = finalOldPrice > 0 ? Math.round((discountAmount / finalOldPrice) * 100) : 0;
       return {
-        price: vPrice,
-        oldPrice: vOldPrice > vPrice ? vOldPrice : null,
+        price: finalPrice,
+        oldPrice: finalOldPrice > finalPrice ? finalOldPrice : null,
         discountPercent,
         offer: discountPercent > 0 ? `${discountPercent}% OFF` : '',
         savings: discountAmount,
@@ -350,13 +350,12 @@ export function calculateVariantPrice(product, selectedSize, selectedColor) {
     }
   }
 
-  // Specific Bed Pricing matching ONLY Aakeshya Bed if not using explicit variants array
+  // 2. Specific Bed Pricing matching ONLY the original catalog seed Aakeshya Bed if no custom variants
   const titleLower = (product.title || product.name || '').toLowerCase();
-  if (type === 'furniture_bed' && titleLower.includes('aakeshya') && (titleLower.includes('bed') || titleLower.includes('cot'))) {
-    // 1. Aakeshya Upholstered Wooden Bed (6.25 x 5 ft - Akeshya) -> Rs 14,000 (old Rs 16,500)
-    // 2. Aakeshya Upholstered Wooden Bed (6.25 x 6 ft - Akeshya) -> Rs 19,000 (old Rs 22,500)
-    // 3. Aakeshya Upholstered Wooden Bed (6.25 x 5 ft - Teak) -> Rs 17,000 (old Rs 20,000)
-    // 4. Aakeshya Upholstered Wooden Bed (6.25 x 6 ft - Teak) -> Rs 24,000 (old Rs 28,500)
+  const isOriginalAakeshyaBed = (product.id === 4 || product.id === '4') && (!product.variants || product.variants.length === 0);
+  if (isOriginalAakeshyaBed && (titleLower.includes('bed') || titleLower.includes('cot'))) {
+    const size = (selectedSize || '').toLowerCase();
+    const color = (selectedColor || '').toLowerCase();
     const isTeak = color.includes('teak');
     const is6x6 = size.includes('6.25 x 6') || size.includes('6 ft');
 
@@ -369,7 +368,6 @@ export function calculateVariantPrice(product, selectedSize, selectedColor) {
         finalOldPrice = 20000;
       }
     } else {
-      // Akeshya Wood
       if (is6x6) {
         finalPrice = 19000;
         finalOldPrice = 22500;
@@ -377,69 +375,6 @@ export function calculateVariantPrice(product, selectedSize, selectedColor) {
         finalPrice = 14000;
         finalOldPrice = 16500;
       }
-    }
-  } 
-  else if (type === 'furniture_chair') {
-    // Single, Set of 2, Set of 4, Set of 6
-    const singlePrice = rawBasePrice > 4000 ? 3499 : (rawBasePrice > 1300 ? 1450 : 1250);
-    const singleOld = Math.round(singlePrice * 1.25);
-
-    if (size.includes('2')) {
-      finalPrice = Math.round(singlePrice * 2 * 0.95);
-      finalOldPrice = singleOld * 2;
-    } else if (size.includes('4')) {
-      finalPrice = Math.round(singlePrice * 4 * 0.91);
-      finalOldPrice = singleOld * 4;
-    } else if (size.includes('6')) {
-      finalPrice = Math.round(singlePrice * 6 * 0.88);
-      finalOldPrice = singleOld * 6;
-    } else {
-      finalPrice = singlePrice;
-      finalOldPrice = singleOld;
-    }
-
-    if (color.includes('teak')) {
-      finalPrice += size.includes('4') ? 800 : (size.includes('6') ? 1200 : 250);
-      finalOldPrice += size.includes('4') ? 1000 : 350;
-    }
-  }
-  else if (type === 'furniture_table') {
-    if (size.includes('4')) {
-      finalPrice = 8499;
-      finalOldPrice = 10500;
-    } else if (size.includes('8')) {
-      finalPrice = 15999;
-      finalOldPrice = 19500;
-    } else {
-      finalPrice = 10999;
-      finalOldPrice = 12500;
-    }
-  }
-  else if (type === 'furniture_wardrobe') {
-    if (size.includes('2')) {
-      finalPrice = 18000;
-      finalOldPrice = 22000;
-    } else if (size.includes('3')) {
-      finalPrice = 25000;
-      finalOldPrice = 30000;
-    } else {
-      finalPrice = color.includes('teak') ? 36000 : 32000;
-      finalOldPrice = color.includes('teak') ? 42000 : 38000;
-    }
-  }
-  else if (type === 'grocery') {
-    if (size.includes('100g')) {
-      finalPrice = Math.round(rawBasePrice * 0.45);
-      finalOldPrice = Math.round(rawOldPrice * 0.45);
-    } else if (size.includes('500g')) {
-      finalPrice = Math.round(rawBasePrice * 1.85);
-      finalOldPrice = Math.round(rawOldPrice * 1.85);
-    } else if (size.includes('1 kg')) {
-      finalPrice = Math.round(rawBasePrice * 3.4);
-      finalOldPrice = Math.round(rawOldPrice * 3.4);
-    } else {
-      finalPrice = rawBasePrice;
-      finalOldPrice = rawOldPrice;
     }
   }
 
