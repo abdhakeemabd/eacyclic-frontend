@@ -106,7 +106,7 @@ export default function RelatedProduct() {
                 const liked = isLiked(item.id);
                 const tag = item.offer ? `-${item.offer.toString().replace(/[^0-9]/g, '')}%` : badgeLabels[idx % badgeLabels.length];
                 const price = item.offerPrice || item.price || 0;
-                const oldPrice = item.oldPrice;
+                const oldPrice = item.oldPrice || item.old_price || (item.discount > 0 ? Math.round((parseFloat(price) * 100) / (100 - parseFloat(item.discount))) : (price > 0 ? Math.round(parseFloat(price) * 1.2) : null));
                 const imageSrc = item.image_url || item.image || (item.gallery && item.gallery[0]);
                 const title = item.name || item.title || 'Product';
                 const description = item.description || item.content || '';
@@ -183,7 +183,7 @@ export default function RelatedProduct() {
                             <span className="text-sm sm:text-base md:text-lg font-black text-gray-900 tracking-tight whitespace-nowrap">
                               ₹{Math.round(Number(price) || 0).toLocaleString('en-IN')}
                             </span>
-                            {oldPrice && (
+                            {oldPrice && Number(oldPrice) > Number(price) && (
                               <span className="text-[11px] sm:text-xs text-gray-400 line-through whitespace-nowrap">
                                 ₹{Math.round(Number(oldPrice) || 0).toLocaleString('en-IN')}
                               </span>

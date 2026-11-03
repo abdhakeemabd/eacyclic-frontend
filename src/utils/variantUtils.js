@@ -312,7 +312,7 @@ export function calculateVariantPrice(product, selectedSize, selectedColor) {
   if (!product) return { price: 0, oldPrice: 0, offer: '0% OFF' };
 
   const rawBasePrice = parseFloat(product.offerPrice || product.price || 0) || 0;
-  const rawOldPrice = parseFloat(product.oldPrice || 0) || Math.round(rawBasePrice * 1.2);
+  const rawOldPrice = parseFloat(product.oldPrice || product.old_price || 0) || (product.discount > 0 ? Math.round((rawBasePrice * 100) / (100 - parseFloat(product.discount))) : Math.round(rawBasePrice * 1.2));
 
   const type = getProductCategoryType(product);
   const size = (selectedSize || '').toLowerCase();
@@ -335,7 +335,7 @@ export function calculateVariantPrice(product, selectedSize, selectedColor) {
 
     if (matched && (matched.price || matched.offerPrice)) {
       const vPrice = parseFloat(matched.price || matched.offerPrice) || rawBasePrice;
-      const vOldPrice = parseFloat(matched.oldPrice) || (rawOldPrice > vPrice ? rawOldPrice : Math.round(vPrice * 1.2));
+      const vOldPrice = parseFloat(matched.oldPrice || matched.old_price) || (rawOldPrice > vPrice ? rawOldPrice : Math.round(vPrice * 1.2));
       const discountAmount = Math.max(0, vOldPrice - vPrice);
       const discountPercent = vOldPrice > 0 ? Math.round((discountAmount / vOldPrice) * 100) : 0;
       return {

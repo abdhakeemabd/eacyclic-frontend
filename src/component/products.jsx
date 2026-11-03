@@ -177,7 +177,7 @@ export default function Products() {
                 const liked = isLiked(product.id);
                 const tag = product.offer ? `-${product.offer.toString().replace(/[^0-9]/g, '')}%` : badgeLabels[index % badgeLabels.length];
                 const price = product.offerPrice || product.price || 0;
-                const oldPrice = product.oldPrice;
+                const oldPrice = product.oldPrice || product.old_price || (product.discount > 0 ? Math.round((parseFloat(price) * 100) / (100 - parseFloat(product.discount))) : (price > 0 ? Math.round(parseFloat(price) * 1.2) : null));
                 const imageSrc = product.image_url || product.image || (product.gallery && product.gallery[0]);
                 const title = product.name || product.title || 'Product';
 
@@ -246,7 +246,7 @@ export default function Products() {
                           <span className="text-sm sm:text-base md:text-lg font-black text-gray-900 tracking-tight whitespace-nowrap">
                             ₹{Math.round(Number(price) || 0).toLocaleString('en-IN')}
                           </span>
-                          {oldPrice && (
+                          {oldPrice && Number(oldPrice) > Number(price) && (
                             <span className="text-[11px] sm:text-xs text-gray-400 line-through whitespace-nowrap">
                               ₹{Math.round(Number(oldPrice) || 0).toLocaleString('en-IN')}
                             </span>

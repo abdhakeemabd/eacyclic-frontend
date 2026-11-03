@@ -204,7 +204,7 @@ export default function QuickViewModal({ product, isOpen, onClose }) {
                 <span className="text-2xl sm:text-3xl font-extrabold text-gray-900 font-sans tracking-tight">
                   ₹{currentPrice.toLocaleString('en-IN')}
                 </span>
-                {currentOldPrice && (
+                {currentOldPrice && currentOldPrice > currentPrice && (
                   <span className="text-sm sm:text-base text-gray-400 line-through">
                     ₹{currentOldPrice.toLocaleString('en-IN')}
                   </span>

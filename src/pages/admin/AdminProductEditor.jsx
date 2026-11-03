@@ -114,7 +114,7 @@ function AdminProductEditor() {
             title: found.title || found.name || '',
             description: found.description || found.content || '',
             price: found.price || found.offerPrice || '',
-            oldPrice: found.oldPrice || (found.price ? Math.round(found.price * 1.2) : ''),
+            oldPrice: found.old_price || found.oldPrice || (found.price ? Math.round(found.price * 1.2) : ''),
             category: found.category || '',
             stock: found.count || found.stock || '25',
             image_url: found.image_url || found.image || initialGallery[0] || '',
@@ -418,17 +418,22 @@ function AdminProductEditor() {
 
     setIsSubmitting(true);
     try {
+      const baseSellingPrice = parseFloat(formData.price) || 0;
+      const baseMrpPrice = formData.oldPrice ? parseFloat(formData.oldPrice) : (baseSellingPrice > 0 ? Math.round(baseSellingPrice * 1.2) : 0);
+      const computedDiscount = parseFloat(formData.discount) || (baseMrpPrice > baseSellingPrice ? Math.round(((baseMrpPrice - baseSellingPrice) / baseMrpPrice) * 100) : 0);
+
       const payload = {
         name: formData.title.trim(),
         title: formData.title.trim(),
         description: formData.description || '',
-        price: parseFloat(formData.price) || 0,
-        oldPrice: formData.oldPrice ? parseFloat(formData.oldPrice) : Math.round((parseFloat(formData.price) || 0) * 1.2),
+        price: baseSellingPrice,
+        oldPrice: baseMrpPrice,
+        old_price: baseMrpPrice,
+        discount: computedDiscount,
         category: formData.category.trim(),
         stock: parseInt(formData.stock) || 0,
         image_url: formData.image_url || '',
         image: formData.image_url || '',
-        discount: parseFloat(formData.discount) || 0,
         isActive: formData.isActive !== false,
         freeShipping: formData.freeShipping !== false,
         gallery: formData.gallery || [],
@@ -1261,7 +1266,7 @@ function AdminProductEditor() {
                     step="0.01"
                     value={formData.oldPrice}
                     onChange={(e) => setFormData({ ...formData, oldPrice: e.target.value })}
-                    className="w-full pl-7 pr-3 py-2 bg-background border border-border rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary text-foreground text-sm text-muted-foreground outline-none"
+                    className="w-full pl-7 pr-3 py-2 bg-background border border-border rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary text-foreground text-sm outline-none"
                     placeholder="16500"
                   />
                 </div>
