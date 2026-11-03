@@ -159,8 +159,13 @@ export default function HomeProduct() {
               {displayProducts.map((item, idx) => {
                 const liked = isLiked(item.id);
                 const tag = item.offer ? `-${item.offer.toString().replace(/[^0-9]/g, '')}%` : badgeLabels[idx % badgeLabels.length];
-                const price = item.offerPrice || item.price || 0;
-                const oldPrice = item.oldPrice || item.old_price || (item.discount > 0 ? Math.round((parseFloat(price) * 100) / (100 - parseFloat(item.discount))) : (price > 0 ? Math.round(parseFloat(price) * 1.2) : null));
+                const price = parseFloat(item.offerPrice !== undefined && item.offerPrice !== null && item.offerPrice !== '' ? item.offerPrice : (item.price || 0));
+                const rawOld = item.oldPrice !== undefined && item.oldPrice !== null && item.oldPrice !== ''
+                  ? parseFloat(item.oldPrice)
+                  : (item.old_price !== undefined && item.old_price !== null && item.old_price !== '' ? parseFloat(item.old_price) : null);
+                const oldPrice = rawOld !== null && !isNaN(rawOld) && rawOld > 0
+                  ? rawOld
+                  : (item.discount > 0 ? Math.round((price * 100) / (100 - parseFloat(item.discount))) : (price > 0 ? Math.round(price * 1.2) : null));
                 const imageSrc = item.image_url || item.image || (item.gallery && item.gallery[0]);
                 const title = item.name || item.title || 'Product';
                 const category = item.category || 'STORE PICK';

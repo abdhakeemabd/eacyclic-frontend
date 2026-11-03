@@ -102,9 +102,19 @@ function AdminProductEditor() {
           const v = getProductVariants(found);
           const existingSizes = found.sizes && found.sizes.length > 0 ? found.sizes : v.sizes;
           const existingColors = found.colors && found.colors.length > 0 ? found.colors : v.colors;
+          const existingPrice = found.price !== undefined && found.price !== null && found.price !== '' ? found.price : (found.offerPrice || '');
+          const existingMrp = found.old_price !== undefined && found.old_price !== null && found.old_price !== ''
+            ? found.old_price
+            : (found.oldPrice !== undefined && found.oldPrice !== null && found.oldPrice !== '' ? found.oldPrice : '');
+
           const existingVariants = Array.isArray(found.variants) && found.variants.length > 0
-            ? found.variants
-            : buildVariantMatrix(existingSizes, existingColors, [], found.price, found.oldPrice);
+            ? found.variants.map(vr => ({
+                ...vr,
+                price: vr.price !== undefined && vr.price !== '' ? vr.price : existingPrice,
+                oldPrice: vr.oldPrice !== undefined && vr.oldPrice !== '' ? vr.oldPrice : (vr.old_price !== undefined && vr.old_price !== '' ? vr.old_price : existingMrp),
+                old_price: vr.old_price !== undefined && vr.old_price !== '' ? vr.old_price : (vr.oldPrice !== undefined && vr.oldPrice !== '' ? vr.oldPrice : existingMrp)
+              }))
+            : buildVariantMatrix(existingSizes, existingColors, [], existingPrice, existingMrp);
 
           const initialGallery = found.gallery && found.gallery.length 
             ? found.gallery 
@@ -113,8 +123,8 @@ function AdminProductEditor() {
           setFormData({
             title: found.title || found.name || '',
             description: found.description || found.content || '',
-            price: found.price || found.offerPrice || '',
-            oldPrice: found.old_price || found.oldPrice || (found.price ? Math.round(found.price * 1.2) : ''),
+            price: existingPrice,
+            oldPrice: existingMrp !== '' ? existingMrp : (existingPrice ? Math.round(Number(existingPrice) * 1.2) : ''),
             category: found.category || '',
             stock: found.count || found.stock || '25',
             image_url: found.image_url || found.image || initialGallery[0] || '',
@@ -205,13 +215,14 @@ function AdminProductEditor() {
 
   // Synchronize base price changes to variant rows
   const handleBasePriceChange = (val) => {
-    const newPriceNum = parseFloat(val) || 0;
+    const newPriceNum = val === '' ? '' : (parseFloat(val) || 0);
     const oldBasePriceNum = parseFloat(formData.price) || 0;
     setFormData(prev => {
       const updatedVariants = (prev.variants || []).map(v => {
         const vP = parseFloat(v.price) || 0;
-        if (vP === 0 || vP === oldBasePriceNum) {
-          return { ...v, price: val === '' ? '' : newPriceNum };
+        // If variant price is unset, matches previous base, or inherits base price, update it
+        if (vP === 0 || vP === oldBasePriceNum || !v.isCustomPrice) {
+          return { ...v, price: newPriceNum, offerPrice: newPriceNum };
         }
         return v;
       });
@@ -221,13 +232,15 @@ function AdminProductEditor() {
 
   // Synchronize base MRP changes to variant rows
   const handleBaseOldPriceChange = (val) => {
-    const newMrpNum = parseFloat(val) || 0;
+    const newMrpNum = val === '' ? '' : (parseFloat(val) || 0);
     const oldBaseMrpNum = parseFloat(formData.oldPrice) || 0;
     setFormData(prev => {
       const updatedVariants = (prev.variants || []).map(v => {
-        const vOld = parseFloat(v.oldPrice) || 0;
-        if (vOld === 0 || vOld === oldBaseMrpNum) {
-          return { ...v, oldPrice: val === '' ? '' : newMrpNum };
+        const rawOld = v.oldPrice !== undefined && v.oldPrice !== null && v.oldPrice !== '' ? v.oldPrice : v.old_price;
+        const vOld = parseFloat(rawOld) || 0;
+        // If variant MRP matches previous base, is 0/empty, or inherits base MRP, update it directly
+        if (vOld === 0 || vOld === oldBaseMrpNum || !v.isCustomMrp) {
+          return { ...v, oldPrice: newMrpNum, old_price: newMrpNum };
         }
         return v;
       });
@@ -370,11 +383,14 @@ function AdminProductEditor() {
   // Matrix Row Actions
   const handleUpdateVariantRow = (index, field, value) => {
     const updated = [...(formData.variants || [])];
+    const val = field === 'price' || field === 'oldPrice' || field === 'stock'
+      ? (value === '' ? '' : parseFloat(value) || 0)
+      : value;
     updated[index] = {
       ...updated[index],
-      [field]: field === 'price' || field === 'oldPrice' || field === 'stock'
-        ? (value === '' ? '' : parseFloat(value) || 0)
-        : value
+      [field]: val,
+      ...(field === 'oldPrice' ? { old_price: val, isCustomMrp: true } : {}),
+      ...(field === 'price' ? { offerPrice: val, isCustomPrice: true } : {})
     };
     setFormData({ ...formData, variants: updated });
   };
@@ -386,14 +402,18 @@ function AdminProductEditor() {
 
   const handleCopyBasePriceToAll = () => {
     const bPrice = parseFloat(formData.price) || 0;
-    const bOld = parseFloat(formData.oldPrice) || Math.round(bPrice * 1.2);
+    const bOld = parseFloat(formData.oldPrice) || (bPrice > 0 ? Math.round(bPrice * 1.2) : 0);
     const bStock = parseInt(formData.stock) || 20;
 
     const updated = (formData.variants || []).map(v => ({
       ...v,
       price: bPrice,
-      oldPrice: bOld,
-      stock: bStock
+      offerPrice: bPrice,
+      oldPrice: bOld > 0 ? bOld : null,
+      old_price: bOld > 0 ? bOld : null,
+      stock: bStock,
+      isCustomPrice: false,
+      isCustomMrp: false
     }));
     setFormData({ ...formData, variants: updated });
   };
@@ -447,13 +467,18 @@ function AdminProductEditor() {
 
       // Ensure each variant accurately reflects base prices if not custom set
       const cleanedVariants = (formData.variants || []).map(v => {
-        const vP = parseFloat(v.price);
-        const vOld = parseFloat(v.oldPrice);
+        const vP = parseFloat(v.price !== undefined ? v.price : v.offerPrice);
+        const rawVOld = v.oldPrice !== undefined && v.oldPrice !== null && v.oldPrice !== '' ? v.oldPrice : v.old_price;
+        const vOld = parseFloat(rawVOld);
+        const resolvedVariantPrice = !isNaN(vP) && vP > 0 ? vP : baseSellingPrice;
+        // If variant has explicit custom MRP, keep it; otherwise apply baseMrpPrice
+        const resolvedVariantOldPrice = v.isCustomMrp && !isNaN(vOld) && vOld > 0 ? vOld : (baseMrpPrice > 0 ? baseMrpPrice : null);
         return {
           ...v,
-          price: !isNaN(vP) && vP > 0 ? vP : baseSellingPrice,
-          oldPrice: !isNaN(vOld) && vOld > 0 ? vOld : (baseMrpPrice > 0 ? baseMrpPrice : null),
-          old_price: !isNaN(vOld) && vOld > 0 ? vOld : (baseMrpPrice > 0 ? baseMrpPrice : null)
+          price: resolvedVariantPrice,
+          offerPrice: resolvedVariantPrice,
+          oldPrice: resolvedVariantOldPrice,
+          old_price: resolvedVariantOldPrice
         };
       });
 
@@ -462,6 +487,7 @@ function AdminProductEditor() {
         title: formData.title.trim(),
         description: formData.description || '',
         price: baseSellingPrice,
+        offerPrice: baseSellingPrice,
         oldPrice: baseMrpPrice > 0 ? baseMrpPrice : null,
         old_price: baseMrpPrice > 0 ? baseMrpPrice : null,
         discount: computedDiscount,
@@ -478,10 +504,18 @@ function AdminProductEditor() {
       };
 
       if (isEditMode) {
-        await updateProduct(routeId, payload);
+        const res = await updateProduct(routeId, payload);
+        if (res && res.success === false) {
+          showError('Save Notice', res.error || 'Failed to save product changes.');
+          return;
+        }
         showSuccess('Product Updated', 'Product details, variants, and prices have been saved successfully.');
       } else {
-        await addProduct(payload);
+        const res = await addProduct(payload);
+        if (res && res.success === false) {
+          showError('Save Error', res.error || 'Failed to create product.');
+          return;
+        }
         sessionStorage.removeItem(DRAFT_STORAGE_KEY);
         showSuccess('Product Created', 'New product with individual variant prices has been saved successfully.');
       }

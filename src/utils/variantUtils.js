@@ -311,8 +311,8 @@ export function getVariantTitle(product, selectedSize, selectedColor) {
 export function calculateVariantPrice(product, selectedSize, selectedColor) {
   if (!product) return { price: 0, oldPrice: 0, offer: '0% OFF' };
 
-  const rawBasePrice = parseFloat(product.offerPrice || product.price || 0) || 0;
-  const rawOldPrice = parseFloat(product.oldPrice || product.old_price || 0) || 0;
+  const rawBasePrice = parseFloat(product.offerPrice !== undefined && product.offerPrice !== null && product.offerPrice !== '' ? product.offerPrice : (product.price || 0)) || 0;
+  const rawOldPrice = parseFloat(product.oldPrice !== undefined && product.oldPrice !== null && product.oldPrice !== '' ? product.oldPrice : (product.old_price || 0)) || 0;
 
   let finalPrice = rawBasePrice;
   let finalOldPrice = rawOldPrice;
@@ -330,11 +330,14 @@ export function calculateVariantPrice(product, selectedSize, selectedColor) {
     });
 
     if (matched) {
-      const vPrice = parseFloat(matched.price || matched.offerPrice);
-      const vOldPrice = parseFloat(matched.oldPrice || matched.old_price);
+      const vPrice = parseFloat(matched.price !== undefined && matched.price !== '' ? matched.price : (matched.offerPrice || rawBasePrice));
+      const vOld = matched.oldPrice !== undefined && matched.oldPrice !== null && matched.oldPrice !== '' 
+        ? matched.oldPrice 
+        : (matched.old_price !== undefined && matched.old_price !== null && matched.old_price !== '' ? matched.old_price : null);
+      const vOldPrice = vOld !== null ? parseFloat(vOld) : null;
 
       finalPrice = !isNaN(vPrice) && vPrice > 0 ? vPrice : rawBasePrice;
-      finalOldPrice = !isNaN(vOldPrice) && vOldPrice > 0 ? vOldPrice : rawOldPrice;
+      finalOldPrice = vOldPrice !== null && !isNaN(vOldPrice) && vOldPrice > 0 ? vOldPrice : rawOldPrice;
 
       const discountAmount = Math.max(0, finalOldPrice - finalPrice);
       const discountPercent = finalOldPrice > 0 ? Math.round((discountAmount / finalOldPrice) * 100) : 0;

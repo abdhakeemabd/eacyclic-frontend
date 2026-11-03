@@ -74,8 +74,8 @@ function HomeFeatures() {
                       <h3 className="font-semibold text-gray-900 text-base mb-1 line-clamp-1 group-hover:text-orange-600 transition-colors leading-snug">{item.title}</h3>
                       <div className="flex items-baseline gap-2 mb-4">
                         <div className="text-xl font-semibold text-gray-900 leading-none">₹{item.offerPrice || item.price}</div>
-                        {item.oldPrice && (
-                          <div className="text-xs text-gray-500 line-through">₹{item.oldPrice}</div>
+                        {(item.oldPrice || item.old_price) && (
+                          <div className="text-xs text-gray-500 line-through">₹{item.oldPrice || item.old_price}</div>
                         )}
                       </div>
                     </div>
