@@ -125,9 +125,6 @@ export const UserProvider = ({ children }) => {
       setIsOfflineMode(false);
       localStorage.setItem('user', JSON.stringify(userData));
       localStorage.setItem('authToken', token);
-      
-      // Sync adminUser for admin panel APIs (assuming the same auth)
-      localStorage.setItem('adminUser', JSON.stringify({ ...userData, token }));
 
       return { success: true, data: userData };
     } catch (err) {
@@ -199,7 +196,6 @@ export const UserProvider = ({ children }) => {
       setIsOfflineMode(false);
       localStorage.setItem('user', JSON.stringify(userData));
       localStorage.setItem('authToken', token);
-      localStorage.setItem('adminUser', JSON.stringify({ ...userData, token }));
 
       return { success: true, data: userData, message };
     } catch (err) {
@@ -223,9 +219,7 @@ export const UserProvider = ({ children }) => {
     setIsOfflineMode(false);
     localStorage.removeItem('user');
     localStorage.removeItem('authToken');
-    localStorage.removeItem('adminUser');
     localStorage.removeItem('userToken');
-    localStorage.removeItem('adminToken');
     localStorage.removeItem('userProfile');
     localStorage.removeItem('cart');
   };
@@ -242,13 +236,75 @@ export const UserProvider = ({ children }) => {
     setIsOfflineMode(false);
     localStorage.removeItem('user');
     localStorage.removeItem('authToken');
-    localStorage.removeItem('adminUser');
     localStorage.removeItem('userToken');
-    localStorage.removeItem('adminToken');
     localStorage.removeItem('userProfile');
     localStorage.removeItem('cart');
   };
 
+
+  // Save or update an address in the user's saved_addresses profile on the server
+  const saveUserAddress = async (addressData) => {
+    try {
+      const currentAddresses = Array.isArray(user?.saved_addresses) ? [...user.saved_addresses] : [];
+      let updatedAddresses = [];
+
+      if (addressData.id) {
+        // Update existing address
+        updatedAddresses = currentAddresses.map(addr => {
+          if (addr.id === addressData.id) {
+            return { ...addr, ...addressData };
+          }
+          return addressData.isDefault ? { ...addr, isDefault: false } : addr;
+        });
+      } else {
+        // Add new address
+        const newAddress = {
+          ...addressData,
+          id: Date.now(),
+          isDefault: currentAddresses.length === 0 || addressData.isDefault
+        };
+        // If new address is default, reset other defaults
+        if (newAddress.isDefault) {
+          updatedAddresses = currentAddresses.map(a => ({ ...a, isDefault: false }));
+        } else {
+          updatedAddresses = [...currentAddresses];
+        }
+        updatedAddresses.unshift(newAddress);
+      }
+
+      // Sync phone and primary address string to profile
+      const defaultAddr = updatedAddresses.find(a => a.isDefault) || updatedAddresses[0];
+      const primaryAddressString = defaultAddr
+        ? `${defaultAddr.houseName || ''}, ${defaultAddr.area ? defaultAddr.area + ', ' : ''}${defaultAddr.city || ''}, ${defaultAddr.district || ''}, ${defaultAddr.state || ''} - ${defaultAddr.pincode || ''}`
+        : '';
+
+      const payload = {
+        saved_addresses: updatedAddresses,
+        phone: defaultAddr?.phone || user?.phone || '',
+        address: primaryAddressString || user?.address || ''
+      };
+
+      return await updateUserProfile(payload);
+    } catch (e) {
+      console.error('Error saving user address:', e);
+      return { success: false, error: e.message };
+    }
+  };
+
+  // Delete an address from profile
+  const deleteUserAddress = async (addressId) => {
+    try {
+      const currentAddresses = Array.isArray(user?.saved_addresses) ? [...user.saved_addresses] : [];
+      const updatedAddresses = currentAddresses.filter(a => a.id !== addressId);
+      if (updatedAddresses.length > 0 && !updatedAddresses.some(a => a.isDefault)) {
+        updatedAddresses[0].isDefault = true;
+      }
+      return await updateUserProfile({ saved_addresses: updatedAddresses });
+    } catch (e) {
+      console.error('Error deleting address:', e);
+      return { success: false, error: e.message };
+    }
+  };
 
   const value = {
     user,
@@ -258,6 +314,8 @@ export const UserProvider = ({ children }) => {
     isOfflineMode,
     fetchUserProfile,
     updateUserProfile,
+    saveUserAddress,
+    deleteUserAddress,
     login,
     register,
     sendOTP,

@@ -114,7 +114,9 @@ function AdminProductEditor() {
                 oldPrice: vr.oldPrice !== undefined && vr.oldPrice !== '' ? vr.oldPrice : (vr.old_price !== undefined && vr.old_price !== '' ? vr.old_price : existingMrp),
                 old_price: vr.old_price !== undefined && vr.old_price !== '' ? vr.old_price : (vr.oldPrice !== undefined && vr.oldPrice !== '' ? vr.oldPrice : existingMrp)
               }))
-            : buildVariantMatrix(existingSizes, existingColors, [], existingPrice, existingMrp);
+            : ((existingSizes.length > 0 || existingColors.length > 0)
+                ? buildVariantMatrix(existingSizes, existingColors, [], existingPrice, existingMrp)
+                : []);
 
           const initialGallery = found.gallery && found.gallery.length 
             ? found.gallery 

@@ -175,111 +175,94 @@ export function getVariantTypeLabels(product) {
     case 'plant':
       return { sizeTitle: 'Plant Size', colorTitle: 'Planter Pot Finish' };
     default:
-      return { sizeTitle: 'Select Option / Size', colorTitle: 'Select Finish / Color' };
+      return { sizeTitle: 'Size / Dimensions', colorTitle: 'Color / Finish' };
   }
 }
 
 /**
- * Returns configured or smart Flipkart/Amazon default variants for ANY product
+ * Returns configured variants (sizes and colors) for a product.
+ * Returns empty arrays if NO variants are added to this product.
  */
 export function getProductVariants(product) {
-  if (!product) return { sizes: GENERAL_SIZES, colors: GENERAL_FINISHES };
+  if (!product) return { sizes: [], colors: [] };
 
   let sizes = Array.isArray(product.sizes) ? product.sizes.filter(Boolean) : [];
   let colors = Array.isArray(product.colors) ? product.colors.filter(Boolean) : [];
 
   if (typeof product.sizes === 'string') {
-    try { sizes = JSON.parse(product.sizes); } catch (e) { sizes = product.sizes.split(',').map(s => s.trim()).filter(Boolean); }
+    try {
+      const parsed = JSON.parse(product.sizes);
+      if (Array.isArray(parsed)) sizes = parsed.filter(Boolean);
+    } catch (e) {
+      sizes = product.sizes.split(',').map(s => s.trim()).filter(Boolean);
+    }
   }
   if (typeof product.colors === 'string') {
-    try { colors = JSON.parse(product.colors); } catch (e) { colors = product.colors.split(',').map(c => c.trim()).filter(Boolean); }
+    try {
+      const parsed = JSON.parse(product.colors);
+      if (Array.isArray(parsed)) colors = parsed.filter(Boolean);
+    } catch (e) {
+      colors = product.colors.split(',').map(c => c.trim()).filter(Boolean);
+    }
   }
 
-  // If already populated, return them
-  if (sizes.length > 0 && colors.length > 0) {
-    return { sizes, colors };
+  // Also check if variants matrix array is configured
+  let variants = Array.isArray(product.variants) ? product.variants : [];
+  if (typeof product.variants === 'string') {
+    try {
+      const parsed = JSON.parse(product.variants);
+      if (Array.isArray(parsed)) variants = parsed;
+    } catch (e) {
+      variants = [];
+    }
   }
 
-  const type = getProductCategoryType(product);
-  let defaultSizes = GENERAL_SIZES;
-  let defaultColors = GENERAL_FINISHES;
-
-  switch (type) {
-    case 'furniture_bed':
-      defaultSizes = BED_SIZES;
-      defaultColors = BED_FINISHES;
-      break;
-    case 'furniture_table':
-      defaultSizes = DINING_TABLE_SIZES;
-      defaultColors = DINING_TABLE_FINISHES;
-      break;
-    case 'furniture_chair':
-      defaultSizes = CHAIR_SIZES;
-      defaultColors = CHAIR_FINISHES;
-      break;
-    case 'furniture_wardrobe':
-      defaultSizes = WARDROBE_SIZES;
-      defaultColors = WARDROBE_FINISHES;
-      break;
-    case 'furniture_general':
-      defaultSizes = ['Standard', 'Compact', 'Large'];
-      defaultColors = BED_FINISHES;
-      break;
-    case 'apparel':
-      defaultSizes = DEFAULT_CLOTHING_SIZES;
-      defaultColors = DEFAULT_CLOTHING_COLORS;
-      break;
-    case 'grocery':
-      defaultSizes = GROCERY_SIZES;
-      defaultColors = GROCERY_FINISHES;
-      break;
-    case 'jewellery':
-      defaultSizes = JEWELLERY_SIZES;
-      defaultColors = JEWELLERY_FINISHES;
-      break;
-    case 'plant':
-      defaultSizes = PLANT_SIZES;
-      defaultColors = PLANT_FINISHES;
-      break;
-    default:
-      defaultSizes = GENERAL_SIZES;
-      defaultColors = GENERAL_FINISHES;
-      break;
+  if (Array.isArray(variants) && variants.length > 0) {
+    if (sizes.length === 0) {
+      const extractedSizes = [...new Set(variants.map(v => v?.size || v?.selectedSize).filter(Boolean))];
+      if (extractedSizes.length > 0) sizes = extractedSizes;
+    }
+    if (colors.length === 0) {
+      const extractedColors = [...new Set(variants.map(v => v?.color || v?.selectedColor).filter(Boolean))];
+      if (extractedColors.length > 0) colors = extractedColors;
+    }
   }
 
   return {
-    sizes: sizes.length > 0 ? sizes : defaultSizes,
-    colors: colors.length > 0 ? colors : defaultColors
+    sizes: [...new Set(sizes.map(s => String(s).trim()).filter(Boolean))],
+    colors: [...new Set(colors.map(c => String(c).trim()).filter(Boolean))]
   };
 }
 
 /**
  * Smart pre-selection based on the product name/content
- * e.g. "Aakeshya Upholstered Wooden Bed (6.25 x 6 ft - Teak)" => size "6.25 x 6 ft", color "Teak Wood"
+ * Returns empty strings if no variants exist for this product.
  */
 export function getInitialVariants(product) {
   const { sizes, colors } = getProductVariants(product);
   const title = ((product?.title || product?.name || '') + ' ' + (product?.content || '')).toLowerCase();
 
-  let initialSize = sizes[0] || '';
-  let initialColor = colors[0] || '';
+  let initialSize = sizes.length > 0 ? sizes[0] : '';
+  let initialColor = colors.length > 0 ? colors[0] : '';
 
-  // Match sizes from title
-  for (const s of sizes) {
-    const sLower = s.toLowerCase();
-    if (title.includes(sLower) || (sLower.includes('6.25 x 6') && title.includes('6.25 x 6')) || (sLower.includes('6.25 x 5') && title.includes('6.25 x 5'))) {
-      initialSize = s;
-      break;
+  if (sizes.length > 0) {
+    for (const s of sizes) {
+      const sLower = s.toLowerCase();
+      if (title.includes(sLower) || (sLower.includes('6.25 x 6') && title.includes('6.25 x 6')) || (sLower.includes('6.25 x 5') && title.includes('6.25 x 5'))) {
+        initialSize = s;
+        break;
+      }
     }
   }
 
-  // Match colors / finish from title
-  for (const c of colors) {
-    const cLower = c.toLowerCase();
-    const cFirstWord = cLower.split(' ')[0];
-    if (title.includes(cLower) || (cFirstWord && title.includes(cFirstWord))) {
-      initialColor = c;
-      break;
+  if (colors.length > 0) {
+    for (const c of colors) {
+      const cLower = c.toLowerCase();
+      const cFirstWord = cLower.split(' ')[0];
+      if (title.includes(cLower) || (cFirstWord && title.includes(cFirstWord))) {
+        initialColor = c;
+        break;
+      }
     }
   }
 

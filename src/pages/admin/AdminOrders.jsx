@@ -53,6 +53,9 @@ function AdminOrders() {
         apiOrders = response.data || [];
       } catch (e) {
         console.warn('Error fetching API orders:', e);
+        if (e.response?.status === 401 || e.response?.status === 403) {
+          showError('Admin Access Required', 'Please ensure you are signed in with an authorized Administrator account.');
+        }
       }
       
       apiOrders.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));

@@ -27,6 +27,7 @@ const Cart = lazy(() => import('./pages/cart'));
 const Wishlist = lazy(() => import('./pages/wishlist'));
 const NotFound = lazy(() => import('./pages/not-found'));
 const Checkout = lazy(() => import('./pages/checkout'));
+const OrderStatus = lazy(() => import('./pages/order-status'));
 
 
 // Lazy loaded admin pages
@@ -112,6 +113,9 @@ function HomeRoutes() {
                   <Route path='/contact' element={<PublicLayout><Contact /></PublicLayout>} />
                   <Route path='/profile' element={<PublicLayout><Profile /></PublicLayout>} />
                   <Route path='/checkout' element={<PublicLayout><Checkout /></PublicLayout>} />
+                  <Route path='/order-status/:orderId' element={<PublicLayout><OrderStatus /></PublicLayout>} />
+                  <Route path='/orders/:orderId' element={<PublicLayout><OrderStatus /></PublicLayout>} />
+                  <Route path='/orders' element={<PublicLayout><Profile /></PublicLayout>} />
                   <Route path="*" element={<PublicLayout><NotFound /></PublicLayout>} />
                 </Routes>
               </Suspense>

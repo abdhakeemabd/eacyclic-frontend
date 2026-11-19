@@ -190,11 +190,18 @@ export default function Header() {
                       <p className="text-[11px] text-gray-500 truncate">{user?.phone || user?.email}</p>
                     </div>
                     <Link
+                      to="/profile?tab=orders"
+                      onClick={() => setUserMenuOpen(false)}
+                      className="block px-4 py-2 text-xs text-gray-700 hover:bg-gray-50 transition-colors"
+                    >
+                      Your Orders
+                    </Link>
+                    <Link
                       to="/profile"
                       onClick={() => setUserMenuOpen(false)}
                       className="block px-4 py-2 text-xs text-gray-700 hover:bg-gray-50 transition-colors"
                     >
-                      My Orders & Profile
+                      My Profile
                     </Link>
                     <button
                       onClick={handleLogout}
