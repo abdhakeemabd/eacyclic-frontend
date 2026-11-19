@@ -43,6 +43,7 @@ const AdminProfile = lazy(() => import('./pages/admin/AdminProfile'));
 const OrderDetails = lazy(() => import('./pages/admin/OrderDetails'));
 
 import AskCyWidget from './component/AskCyWidget';
+import FloatingWhatsApp from './component/FloatingWhatsApp';
 
 // Layout wrapper for public pages
 function PublicLayout({ children }) {
@@ -54,6 +55,7 @@ function PublicLayout({ children }) {
       </Suspense>
       <Footer />
       <AskCyWidget />
+      <FloatingWhatsApp />
     </>
   );
 }

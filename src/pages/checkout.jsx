@@ -305,14 +305,8 @@ export default function Checkout() {
       return;
     }
 
-    if (!isAuthenticated) {
-      setIsOtpModalOpen(true);
-      setIsSubmitting(false);
-      return;
-    }
-
-    // If customer entered address in form directly (no saved address chosen), save to profile
-    if (!selectedAddress && (formData.saveToProfile || savedAddresses.length === 0)) {
+    // Auto-save address to user profile if user is logged in
+    if (isAuthenticated && !selectedAddress && (formData.saveToProfile || savedAddresses.length === 0)) {
       try {
         await saveUserAddress({
           ...activeAddress,
@@ -345,7 +339,7 @@ export default function Checkout() {
       tax: 0,
       total: total,
       status: 'pending',
-      payment_method: 'Cash on Delivery',
+      payment_method: 'Cash on Delivery', 
       payment_status: 'Pending',
       items: items.map(item => ({
         product_id: item.id || null,
@@ -483,7 +477,7 @@ export default function Checkout() {
               ) : (
                 /* Address Input Form for New Users or Manual Entry */
                 <div>
-                  <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center justify-between mb-4">
                     <h2 className="text-base font-bold text-gray-900 flex items-center gap-2">
                       <span className="text-xs font-bold text-gray-400">01</span>
                       <span>Delivery address</span>
@@ -502,6 +496,19 @@ export default function Checkout() {
                       </button>
                     )}
                   </div>
+
+                  {!isAuthenticated && (
+                    <div className="mb-5 p-3 bg-emerald-50/80 border border-emerald-200/70 rounded-xl flex items-center justify-between text-xs">
+                      <span className="text-emerald-900 font-medium">Have an account or saved addresses?</span>
+                      <button
+                        type="button"
+                        onClick={() => setIsOtpModalOpen(true)}
+                        className="font-bold text-[#134e35] hover:underline cursor-pointer"
+                      >
+                        Sign in with OTP →
+                      </button>
+                    </div>
+                  )}
 
                   <form id="checkout-form" onSubmit={handleSubmit} className="space-y-4">
                     
@@ -548,15 +555,14 @@ export default function Checkout() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-xs font-medium text-gray-700 mb-1.5">
-                          Email address <span className="text-rose-500">*</span>
+                          Email address <span className="text-gray-400 font-normal">(Optional)</span>
                         </label>
                         <input
-                          required
                           type="email"
                           name="email"
                           value={formData.email}
                           onChange={handleInputChange}
-                          placeholder="e.g. name@example.com"
+                          placeholder="e.g. name@example.com (optional)"
                           className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-[#134e35] focus:ring-1 focus:ring-[#134e35] text-xs sm:text-sm text-gray-900 outline-none transition-all placeholder-gray-400"
                         />
                       </div>

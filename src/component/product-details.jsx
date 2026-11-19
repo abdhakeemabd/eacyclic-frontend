@@ -15,6 +15,7 @@ import {
 } from '../utils/variantUtils';
 import { Fancybox as NativeFancybox } from "@fancyapps/ui";
 import "@fancyapps/ui/dist/fancybox/fancybox.css";
+import { FaWhatsapp } from 'react-icons/fa';
 
 export default function ProductDetails() {
   const { id } = useParams();
@@ -424,10 +425,21 @@ export default function ProductDetails() {
                     onClick={handleBuyNow}
                     className="py-3 sm:py-3.5 px-3 sm:px-6 rounded-full font-semibold text-xs sm:text-sm bg-[#14261c] hover:bg-black text-white flex items-center justify-center gap-1.5 sm:gap-2 transition-all duration-200 cursor-pointer shadow-xs active:scale-95 whitespace-nowrap"
                   >
-                    <span>Buy Now</span>
+                    <span>Buy Now (COD)</span>
                     <ArrowRight className="w-4 h-4 shrink-0" />
                   </button>
                 </div>
+
+                {/* WhatsApp Direct Order Button */}
+                <a
+                  href={`https://wa.me/919846007257?text=${encodeURIComponent(`Hi Eacyclic! I would like to order "${currentTitle}" (₹${currentPrice}) with Cash on Delivery. Please confirm delivery.`)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full py-3 px-4 rounded-full font-semibold text-xs sm:text-sm bg-[#25D366] hover:bg-[#20bd5a] text-white flex items-center justify-center gap-2 transition-all duration-200 cursor-pointer shadow-xs active:scale-95"
+                >
+                  <FaWhatsapp className="w-4 h-4 text-white" />
+                  <span>Order via WhatsApp (Cash on Delivery)</span>
+                </a>
               </div>
 
               {/* Delivery, Returns, & Guarantees (Conditionally set properly!) */}
@@ -474,6 +486,32 @@ export default function ProductDetails() {
             </div>
           </div>
 
+        </div>
+      </div>
+
+      {/* Mobile Sticky Action Bar */}
+      <div className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-gray-200 px-4 py-3 md:hidden flex items-center justify-between gap-3 shadow-lg">
+        <div className="flex flex-col">
+          <span className="text-[10px] text-gray-500 uppercase font-semibold">Price (COD)</span>
+          <span className="text-base font-extrabold text-gray-900">₹{currentPrice.toLocaleString('en-IN')}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <a
+            href={`https://wa.me/919846007257?text=${encodeURIComponent(`Hi Eacyclic! I would like to order "${currentTitle}" (₹${currentPrice}) with Cash on Delivery.`)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="p-2.5 bg-[#25D366] text-white rounded-xl shadow-xs active:scale-95"
+            aria-label="Order on WhatsApp"
+          >
+            <FaWhatsapp className="w-5 h-5" />
+          </a>
+          <button
+            onClick={handleBuyNow}
+            className="px-5 py-2.5 bg-[#14261c] text-white font-bold text-xs rounded-xl shadow-sm active:scale-95 flex items-center gap-1.5"
+          >
+            <span>Buy Now (COD)</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
         </div>
       </div>
     </section>
