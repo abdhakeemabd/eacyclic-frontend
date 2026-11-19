@@ -15,7 +15,11 @@ const api = axios.create({
 api.interceptors.request.use((config) => {
   const isAuthEndpoint = config.url.includes('/login') || config.url.includes('/register') || config.url.includes('/send-otp') || config.url.includes('/verify-otp');
   if (!isAuthEndpoint) {
-    const token = localStorage.getItem('authToken') || localStorage.getItem('adminToken') || localStorage.getItem('userToken');
+    // Prioritize adminToken when accessing admin routes or endpoints to prevent customer token collision
+    const isAdminRoute = (typeof window !== 'undefined' && window.location.pathname.startsWith('/admin')) || config.url.includes('/admin/');
+    const token = isAdminRoute
+      ? (localStorage.getItem('adminToken') || localStorage.getItem('authToken'))
+      : (localStorage.getItem('authToken') || localStorage.getItem('userToken') || localStorage.getItem('adminToken'));
     if (token) {
       config.headers.Authorization = `Token ${token}`;
     }
@@ -63,6 +67,9 @@ export const productsAPI = {
 export const ordersAPI = {
   getAll: () => api.get('/orders'),
   getById: (id) => api.get(`/orders/${id}`),
+  getMyOrders: () => api.get('/orders/my_orders'),
+  trackOrder: (id) => api.get(`/orders/${id}/track`),
+  cancelOrder: (id, reason = '') => api.post(`/orders/${id}/cancel`, { reason }),
   create: (data) => api.post('/orders', data),
   update: (id, data) => api.put(`/orders/${id}`, data),
   updateStatus: (id, status) => api.patch(`/orders/${id}/status`, { status }),

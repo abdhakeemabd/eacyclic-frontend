@@ -1370,7 +1370,9 @@ function AdminProducts() {
             const v = getProductVariants(product);
             const variantCount = (product.variants && product.variants.length > 0)
               ? product.variants.length
-              : (v.sizes.length * Math.max(1, v.colors.length));
+              : ((v.sizes.length > 0 || v.colors.length > 0)
+                  ? Math.max(1, v.sizes.length) * Math.max(1, v.colors.length)
+                  : 0);
             
             return (
               <React.Fragment key={product.id}>
