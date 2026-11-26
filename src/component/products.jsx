@@ -1,28 +1,25 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { Search, Heart, Plus, Sparkles, X, Truck, ArrowRight } from 'lucide-react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { useCart } from '../context/CartContext';
+import { Search, X, Truck, SlidersHorizontal } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
 import { useProducts } from '../context/ProductContext';
-import { getProductVariants } from '../utils/variantUtils';
-import ImageLoader from './image-loader';
 import ProductSkeleton from './product-skeleton';
 import QuickViewModal from './QuickViewModal';
+import ProductCard from './ProductCard';
 
 export default function Products() {
   const [activeTab, setActiveTab] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
+  const [sortBy, setSortBy] = useState('featured');
+  const [freeOnly, setFreeOnly] = useState(false);
   const [visibleCount, setVisibleCount] = useState(16);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const { addToCart, toggleLike, isLiked } = useCart();
   const { products, loading } = useProducts();
 
   const location = useLocation();
-  const navigate = useNavigate();
   const observer = useRef();
 
-  // Extract unique categories from real products
   const categories = useMemo(() => {
     const cats = products.reduce((acc, p) => {
       if (p.category && !acc.includes(p.category.trim())) {
@@ -33,20 +30,36 @@ export default function Products() {
     return ['All', ...cats];
   }, [products]);
 
-  // Filter products based on search and tab
   const filteredProducts = useMemo(() => {
-    return products.filter((product) => {
+    const base = products.filter((product) => {
       const titleName = (product.name || product.title || '').toLowerCase();
       const desc = (product.description || product.content || '').toLowerCase();
       const term = searchTerm.toLowerCase();
 
       const matchesSearch = !term || titleName.includes(term) || desc.includes(term);
       const matchesTab = activeTab === 'All' || product.category === activeTab;
-      return matchesSearch && matchesTab;
+      const matchesShipping = !freeOnly || product.freeShipping !== false;
+      return matchesSearch && matchesTab && matchesShipping;
     });
-  }, [products, searchTerm, activeTab]);
 
-  // Initialize search and category from URL
+    if (sortBy === 'price-asc') {
+      return [...base].sort((a, b) => (parseFloat(a.offerPrice || a.price || 0) - parseFloat(b.offerPrice || b.price || 0)));
+    }
+    if (sortBy === 'price-desc') {
+      return [...base].sort((a, b) => (parseFloat(b.offerPrice || b.price || 0) - parseFloat(a.offerPrice || a.price || 0)));
+    }
+    if (sortBy === 'discount') {
+      const getPct = (p) => {
+        const price = parseFloat(p.offerPrice || p.price || 0);
+        const oldP = parseFloat(p.oldPrice || p.old_price || 0);
+        if (oldP > price && price > 0) return ((oldP - price) / oldP) * 100;
+        return parseFloat(p.discount || 0);
+      };
+      return [...base].sort((a, b) => getPct(b) - getPct(a));
+    }
+    return base;
+  }, [products, searchTerm, activeTab, freeOnly, sortBy]);
+
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const search = params.get('search');
@@ -55,7 +68,6 @@ export default function Products() {
     if (category) setActiveTab(category);
   }, [location.search]);
 
-  // Infinite Scroll Observer
   const lastProductElementRef = useCallback((node) => {
     if (observer.current) observer.current.disconnect();
     observer.current = new IntersectionObserver((entries) => {
@@ -66,40 +78,18 @@ export default function Products() {
     if (node) observer.current.observe(node);
   }, [visibleCount, filteredProducts.length]);
 
-  const handleOpenAddToCartModal = (e, item) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setSelectedProduct(item);
+  const handleQuickView = (product) => {
+    setSelectedProduct(product);
     setIsModalOpen(true);
   };
 
-  const handleGoToProductDetails = (product) => {
-    navigate(`/product-view/${product.id}`, { state: { product } });
-  };
-
-  const handleBuyNow = (e, product) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const { sizes, colors } = getProductVariants(product);
-    if ((sizes && sizes.length > 0) || (colors && colors.length > 0)) {
-      setSelectedProduct(product);
-      setIsModalOpen(true);
-      return;
-    }
-    navigate('/checkout', { state: { product, quantity: 1 } });
-  };
-
   const displayedProducts = filteredProducts.slice(0, visibleCount);
-  const badgeLabels = ['Best seller', 'Everyday essential', 'Popular pick', 'New arrival', 'Top rated'];
 
   return (
     <section className="py-12 bg-white min-h-screen">
       <div className="container mx-auto px-6 sm:px-8 lg:px-16">
-        
         {/* Controls: Search & Category Pills */}
-        <div className="max-w-4xl mx-auto mb-10 space-y-6">
-          
-          {/* Search Input */}
+        <div className="max-w-4xl mx-auto mb-8 space-y-5">
           <div className="relative max-w-xl mx-auto">
             <Search className="w-4 h-4 text-gray-400 absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
@@ -115,7 +105,7 @@ export default function Products() {
             {searchTerm && (
               <button
                 onClick={() => setSearchTerm('')}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-black p-1"
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-black p-1 cursor-pointer"
                 aria-label="Clear search"
               >
                 <X className="w-3.5 h-3.5" />
@@ -123,11 +113,10 @@ export default function Products() {
             )}
           </div>
 
-          {/* Category Filter Pills */}
           <div className="flex flex-wrap items-center justify-center gap-2 overflow-x-auto py-1 no-scrollbar">
             {categories.map((cat) => {
-              const count = cat === 'All' 
-                ? products.length 
+              const count = cat === 'All'
+                ? products.length
                 : products.filter(p => p.category === cat).length;
               const isActive = activeTab === cat;
 
@@ -154,17 +143,53 @@ export default function Products() {
           </div>
         </div>
 
-        {/* Results Counter */}
-        <div className="flex items-center justify-between text-xs text-gray-500 mb-6 border-b border-gray-100 pb-3">
-          <span>Showing <strong className="text-gray-900">{displayedProducts.length}</strong> of {filteredProducts.length} items</span>
-          {activeTab !== 'All' && (
+        {/* Results Counter, Free Delivery Toggle & Sort */}
+        <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-gray-500 mb-6 border-b border-gray-100 pb-4">
+          <div className="flex items-center gap-3">
+            <span>Showing <strong className="text-gray-900">{displayedProducts.length}</strong> of {filteredProducts.length} items</span>
+            {(activeTab !== 'All' || searchTerm || freeOnly) && (
+              <button
+                onClick={() => {
+                  setActiveTab('All');
+                  setSearchTerm('');
+                  setFreeOnly(false);
+                }}
+                className="text-[#134e35] font-semibold hover:underline cursor-pointer"
+              >
+                Reset filters
+              </button>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2.5">
             <button
-              onClick={() => setActiveTab('All')}
-              className="text-[#134e35] font-semibold hover:underline"
+              type="button"
+              onClick={() => setFreeOnly(prev => !prev)}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors cursor-pointer ${
+                freeOnly
+                  ? 'bg-[#edf6f1] text-[#134e35] border-[#134e35]'
+                  : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
+              }`}
             >
-              Reset filter
+              <Truck className="w-3.5 h-3.5" />
+              <span>Free Delivery</span>
             </button>
-          )}
+
+            <div className="inline-flex items-center gap-1.5 bg-[#f8f9f8] border border-gray-200 rounded-full px-3 py-1.5">
+              <SlidersHorizontal className="w-3.5 h-3.5 text-gray-500" />
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                aria-label="Sort products"
+                className="bg-transparent text-xs font-semibold text-gray-800 outline-none cursor-pointer"
+              >
+                <option value="featured">Featured</option>
+                <option value="price-asc">Price: Low to High</option>
+                <option value="price-desc">Price: High to Low</option>
+                <option value="discount">Biggest Savings</option>
+              </select>
+            </div>
+          </div>
         </div>
 
         {/* Product Grid */}
@@ -173,133 +198,17 @@ export default function Products() {
         ) : displayedProducts.length > 0 ? (
           <>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
-              {displayedProducts.map((product, index) => {
-                const liked = isLiked(product.id);
-                const tag = product.offer ? `-${product.offer.toString().replace(/[^0-9]/g, '')}%` : badgeLabels[index % badgeLabels.length];
-                const price = parseFloat(product.offerPrice !== undefined && product.offerPrice !== null && product.offerPrice !== '' ? product.offerPrice : (product.price || 0));
-                const rawOld = product.oldPrice !== undefined && product.oldPrice !== null && product.oldPrice !== ''
-                  ? parseFloat(product.oldPrice)
-                  : (product.old_price !== undefined && product.old_price !== null && product.old_price !== '' ? parseFloat(product.old_price) : null);
-                const oldPrice = rawOld !== null && !isNaN(rawOld) && rawOld > 0
-                  ? rawOld
-                  : (product.discount > 0 ? Math.round((price * 100) / (100 - parseFloat(product.discount))) : (price > 0 ? Math.round(price * 1.2) : null));
-                const imageSrc = product.image_url || product.image || (product.gallery && product.gallery[0]);
-                const title = product.name || product.title || 'Product';
-
-                return (
-                  <div
-                    key={product.id || index}
-                    onClick={() => handleGoToProductDetails(product)}
-                    className="group bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-lg transition-all duration-300 flex flex-col relative cursor-pointer"
-                  >
-                    {/* Image Area */}
-                    <div
-                      className="aspect-square bg-[#f5f6f5] relative flex items-center justify-center p-4 overflow-hidden"
-                    >
-                      {/* Top Left Tag */}
-                      <span className="absolute top-3 left-3 z-10 text-[10px] font-semibold text-gray-700 bg-white/90 backdrop-blur-xs px-2.5 py-1 rounded-full shadow-2xs">
-                        {tag}
-                      </span>
-
-                      {/* Top Right Wishlist Button */}
-                      <button
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          toggleLike(product);
-                        }}
-                        className="absolute top-3 right-3 z-10 w-8 h-8 rounded-full bg-white/90 backdrop-blur-xs shadow-2xs flex items-center justify-center hover:scale-110 transition-transform cursor-pointer"
-                        aria-label="Save to wishlist"
-                      >
-                        <Heart
-                          className={`w-4 h-4 ${
-                            liked ? 'text-red-500 fill-red-500' : 'text-gray-600'
-                          }`}
-                        />
-                      </button>
-
-                      {/* Image */}
-                      <div className="w-full h-full flex items-center justify-center transition-transform duration-500 group-hover:scale-105">
-                        <ImageLoader
-                          src={imageSrc}
-                          alt={title}
-                          className="w-full h-full object-contain mix-blend-multiply"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Content Details */}
-                    <div className="p-3 sm:p-4 md:p-5 flex flex-col flex-1 justify-between">
-                      <div>
-                        {/* Top Category */}
-                        <div className="text-[10px] font-semibold text-gray-400 tracking-wider uppercase mb-1 truncate">
-                          {product.category || 'STORE PICK'}
-                        </div>
-
-                        <h3
-                          className="font-bold text-gray-900 text-xs sm:text-sm line-clamp-1 group-hover:text-[#134e35] transition-colors mb-3"
-                          title={title}
-                        >
-                          {title}
-                        </h3>
-                      </div>
-
-                      {/* Price, Free Delivery & Actions */}
-                      <div className="mt-auto pt-2 border-t border-gray-100">
-                        {/* Price Row */}
-                        <div className="flex items-baseline gap-1.5 flex-wrap">
-                          <span className="text-sm sm:text-base md:text-lg font-black text-gray-900 tracking-tight whitespace-nowrap">
-                            ₹{Math.round(Number(price) || 0).toLocaleString('en-IN')}
-                          </span>
-                          {oldPrice && Number(oldPrice) > Number(price) && (
-                            <span className="text-[11px] sm:text-xs text-gray-400 line-through whitespace-nowrap">
-                              ₹{Math.round(Number(oldPrice) || 0).toLocaleString('en-IN')}
-                            </span>
-                          )}
-                        </div>
-
-                        {/* Free Delivery on ONE LINE below price */}
-                        <div className="mt-1.5 mb-2.5 flex items-center">
-                          {product.freeShipping !== false ? (
-                            <span className="inline-flex items-center gap-1.5 text-[10px] sm:text-[11px] font-semibold text-[#134e35] bg-[#edf6f1] px-2 py-0.5 rounded-md whitespace-nowrap">
-                              <Truck className="w-3 h-3 text-[#134e35] shrink-0" />
-                              <span>Free delivery</span>
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1.5 text-[10px] sm:text-[11px] font-medium text-gray-500 bg-gray-100 px-2 py-0.5 rounded-md whitespace-nowrap">
-                              <Truck className="w-3 h-3 text-gray-400 shrink-0" />
-                              <span>Standard delivery</span>
-                            </span>
-                          )}
-                        </div>
-
-                        {/* Actions on ONE line: Add to Cart (+) & Buy Now */}
-                        <div className="flex items-center gap-1.5 sm:gap-2">
-                          <button
-                            onClick={(e) => handleOpenAddToCartModal(e, product)}
-                            className="shrink-0 w-8 h-8 rounded-lg border border-gray-200 hover:border-[#134e35] hover:bg-[#edf6f1] hover:text-[#134e35] flex items-center justify-center text-gray-700 transition-all duration-200 active:scale-95 shadow-2xs cursor-pointer z-10"
-                            title="Add to Cart / Select Options"
-                            aria-label={`Add ${title} to Cart`}
-                          >
-                            <Plus className="w-4 h-4" />
-                          </button>
-
-                          <button
-                            onClick={(e) => handleBuyNow(e, product)}
-                            className="flex-1 h-8 px-2.5 rounded-lg bg-[#134e35] hover:bg-[#0c3322] active:bg-[#082216] text-white text-xs font-bold flex items-center justify-center gap-1 shadow-xs hover:shadow-md transition-all duration-200 active:scale-95 cursor-pointer z-10 whitespace-nowrap group/buy"
-                          >
-                            <span>Buy Now</span>
-                            <ArrowRight className="w-3.5 h-3.5 shrink-0 transition-transform duration-200 group-hover/buy:translate-x-0.5" />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
+              {displayedProducts.map((product, index) => (
+                <ProductCard
+                  key={product.id || index}
+                  product={product}
+                  index={index}
+                  priority={index < 4}
+                  onQuickView={handleQuickView}
+                />
+              ))}
             </div>
 
-            {/* Infinite Scroll Loader */}
             {visibleCount < filteredProducts.length && (
               <div ref={lastProductElementRef} className="flex justify-center mt-12 py-4">
                 <div className="w-7 h-7 border-3 border-[#134e35] border-t-transparent rounded-full animate-spin" />
@@ -307,7 +216,7 @@ export default function Products() {
             )}
           </>
         ) : (
-          <div className="text-center py-20 bg-gray-50 rounded-2xl border border-dashed border-gray-200 max-w-lg mx-auto">
+          <div className="text-center py-20 bg-[#fbf9f6] rounded-2xl border border-dashed border-gray-200 max-w-lg mx-auto">
             <Search className="w-8 h-8 text-gray-400 mx-auto mb-3" />
             <h3 className="text-base font-bold text-gray-900">No products found</h3>
             <p className="text-xs text-gray-500 mt-1">
@@ -317,8 +226,9 @@ export default function Products() {
               onClick={() => {
                 setSearchTerm('');
                 setActiveTab('All');
+                setFreeOnly(false);
               }}
-              className="mt-4 px-4 py-2 bg-[#134e35] text-white text-xs font-semibold rounded-full hover:bg-[#0e3a27] transition-all cursor-pointer"
+              className="mt-4 px-5 py-2 bg-[#134e35] text-white text-xs font-semibold rounded-full hover:bg-[#0e3a27] transition-all cursor-pointer"
             >
               Clear filters
             </button>
@@ -326,7 +236,6 @@ export default function Products() {
         )}
       </div>
 
-      {/* Quick View Modal */}
       <QuickViewModal
         product={selectedProduct}
         isOpen={isModalOpen}

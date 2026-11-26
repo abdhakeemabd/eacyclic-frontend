@@ -1,57 +1,43 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { FaHome, FaShoppingBag, FaQuestionCircle } from 'react-icons/fa';
+import { Home, ShoppingBag, HelpCircle } from 'lucide-react';
 
 const NotFound = () => {
   return (
-    <section className="flex items-center justify-center min-h-[75vh] px-6 bg-gradient-to-b from-white to-gray-50 relative overflow-hidden">
-      {/* Background ambient glow shapes */}
-      <div className="absolute top-1/4 left-1/4 w-72 h-72 bg-orange-100 rounded-full blur-3xl opacity-40 -translate-x-1/2 -translate-y-1/2" />
-      <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-blue-50 rounded-full blur-3xl opacity-40 translate-x-1/2 translate-y-1/2" />
-
-      <div className="max-w-xl w-full text-center relative z-10 space-y-8 py-10">
-        {/* Animated Visual Number */}
-        <div className="relative inline-block select-none animate-float">
-          <h1 className="text-[120px] sm:text-[150px] font-black leading-none tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-orange-500 via-red-500 to-orange-600">
-            404
-          </h1>
-          <div className="absolute -inset-1 bg-gradient-to-r from-orange-500 to-red-600 rounded-full blur opacity-15 -z-10" />
+    <section className="flex items-center justify-center min-h-[75vh] px-6 bg-[#fbf9f6]">
+      <div className="max-w-lg w-full text-center space-y-6 py-12 bg-white rounded-3xl border border-gray-100 shadow-xs p-8 sm:p-12">
+        <div className="text-7xl sm:text-8xl font-black text-[#134e35] font-serif leading-none">
+          404
         </div>
-
-        {/* Content */}
-        <div className="space-y-3">
-          <h2 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight">
-            Lost in the Marketplace?
-          </h2>
-          <p className="text-gray-500 text-sm sm:text-base max-w-md mx-auto leading-relaxed">
-            The page you are looking for has been moved, deleted, or never existed in the Eacyclic catalog. Let's get you back on track!
+        <div className="space-y-2">
+          <h1 className="text-2xl sm:text-3xl font-bold text-[#14261c] font-serif">
+            Page not found
+          </h1>
+          <p className="text-gray-500 text-xs sm:text-sm max-w-sm mx-auto leading-relaxed">
+            The page you are looking for has moved or no longer exists. Explore our latest products below.
           </p>
         </div>
-
-        {/* Navigation CTAs */}
-        <div className="flex flex-col sm:flex-row justify-center gap-3.5 pt-4">
+        <div className="flex flex-wrap justify-center gap-3 pt-2">
           <Link
             to="/"
-            className="flex items-center justify-center gap-2 px-6 py-3.5 bg-black hover:bg-gray-800 text-white font-semibold rounded-xl shadow-lg transition-all duration-300 transform active:scale-[0.98] text-sm uppercase tracking-wider"
+            className="inline-flex items-center gap-2 px-5 py-3 bg-[#134e35] hover:bg-[#0e3a27] text-white font-bold rounded-full text-xs transition-colors"
           >
-            <FaHome className="text-base" />
-            Go Home
+            <Home className="w-4 h-4" />
+            <span>Go Home</span>
           </Link>
-          
           <Link
             to="/product"
-            className="flex items-center justify-center gap-2 px-6 py-3.5 bg-white border border-gray-200 text-gray-800 font-semibold rounded-xl shadow-sm hover:bg-gray-50 hover:border-gray-300 transition-all duration-300 transform active:scale-[0.98] text-sm uppercase tracking-wider"
+            className="inline-flex items-center gap-2 px-5 py-3 bg-[#f6f9f7] border border-[#134e35]/20 text-[#134e35] font-bold rounded-full text-xs hover:bg-[#eaf4ee] transition-colors"
           >
-            <FaShoppingBag className="text-base text-orange-500" />
-            Shop Catalog
+            <ShoppingBag className="w-4 h-4" />
+            <span>Shop Products</span>
           </Link>
-
           <Link
             to="/contact"
-            className="flex items-center justify-center gap-2 px-6 py-3.5 bg-white border border-gray-200 text-gray-800 font-semibold rounded-xl shadow-sm hover:bg-gray-50 hover:border-gray-300 transition-all duration-300 transform active:scale-[0.98] text-sm uppercase tracking-wider"
+            className="inline-flex items-center gap-2 px-5 py-3 bg-white border border-gray-200 text-gray-700 font-semibold rounded-full text-xs hover:bg-gray-50 transition-colors"
           >
-            <FaQuestionCircle className="text-base text-blue-500" />
-            Get Help
+            <HelpCircle className="w-4 h-4" />
+            <span>Get Help</span>
           </Link>
         </div>
       </div>

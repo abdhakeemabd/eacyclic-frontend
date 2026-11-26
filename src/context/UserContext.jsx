@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { userAPI } from '../utils/api';
 
 const UserContext = createContext();
@@ -23,6 +23,36 @@ export const UserProvider = ({ children }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [isOfflineMode, setIsOfflineMode] = useState(false);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const pendingAuthActionRef = useRef(null);
+
+  const openAuthModal = (onSuccessAction = null) => {
+    pendingAuthActionRef.current = typeof onSuccessAction === 'function' ? onSuccessAction : null;
+    setAuthModalOpen(true);
+  };
+
+  const closeAuthModal = () => {
+    setAuthModalOpen(false);
+    pendingAuthActionRef.current = null;
+  };
+
+  const handleAuthModalSuccess = (userData) => {
+    const action = pendingAuthActionRef.current;
+    pendingAuthActionRef.current = null;
+    setAuthModalOpen(false);
+    if (typeof action === 'function') {
+      action(userData);
+    }
+  };
+
+  const requireLogin = (action) => {
+    if (isAuthenticated) {
+      if (typeof action === 'function') action();
+      return true;
+    }
+    openAuthModal(action);
+    return false;
+  };
 
   // Load user and sync database on mount
   useEffect(() => {
@@ -312,6 +342,11 @@ export const UserProvider = ({ children }) => {
     error,
     isAuthenticated,
     isOfflineMode,
+    authModalOpen,
+    openAuthModal,
+    closeAuthModal,
+    handleAuthModalSuccess,
+    requireLogin,
     fetchUserProfile,
     updateUserProfile,
     saveUserAddress,

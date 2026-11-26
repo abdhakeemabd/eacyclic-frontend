@@ -146,8 +146,8 @@ function ContactForm() {
                   </div>
                   <div>
                     <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Phone No.</p>
-                    <a href="tel:+918606065001" className="text-sm font-bold text-white hover:text-orange-400 transition-colors block mt-0.5">
-                      +91 8606065001
+                    <a href="tel:+919846007257" className="text-sm font-bold text-white hover:text-orange-400 transition-colors block mt-0.5">
+                      +91 98460 07257
                     </a>
                   </div>
                 </div>
@@ -191,9 +191,9 @@ function ContactForm() {
           <h3 className="text-base font-bold text-slate-900 mb-4 px-2">Office Location</h3>
           <div className="rounded-2xl overflow-hidden border border-slate-200">
             <MapLoader
-              title="Google Maps Office Location"
+              title="Google Maps Office Location - Edavannappara"
               className="w-full h-[350px] sm:h-[450px]"
-              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3887.175874738364!2d77.70469257578802!3d13.024469613715535!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3bae11000bcd07cd%3A0x28024596209046f5!2sKP%20Consulting!5e0!3m2!1sen!2sin!4v1753201530246!5m2!1sen!2sin"
+              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d15654.437987213454!2d75.976077!3d11.233519!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3ba645229aaaeeb1%3A0x63321db8cb244c35!2sEdavannappara%2C%20Kerala!5e0!3m2!1sen!2sin!4v1700000000000!5m2!1sen!2sin"
               width="100%"
               height="450"
               style={{ border: 0 }}

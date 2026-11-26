@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 
-const ImageLoader = ({ src, alt, className = '', imgClassName = '', wrapperClassName = '', aspectRatio = 'aspect-[4/3]', ...props }) => {
+const ImageLoader = ({ src, alt, className = '', imgClassName = '', wrapperClassName = '', aspectRatio = 'aspect-[4/3]', priority = false, ...props }) => {
   const imgRef = useRef(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const [error, setError] = useState(false);
@@ -49,7 +49,9 @@ const ImageLoader = ({ src, alt, className = '', imgClassName = '', wrapperClass
         } ${error ? 'hidden' : 'block'} ${className} ${imgClassName}`}
         onLoad={() => setIsLoaded(true)}
         onError={() => setError(true)}
-        loading="lazy"
+        loading={priority ? 'eager' : 'lazy'}
+        fetchPriority={priority ? 'high' : 'auto'}
+        decoding="async"
         {...props}
       />
     </div>

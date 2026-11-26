@@ -2,8 +2,8 @@ import React from 'react';
 import { Helmet } from 'react-helmet-async';
 
 const SITE_NAME = 'Eacyclic';
-const SITE_URL = 'https://www.eacyclic.com';
-const DEFAULT_IMAGE = `${SITE_URL}/favicon.webp`;
+const SITE_URL = 'https://eacyclic.com';
+const DEFAULT_IMAGE = `${SITE_URL}/apple-touch-icon.png`;
 
 /**
  * Professional SEO component — supports:

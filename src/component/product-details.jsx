@@ -3,6 +3,7 @@ import { useParams, useLocation, useNavigate, Link } from 'react-router-dom';
 import { ShoppingBag, ArrowRight, Truck, RotateCcw, ShieldCheck, Minus, Plus, Heart, Share2, Check, Sparkles } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useProducts } from '../context/ProductContext';
+import { useUser } from '../context/UserContext';
 import ImageLoader from './image-loader';
 import { 
   getColorHex, 
@@ -27,9 +28,9 @@ export default function ProductDetails() {
   const [selectedSize, setSelectedSize] = useState('');
   const [selectedColor, setSelectedColor] = useState('');
   const [isAdded, setIsAdded] = useState(false);
-  const [activeTab, setActiveTab] = useState('details');
 
   const { addToCart, toggleLike, isLiked } = useCart();
+  const { requireLogin } = useUser();
 
   useEffect(() => {
     const passedProduct = location.state?.product;
@@ -75,9 +76,6 @@ export default function ProductDetails() {
   const rawProductOldPrice = product.oldPrice !== undefined && product.oldPrice !== null && product.oldPrice !== ''
     ? parseFloat(product.oldPrice)
     : (product.old_price !== undefined && product.old_price !== null && product.old_price !== '' ? parseFloat(product.old_price) : null);
-  const oldPrice = rawProductOldPrice !== null && !isNaN(rawProductOldPrice) && rawProductOldPrice > 0
-    ? rawProductOldPrice
-    : (product.discount > 0 ? Math.round((price * 100) / (100 - parseFloat(product.discount))) : (price > 0 ? Math.round(price * 1.2) : null));
   const title = product.name || product.title || 'Product';
   const category = product.category || 'Store Collection';
   const liked = isLiked(product.id);
@@ -103,24 +101,27 @@ export default function ProductDetails() {
     };
     await addToCart(productWithVariantPrice, quantity, { selectedSize, selectedColor });
     setIsAdded(true);
-    setTimeout(() => setIsAdded(false), 2200);
+    setTimeout(() => setIsAdded(false), 6000);
   };
 
   const handleBuyNow = () => {
-    navigate('/checkout', {
-      state: {
-        product: { 
-          ...product, 
-          title: currentTitle,
-          name: currentTitle,
-          price: currentPrice,
-          offerPrice: currentPrice,
-          oldPrice: currentOldPrice,
-          selectedSize, 
-          selectedColor 
-        },
-        quantity
-      }
+    const productPayload = {
+      ...product,
+      title: currentTitle,
+      name: currentTitle,
+      price: currentPrice,
+      offerPrice: currentPrice,
+      oldPrice: currentOldPrice,
+      selectedSize,
+      selectedColor
+    };
+    requireLogin(() => {
+      navigate('/checkout', {
+        state: {
+          product: productPayload,
+          quantity
+        }
+      });
     });
   };
 
@@ -131,7 +132,7 @@ export default function ProductDetails() {
           title,
           url: window.location.href,
         });
-      } catch (err) {
+      } catch {
         // Ignored
       }
     } else {
@@ -424,10 +425,35 @@ export default function ProductDetails() {
                     onClick={handleBuyNow}
                     className="py-3 sm:py-3.5 px-3 sm:px-6 rounded-full font-semibold text-xs sm:text-sm bg-[#14261c] hover:bg-black text-white flex items-center justify-center gap-1.5 sm:gap-2 transition-all duration-200 cursor-pointer shadow-xs active:scale-95 whitespace-nowrap"
                   >
-                    <span>Buy Now</span>
+                    <span>Buy Now (COD)</span>
                     <ArrowRight className="w-4 h-4 shrink-0" />
                   </button>
                 </div>
+
+                {/* Instant Post-Add Conversion Bar */}
+                {isAdded && (
+                  <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-3 flex flex-wrap items-center justify-between gap-2 text-xs animate-fadeIn">
+                    <span className="font-semibold text-emerald-900 flex items-center gap-1.5">
+                      <Check className="w-4 h-4 text-emerald-600" />
+                      Added to your bag!
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <Link
+                        to="/cart"
+                        className="px-3 py-1.5 bg-white border border-emerald-300 text-emerald-800 font-bold rounded-full hover:bg-emerald-100 transition-colors"
+                      >
+                        View Bag
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={handleBuyNow}
+                        className="px-3.5 py-1.5 bg-[#134e35] text-white font-bold rounded-full hover:bg-[#0e3a27] transition-colors cursor-pointer"
+                      >
+                        Checkout Now →
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Delivery, Returns, & Guarantees (Conditionally set properly!) */}
@@ -474,6 +500,31 @@ export default function ProductDetails() {
             </div>
           </div>
 
+        </div>
+      </div>
+
+      {/* Mobile Sticky Action Bar */}
+      <div className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-gray-200 px-4 py-3 md:hidden flex items-center justify-between gap-3 shadow-lg">
+        <div className="flex flex-col">
+          <span className="text-[10px] text-gray-500 uppercase font-semibold">Price (COD)</span>
+          <span className="text-base font-extrabold text-gray-900">₹{currentPrice.toLocaleString('en-IN')}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleAddToCart}
+            className="px-3.5 py-2.5 bg-[#134e35] text-white font-bold text-xs rounded-xl shadow-xs active:scale-95 flex items-center gap-1.5 cursor-pointer"
+            aria-label="Add to bag"
+          >
+            {isAdded ? <Check className="w-4 h-4" /> : <ShoppingBag className="w-4 h-4" />}
+            <span>{isAdded ? 'Added' : 'Add'}</span>
+          </button>
+          <button
+            onClick={handleBuyNow}
+            className="px-5 py-2.5 bg-[#14261c] text-white font-bold text-xs rounded-xl shadow-sm active:scale-95 flex items-center gap-1.5 cursor-pointer"
+          >
+            <span>Buy Now (COD)</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
         </div>
       </div>
     </section>

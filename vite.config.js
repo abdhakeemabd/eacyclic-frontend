@@ -25,11 +25,19 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     emptyOutDir: true,
-    sourcemap: true,
+    sourcemap: false,
+    chunkSizeWarningLimit: 600,
     rollupOptions: {
       input: {
         main: './index.html',
-      }
+      },
+      output: {
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom', 'react-router-dom', 'react-helmet-async'],
+          'ui-vendor': ['framer-motion', 'lucide-react', 'sweetalert2'],
+          'charts-vendor': ['recharts'],
+        },
+      },
     }
   }
 })

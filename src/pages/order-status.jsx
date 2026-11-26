@@ -7,6 +7,8 @@ import {
   HelpCircle, ShieldCheck, RefreshCw, ExternalLink 
 } from 'lucide-react';
 import { ordersAPI } from '../utils/api';
+import { useCart } from '../context/CartContext';
+import { useUser } from '../context/UserContext';
 import ImageLoader from '../component/image-loader';
 import { showConfirm, showSuccess, showError } from '../utils/swalUtils';
 
@@ -14,11 +16,12 @@ export default function OrderStatus() {
   const { orderId } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
+  const { reorderOrder, recordLocalOrder } = useCart();
+  const { requireLogin } = useUser();
 
   // Pick up order from router state if arrived directly from checkout
   const [order, setOrder] = useState(location.state?.order || null);
-  const [isNewOrder, setIsNewOrder] = useState(Boolean(location.state?.isNewOrder));
-  const [trackingData, setTrackingData] = useState(null);
+  const isNewOrder = Boolean(location.state?.isNewOrder);
   const [loading, setLoading] = useState(!order);
   const [copiedId, setCopiedId] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
@@ -38,9 +41,10 @@ export default function OrderStatus() {
 
       if (orderRes.status === 'fulfilled' && orderRes.value?.data) {
         setOrder(orderRes.value.data);
+        recordLocalOrder(orderRes.value.data);
       }
-      if (trackRes.status === 'fulfilled' && trackRes.value?.data) {
-        setTrackingData(trackRes.value.data);
+      if (trackRes.status === 'fulfilled' && trackRes.value?.data?.delivery) {
+        setOrder(prev => prev ? { ...prev, delivery: trackRes.value.data.delivery } : prev);
       }
     } catch (err) {
       console.error('Failed to load order status:', err);
@@ -87,6 +91,16 @@ export default function OrderStatus() {
 
   const handlePrint = () => {
     window.print();
+  };
+
+  const handleOrderAgain = () => {
+    if (!order) return;
+    requireLogin(async () => {
+      const { items: reorderItems } = await reorderOrder(order);
+      if (reorderItems.length > 0) {
+        navigate('/checkout', { state: { cartItems: reorderItems } });
+      }
+    });
   };
 
   // Determine current step index for the tracker
@@ -177,8 +191,15 @@ export default function OrderStatus() {
 
           <div className="flex items-center gap-2">
             <button
+              onClick={handleOrderAgain}
+              className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-[#134e35] hover:bg-[#0e3a27] text-white rounded-lg text-xs font-bold transition-colors shadow-2xs cursor-pointer"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              <span>Order Again (1-Click)</span>
+            </button>
+            <button
               onClick={handlePrint}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-white border border-gray-200 rounded-lg text-xs font-semibold text-gray-700 hover:bg-gray-50 transition-colors shadow-2xs"
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-white border border-gray-200 rounded-lg text-xs font-semibold text-gray-700 hover:bg-gray-50 transition-colors shadow-2xs cursor-pointer"
             >
               <Printer className="w-3.5 h-3.5" />
               <span>Download Invoice</span>
@@ -204,7 +225,11 @@ export default function OrderStatus() {
                 Order Placed, thank you!
               </h2>
               <p className="text-xs text-gray-600 mt-1">
-                Confirmation has been registered for <span className="font-semibold text-gray-800">{order.customer_email || order.customer_name}</span>. We will notify you once your package is dispatched.
+                {order.customer_email ? (
+                  <>A confirmation receipt & tracking link has been sent to <span className="font-semibold text-gray-800">{order.customer_email}</span>.</>
+                ) : (
+                  <>Confirmation has been registered for <span className="font-semibold text-gray-800">{order.customer_name}</span>. Save your Order ID <span className="font-bold">#{order.id}</span> to track your package anytime.</>
+                )}
               </p>
             </div>
           </div>

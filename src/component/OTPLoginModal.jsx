@@ -11,9 +11,20 @@ const OTPLoginModal = ({ isOpen, onClose, onSuccess }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
+  const [slowNotice, setSlowNotice] = useState(false);
   const [timer, setTimer] = useState(0);
 
   const inputRefs = useRef([]);
+
+  // Show reassuring message if backend cold start takes >3s
+  useEffect(() => {
+    if (!loading) {
+      setSlowNotice(false);
+      return;
+    }
+    const t = setTimeout(() => setSlowNotice(true), 3000);
+    return () => clearTimeout(t);
+  }, [loading]);
 
   // Handle countdown timer for Resend OTP button
   useEffect(() => {
@@ -159,9 +170,9 @@ const OTPLoginModal = ({ isOpen, onClose, onSuccess }) => {
       <div className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-100 transition-all transform scale-100">
         
         {/* Top Header Card */}
-        <div className="bg-gradient-to-br from-orange-50 via-white to-orange-100 px-6 pt-8 pb-7 text-gray-900 relative overflow-hidden border-b border-gray-100">
+        <div className="bg-gradient-to-br from-[#f6f9f7] via-white to-[#edf6f1] px-6 pt-8 pb-7 text-gray-900 relative overflow-hidden border-b border-gray-100">
           {/* Subtle Decorative Glow Circle */}
-          <div className="absolute -right-8 -top-8 w-32 h-32 bg-orange-500/20 rounded-full blur-2xl z-2"></div>
+          <div className="absolute -right-8 -top-8 w-32 h-32 bg-[#134e35]/15 rounded-full blur-2xl z-2"></div>
           
           <button
             onClick={() => { onClose(); resetForm(); }}
@@ -206,8 +217,8 @@ const OTPLoginModal = ({ isOpen, onClose, onSuccess }) => {
             {/* Step Progress Dots */}
             {step !== 3 && (
               <div className="flex items-center gap-1.5 mt-4">
-                <span className={`h-1.5 rounded-full transition-all duration-300 ${step === 1 ? 'w-6 bg-orange-500' : 'w-1.5 bg-gray-300'}`}></span>
-                <span className={`h-1.5 rounded-full transition-all duration-300 ${step === 2 ? 'w-6 bg-orange-500' : 'w-1.5 bg-gray-300'}`}></span>
+                <span className={`h-1.5 rounded-full transition-all duration-300 ${step === 1 ? 'w-6 bg-[#134e35]' : 'w-1.5 bg-gray-300'}`}></span>
+                <span className={`h-1.5 rounded-full transition-all duration-300 ${step === 2 ? 'w-6 bg-[#134e35]' : 'w-1.5 bg-gray-300'}`}></span>
               </div>
             )}
           </div>
@@ -225,8 +236,8 @@ const OTPLoginModal = ({ isOpen, onClose, onSuccess }) => {
           )}
 
           {successMsg && step === 2 && (
-            <div className="mb-5 bg-orange-50 border border-orange-200/80 text-orange-800 px-4 py-3 rounded-2xl flex items-center gap-3 text-xs font-medium animate-fadeIn">
-              <FaCheckCircle className="text-orange-500 shrink-0 text-base" />
+            <div className="mb-5 bg-emerald-50 border border-emerald-200/80 text-emerald-900 px-4 py-3 rounded-2xl flex items-center gap-3 text-xs font-medium animate-fadeIn">
+              <FaCheckCircle className="text-[#134e35] shrink-0 text-base" />
               <span>{successMsg}</span>
             </div>
           )}
@@ -248,7 +259,7 @@ const OTPLoginModal = ({ isOpen, onClose, onSuccess }) => {
                     value={email}
                     onChange={(e) => { setEmail(e.target.value); setError(''); }}
                     placeholder="john@example.com"
-                    className="w-full pl-11 pr-4 py-3.5 bg-gray-50/50 border border-gray-200 rounded-2xl focus:bg-white focus:border-orange-500 focus:ring-2 focus:ring-orange-500/10 outline-none transition-all text-sm font-semibold text-gray-900 placeholder-gray-400"
+                    className="w-full pl-11 pr-4 py-3.5 bg-gray-50/50 border border-gray-200 rounded-2xl focus:bg-white focus:border-[#134e35] focus:ring-2 focus:ring-[#134e35]/10 outline-none transition-all text-sm font-semibold text-gray-900 placeholder-gray-400"
                   />
                 </div>
               </div>
@@ -256,12 +267,12 @@ const OTPLoginModal = ({ isOpen, onClose, onSuccess }) => {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-gradient-to-r from-orange-500 via-orange-600 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white font-bold py-3.5 px-4 rounded-2xl transition-all duration-200 shadow-md active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                className="w-full bg-[#134e35] hover:bg-[#0e3a27] text-white font-bold py-3.5 px-4 rounded-2xl transition-all duration-200 shadow-md active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {loading ? (
                   <>
                     <FaSpinner className="animate-spin text-base" />
-                    <span>Sending Code...</span>
+                    <span>{slowNotice ? 'Waking secure server, almost ready...' : 'Sending Code...'}</span>
                   </>
                 ) : (
                   <>
@@ -294,7 +305,7 @@ const OTPLoginModal = ({ isOpen, onClose, onSuccess }) => {
                       value={digit}
                       onChange={(e) => handleDigitChange(idx, e.target.value)}
                       onKeyDown={(e) => handleKeyDown(idx, e)}
-                      className="w-10 h-12 md:w-11 md:h-12 text-center text-lg font-bold border border-gray-300 rounded-xl focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 outline-none transition-all bg-white text-gray-900 shadow-none"
+                      className="w-10 h-12 md:w-11 md:h-12 text-center text-lg font-bold border border-gray-300 rounded-xl focus:border-[#134e35] focus:ring-2 focus:ring-[#134e35]/20 outline-none transition-all bg-white text-gray-900 shadow-none"
                     />
                   ))}
                 </div>
@@ -303,7 +314,7 @@ const OTPLoginModal = ({ isOpen, onClose, onSuccess }) => {
               <button
                 type="submit"
                 disabled={loading || otpDigits.join('').length !== 6}
-                className="w-full bg-gradient-to-r from-orange-500 via-orange-600 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white font-bold py-3.5 px-4 rounded-2xl transition-all duration-200 shadow-lg shadow-orange-500/25 active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:shadow-none disabled:cursor-not-allowed"
+                className="w-full bg-[#134e35] hover:bg-[#0e3a27] text-white font-bold py-3.5 px-4 rounded-2xl transition-all duration-200 shadow-lg shadow-emerald-900/15 active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:shadow-none disabled:cursor-not-allowed"
               >
                 {loading ? (
                   <>
@@ -319,7 +330,7 @@ const OTPLoginModal = ({ isOpen, onClose, onSuccess }) => {
               <div className="text-center text-xs text-gray-500 pt-1">
                 Didn't receive code?{' '}
                 {timer > 0 ? (
-                  <span className="font-bold text-orange-600">
+                  <span className="font-bold text-[#134e35]">
                     Resend in {timer}s
                   </span>
                 ) : (
@@ -327,7 +338,7 @@ const OTPLoginModal = ({ isOpen, onClose, onSuccess }) => {
                     type="button"
                     onClick={handleSendOTP}
                     disabled={loading}
-                    className="font-bold text-orange-600 hover:text-orange-700 hover:underline cursor-pointer disabled:opacity-50"
+                    className="font-bold text-[#134e35] hover:underline cursor-pointer disabled:opacity-50"
                   >
                     Resend Code Now
                   </button>
