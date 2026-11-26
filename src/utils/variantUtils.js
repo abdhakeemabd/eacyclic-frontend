@@ -193,7 +193,7 @@ export function getProductVariants(product) {
     try {
       const parsed = JSON.parse(product.sizes);
       if (Array.isArray(parsed)) sizes = parsed.filter(Boolean);
-    } catch (e) {
+    } catch {
       sizes = product.sizes.split(',').map(s => s.trim()).filter(Boolean);
     }
   }
@@ -201,7 +201,7 @@ export function getProductVariants(product) {
     try {
       const parsed = JSON.parse(product.colors);
       if (Array.isArray(parsed)) colors = parsed.filter(Boolean);
-    } catch (e) {
+    } catch {
       colors = product.colors.split(',').map(c => c.trim()).filter(Boolean);
     }
   }
@@ -212,7 +212,7 @@ export function getProductVariants(product) {
     try {
       const parsed = JSON.parse(product.variants);
       if (Array.isArray(parsed)) variants = parsed;
-    } catch (e) {
+    } catch {
       variants = [];
     }
   }

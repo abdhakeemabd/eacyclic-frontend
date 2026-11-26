@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Check, ShoppingBag, ArrowRight, Minus, Plus, ShieldCheck, Truck, RotateCcw, ExternalLink, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
+import { useUser } from '../context/UserContext';
 import ImageLoader from './image-loader';
 import { 
   getColorHex, 
@@ -15,6 +16,7 @@ import {
 
 export default function QuickViewModal({ product, isOpen, onClose }) {
   const { addToCart } = useCart();
+  const { requireLogin } = useUser();
   const navigate = useNavigate();
 
   const [quantity, setQuantity] = useState(1);
@@ -80,21 +82,24 @@ export default function QuickViewModal({ product, isOpen, onClose }) {
   };
 
   const handleBuyNow = () => {
+    const productPayload = {
+      ...product,
+      title: currentTitle,
+      name: currentTitle,
+      price: currentPrice,
+      offerPrice: currentPrice,
+      oldPrice: currentOldPrice,
+      selectedSize,
+      selectedColor
+    };
     onClose();
-    navigate('/checkout', {
-      state: {
-        product: {
-          ...product,
-          title: currentTitle,
-          name: currentTitle,
-          price: currentPrice,
-          offerPrice: currentPrice,
-          oldPrice: currentOldPrice,
-          selectedSize,
-          selectedColor
-        },
-        quantity
-      }
+    requireLogin(() => {
+      navigate('/checkout', {
+        state: {
+          product: productPayload,
+          quantity
+        }
+      });
     });
   };
 

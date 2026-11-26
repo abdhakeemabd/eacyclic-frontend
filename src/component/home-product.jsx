@@ -1,19 +1,38 @@
 import React, { useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Heart, Plus, Sparkles, Truck, ArrowRight } from 'lucide-react';
+import { Sparkles, Truck, RefreshCw, ShieldCheck, ArrowRight } from 'lucide-react';
+import { FaInstagram } from 'react-icons/fa';
 import { useProducts } from '../context/ProductContext';
 import { useCart } from '../context/CartContext';
-import { getProductVariants } from '../utils/variantUtils';
+import { useUser } from '../context/UserContext';
 import QuickViewModal from './QuickViewModal';
 import ImageLoader from './image-loader';
 import ProductSkeleton from './product-skeleton';
+import ProductCard from './ProductCard';
 
 export default function HomeProduct() {
   const navigate = useNavigate();
   const { products = [], loading } = useProducts();
-  const { toggleLike, isLiked } = useCart();
+  const { recentOrders = [], reorderOrder } = useCart();
+  const { requireLogin } = useUser();
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const recentBoughtItems = useMemo(() => {
+    const seen = new Set();
+    const list = [];
+    for (const ord of recentOrders) {
+      for (const item of ord.items || []) {
+        const key = (item.product_name || '').toLowerCase();
+        if (key && !seen.has(key)) {
+          seen.add(key);
+          list.push({ ...item, orderId: ord.id });
+        }
+        if (list.length >= 4) return list;
+      }
+    }
+    return list;
+  }, [recentOrders]);
 
   // Dynamically extract unique categories from actual store products
   const categoryList = useMemo(() => {
@@ -26,11 +45,9 @@ export default function HomeProduct() {
       }
     });
 
-    // If categories exist in real data, take top 8
     const list = Array.from(catMap.values());
     if (list.length > 0) return list.slice(0, 8);
 
-    // Fallback names matching the store categories
     return [
       { name: 'Chair', image: null },
       { name: 'Table', image: null },
@@ -43,42 +60,18 @@ export default function HomeProduct() {
     ];
   }, [products]);
 
-  // Display only real products from the store (top 8 or 12)
-  const displayProducts = useMemo(() => {
-    return products.slice(0, 12);
-  }, [products]);
+  const displayProducts = useMemo(() => products.slice(0, 12), [products]);
 
-  const handleOpenAddToCartModal = (e, item) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setSelectedProduct(item);
+  const handleQuickView = (product) => {
+    setSelectedProduct(product);
     setIsModalOpen(true);
   };
 
-  const handleGoToProductDetails = (item) => {
-    navigate(`/product-view/${item.id}`, { state: { product: item } });
-  };
-
-  const handleBuyNow = (e, item) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const { sizes, colors } = getProductVariants(item);
-    if ((sizes && sizes.length > 0) || (colors && colors.length > 0)) {
-      setSelectedProduct(item);
-      setIsModalOpen(true);
-      return;
-    }
-    navigate('/checkout', { state: { product: item, quantity: 1 } });
-  };
-
-  const badgeLabels = ['Best seller', 'Everyday essential', 'Popular pick', 'New arrival', 'Top rated', 'Staff pick'];
-
   return (
     <div className="w-full bg-white">
-      {/* 1. Category Discovery Section (Screenshot 2) */}
+      {/* 1. Category Discovery Section */}
       <section className="py-12 sm:py-16 border-b border-gray-100">
         <div className="container mx-auto px-6 sm:px-8 lg:px-16">
-          {/* Header */}
           <div className="flex items-end justify-between mb-8 sm:mb-10">
             <div>
               <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">
@@ -98,7 +91,6 @@ export default function HomeProduct() {
             </Link>
           </div>
 
-          {/* Circular Category Row */}
           <div className="grid grid-cols-4 sm:grid-cols-4 md:grid-cols-8 gap-4 sm:gap-6">
             {categoryList.map((cat, idx) => (
               <Link
@@ -128,10 +120,9 @@ export default function HomeProduct() {
         </div>
       </section>
 
-      {/* 2. Real Store Products Section (Screenshot 2) */}
+      {/* 2. Featured Products Grid */}
       <section className="py-12 sm:py-16">
         <div className="container mx-auto px-6 sm:px-8 lg:px-16">
-          {/* Header */}
           <div className="flex items-end justify-between mb-8 sm:mb-10">
             <div>
               <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">
@@ -151,142 +142,134 @@ export default function HomeProduct() {
             </Link>
           </div>
 
-          {/* Product Cards Grid */}
           {loading && displayProducts.length === 0 ? (
             <ProductSkeleton count={8} />
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
-              {displayProducts.map((item, idx) => {
-                const liked = isLiked(item.id);
-                const tag = item.offer ? `-${item.offer.toString().replace(/[^0-9]/g, '')}%` : badgeLabels[idx % badgeLabels.length];
-                const price = parseFloat(item.offerPrice !== undefined && item.offerPrice !== null && item.offerPrice !== '' ? item.offerPrice : (item.price || 0));
-                const rawOld = item.oldPrice !== undefined && item.oldPrice !== null && item.oldPrice !== ''
-                  ? parseFloat(item.oldPrice)
-                  : (item.old_price !== undefined && item.old_price !== null && item.old_price !== '' ? parseFloat(item.old_price) : null);
-                const oldPrice = rawOld !== null && !isNaN(rawOld) && rawOld > 0
-                  ? rawOld
-                  : (item.discount > 0 ? Math.round((price * 100) / (100 - parseFloat(item.discount))) : (price > 0 ? Math.round(price * 1.2) : null));
-                const imageSrc = item.image_url || item.image || (item.gallery && item.gallery[0]);
-                const title = item.name || item.title || 'Product';
-                const category = item.category || 'STORE PICK';
-
-                return (
-                  <div
-                    key={item.id || idx}
-                    onClick={() => handleGoToProductDetails(item)}
-                    className="group bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-lg transition-all duration-300 flex flex-col relative cursor-pointer"
-                  >
-                    {/* Image Area */}
-                    <div 
-                      className="aspect-square bg-[#f5f6f5] relative flex items-center justify-center p-4 overflow-hidden"
-                    >
-                      {/* Top Left Tag */}
-                      <span className="absolute top-3 left-3 z-10 text-[10px] font-semibold text-gray-700 bg-white/90 backdrop-blur-xs px-2.5 py-1 rounded-full shadow-2xs">
-                        {tag}
-                      </span>
-
-                      {/* Top Right Wishlist Button */}
-                      <button
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          toggleLike(item);
-                        }}
-                        className="absolute top-3 right-3 z-10 w-8 h-8 rounded-full bg-white/90 backdrop-blur-xs shadow-2xs flex items-center justify-center hover:scale-110 transition-transform cursor-pointer"
-                        aria-label="Save to wishlist"
-                      >
-                        <Heart
-                          className={`w-4 h-4 ${
-                            liked ? 'text-red-500 fill-red-500' : 'text-gray-600'
-                          }`}
-                        />
-                      </button>
-
-                      {/* Product Image */}
-                      <div className="w-full h-full flex items-center justify-center transition-transform duration-500 group-hover:scale-105">
-                        <ImageLoader
-                          src={imageSrc}
-                          alt={title}
-                          className="w-full h-full object-contain mix-blend-multiply"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Content Area */}
-                    <div className="p-3 sm:p-4 md:p-5 flex flex-col flex-1 justify-between">
-                      <div>
-                        {/* Top Category */}
-                        <div className="text-[10px] font-semibold text-gray-400 tracking-wider uppercase mb-1 truncate">
-                          {category}
-                        </div>
-
-                        <h3 
-                          className="font-bold text-gray-900 text-xs sm:text-sm line-clamp-1 group-hover:text-[#134e35] transition-colors mb-3"
-                          title={title}
-                        >
-                          {title}
-                        </h3>
-                      </div>
-
-                      {/* Price, Free Delivery & Actions */}
-                      <div className="mt-auto pt-2 border-t border-gray-100">
-                        {/* Price Row */}
-                        <div className="flex items-baseline gap-1.5 flex-wrap">
-                          <span className="text-sm sm:text-base md:text-lg font-black text-gray-900 tracking-tight whitespace-nowrap">
-                            ₹{Math.round(Number(price) || 0).toLocaleString('en-IN')}
-                          </span>
-                          {oldPrice && Number(oldPrice) > Number(price) && (
-                            <span className="text-[11px] sm:text-xs text-gray-400 line-through whitespace-nowrap">
-                              ₹{Math.round(Number(oldPrice) || 0).toLocaleString('en-IN')}
-                            </span>
-                          )}
-                        </div>
-
-                        {/* Free Delivery on ONE LINE below price */}
-                        <div className="mt-1.5 mb-2.5 flex items-center">
-                          {item.freeShipping !== false ? (
-                            <span className="inline-flex items-center gap-1.5 text-[10px] sm:text-[11px] font-semibold text-[#134e35] bg-[#edf6f1] px-2 py-0.5 rounded-md whitespace-nowrap">
-                              <Truck className="w-3 h-3 text-[#134e35] shrink-0" />
-                              <span>Free delivery</span>
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1.5 text-[10px] sm:text-[11px] font-medium text-gray-500 bg-gray-100 px-2 py-0.5 rounded-md whitespace-nowrap">
-                              <Truck className="w-3 h-3 text-gray-400 shrink-0" />
-                              <span>Standard delivery</span>
-                            </span>
-                          )}
-                        </div>
-
-                        {/* Actions on ONE line: Add to Cart (+) & Buy Now */}
-                        <div className="flex items-center gap-1.5 sm:gap-2">
-                          <button
-                            onClick={(e) => handleOpenAddToCartModal(e, item)}
-                            className="shrink-0 w-8 h-8 rounded-lg border border-gray-200 hover:border-[#134e35] hover:bg-[#edf6f1] hover:text-[#134e35] flex items-center justify-center text-gray-700 transition-all duration-200 active:scale-95 shadow-2xs cursor-pointer z-10"
-                            title="Add to Cart / Select Options"
-                            aria-label={`Add ${title} to Cart`}
-                          >
-                            <Plus className="w-4 h-4" />
-                          </button>
-
-                          <button
-                            onClick={(e) => handleBuyNow(e, item)}
-                            className="flex-1 h-8 px-2.5 rounded-lg bg-[#134e35] hover:bg-[#0c3322] active:bg-[#082216] text-white text-xs font-bold flex items-center justify-center gap-1 shadow-xs hover:shadow-md transition-all duration-200 active:scale-95 cursor-pointer z-10 whitespace-nowrap group/buy"
-                          >
-                            <span>Buy Now</span>
-                            <ArrowRight className="w-3.5 h-3.5 shrink-0 transition-transform duration-200 group-hover/buy:translate-x-0.5" />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
+              {displayProducts.map((item, idx) => (
+                <ProductCard
+                  key={item.id || idx}
+                  product={item}
+                  index={idx}
+                  priority={idx < 4}
+                  onQuickView={handleQuickView}
+                />
+              ))}
             </div>
           )}
         </div>
       </section>
 
-      {/* Quick View Modal Dialog */}
+      {/* 3. Returning Customer "Buy It Again in 1 Click" Section */}
+      {recentBoughtItems.length > 0 && (
+        <section className="py-10 bg-[#f6f9f7] border-t border-gray-100">
+          <div className="container mx-auto px-6 sm:px-8 lg:px-16">
+            <div className="flex items-end justify-between mb-6">
+              <div>
+                <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#134e35]">
+                  WELCOME BACK
+                </span>
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mt-1">
+                  Buy it again in 1 click
+                </h2>
+              </div>
+              <Link
+                to="/profile?tab=orders"
+                className="text-xs sm:text-sm font-semibold text-[#134e35] hover:underline"
+              >
+                View all orders →
+              </Link>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {recentBoughtItems.map((item, idx) => (
+                <div
+                  key={idx}
+                  className="bg-white rounded-2xl border border-gray-200/80 p-4 flex items-center gap-3.5 shadow-2xs"
+                >
+                  <div className="w-16 h-16 rounded-xl bg-[#f5f6f5] p-1.5 shrink-0 flex items-center justify-center overflow-hidden">
+                    <ImageLoader
+                      src={item.product_image || item.image_url || item.image}
+                      alt={item.product_name}
+                      className="w-full h-full object-contain mix-blend-multiply"
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h4 className="text-xs font-bold text-gray-900 truncate">
+                      {item.product_name}
+                    </h4>
+                    <p className="text-xs font-extrabold text-[#134e35] mt-0.5">
+                      ₹{Math.round(Number(item.price || 0)).toLocaleString('en-IN')}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        requireLogin(async () => {
+                          const ord = recentOrders.find(o => String(o.id) === String(item.orderId));
+                          if (ord) {
+                            const { items } = await reorderOrder({ ...ord, items: [item] });
+                            if (items.length > 0) {
+                              navigate('/checkout', { state: { cartItems: items } });
+                            }
+                          }
+                        });
+                      }}
+                      className="mt-2 inline-flex items-center gap-1 px-3 py-1 rounded-full bg-[#134e35] hover:bg-[#0e3a27] text-white text-[11px] font-bold transition-colors cursor-pointer"
+                    >
+                      <RefreshCw className="w-3 h-3" />
+                      <span>Order Again</span>
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* 4. Instagram Community & Website Order Banner */}
+      <section className="py-12 sm:py-16 bg-[#fbf9f6] border-t border-gray-100">
+        <div className="container mx-auto px-6 sm:px-8 lg:px-16">
+          <div className="bg-white rounded-3xl border border-gray-200/80 p-6 sm:p-10 shadow-xs flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="space-y-2 text-center md:text-left max-w-xl">
+              <div className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-pink-600 bg-pink-50 px-3 py-1 rounded-full">
+                <FaInstagram className="w-3.5 h-3.5" />
+                <span>@eacyclic on Instagram</span>
+              </div>
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 font-serif">
+                Watch product demos & real unboxing reels
+              </h2>
+              <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
+                See how our home organizers, furniture, and daily finds work in real homes, then order directly on our website with Cash on Delivery and live order tracking.
+              </p>
+              <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 pt-1 text-xs text-gray-600 font-medium">
+                <span className="inline-flex items-center gap-1"><ShieldCheck className="w-4 h-4 text-[#134e35]" /> Zero Advance Needed</span>
+                <span className="inline-flex items-center gap-1"><Truck className="w-4 h-4 text-[#134e35]" /> Fast Dispatch across India</span>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-center gap-3 shrink-0">
+              <a
+                href="https://www.instagram.com/eacyclic/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-gradient-to-r from-pink-500 via-rose-500 to-amber-500 text-white text-xs sm:text-sm font-bold shadow-sm hover:opacity-90 transition-opacity"
+              >
+                <FaInstagram className="w-4 h-4" />
+                <span>Follow @eacyclic</span>
+              </a>
+              <Link
+                to="/product"
+                className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-[#134e35] hover:bg-[#0e3a27] text-white text-xs sm:text-sm font-bold shadow-sm transition-colors"
+              >
+                <span>Shop All Products</span>
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <QuickViewModal
         product={selectedProduct}
         isOpen={isModalOpen}

@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { FaInstagram } from 'react-icons/fa';
 import Logo from '../assets/images/logo/logo.png';
 
 export default function Footer() {
@@ -32,7 +33,18 @@ export default function Footer() {
               </Link>
               <div className="text-xs sm:text-sm text-gray-500 max-w-sm leading-relaxed">
                 <p className="font-medium text-gray-700">Thoughtfully chosen. Easily delivered.</p>
-                <p className="mt-1">Good things for your everyday, from closer to home.</p>
+                <p className="mt-1">Good things for your everyday, from closer to home. Cash on Delivery & 7-Day Easy Returns across India.</p>
+              </div>
+              <div className="flex items-center gap-3 pt-1">
+                <a
+                  href="https://www.instagram.com/eacyclic/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-3.5 py-2 rounded-full bg-gradient-to-r from-pink-500 via-rose-500 to-amber-500 text-white text-xs font-bold shadow-xs hover:opacity-90 transition-opacity"
+                >
+                  <FaInstagram className="w-4 h-4" />
+                  <span>@eacyclic</span>
+                </a>
               </div>
             </div>
 
@@ -55,6 +67,21 @@ export default function Footer() {
                 <li>
                   <Link to="/product?category=Home%20Utilities" className="hover:text-[#134e35] transition-colors">
                     Home utilities
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/about" className="hover:text-[#134e35] transition-colors">
+                    About us
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/faq" className="hover:text-[#134e35] transition-colors">
+                    Help & FAQ
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/profile?tab=orders" className="hover:text-[#134e35] transition-colors">
+                    Your orders
                   </Link>
                 </li>
               </ul>

@@ -187,7 +187,6 @@ function AdminLogin() {
           <div className="mt-8 pt-6 border-t border-border/60 text-center">
             <p className="text-[11px] text-muted-foreground flex items-center justify-center gap-1.5">
               <ShieldCheck size={13} className="text-emerald-500" />
-              <span>256-Bit Encrypted Session • 24-Hour Expiry</span>
             </p>
           </div>
         </motion.div>

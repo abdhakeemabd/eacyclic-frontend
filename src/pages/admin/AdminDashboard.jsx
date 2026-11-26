@@ -44,7 +44,7 @@ function AdminDashboard() {
     try {
       setLoading(true);
       const [products, orders, contacts] = await Promise.allSettled([
-        productsAPI.getAll(),
+        productsAPI.getAll({ include_inactive: 1 }),
         ordersAPI.getAll(),
         contactAPI.getAll()
       ]);

@@ -3,7 +3,7 @@ import { useParams, useLocation } from 'react-router-dom';
 import { useProducts } from '../context/ProductContext';
 import SEO from './SEO';
 
-const SITE_URL = 'https://www.eacyclic.com';
+const SITE_URL = 'https://eacyclic.com';
 
 /**
  * ProductSEO — reads the same product data as ProductDetails
@@ -27,7 +27,6 @@ function ProductSEO() {
   const name = product.name || product.title || 'Product';
   const description = product.description || product.content ||
     `Buy ${name} online at Eacyclic. Best price in Kerala & India. Fast delivery, easy returns.`;
-  const price = product.price || product.offerPrice || 0;
   const image = product.image_url || product.image || (product.gallery && product.gallery[0]);
   const pageUrl = `${SITE_URL}/product-view/${product.id}`;
 

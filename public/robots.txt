@@ -17,7 +17,8 @@ Allow: /product?category=
 Allow: /product-view/
 
 # Sitemaps
-Sitemap: https://www.eacyclic.com/sitemap.xml
+Sitemap: https://eacyclic.com/sitemap.xml
+Sitemap: https://eacyclic-backend.onrender.com/api/sitemap-products/
 
 # Crawl rate (be polite)
 Crawl-delay: 1

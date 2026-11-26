@@ -1,40 +1,43 @@
 import React from 'react';
 import { useCart } from '../context/CartContext';
-import { Link } from 'react-router-dom';
-import { FaHeart, FaTrash, FaShoppingCart, FaArrowRight } from 'react-icons/fa';
-import { BiArrowBack } from 'react-icons/bi';
+import { useUser } from '../context/UserContext';
+import { Link, useNavigate } from 'react-router-dom';
+import { Heart, ShoppingBag, ArrowLeft, ArrowRight } from 'lucide-react';
 import ImageLoader from '../component/image-loader';
 import { showSuccess } from '../utils/swalUtils';
 
 function Wishlist() {
-  const { likes, toggleLike, addToCart } = useCart();
+  const { likes, toggleLike, addToCart, openCartDrawer } = useCart();
+  const { requireLogin } = useUser();
+  const navigate = useNavigate();
 
-  const handleAddToCart = (product) => {
-    addToCart(product, 1);
-    showSuccess('Added to Cart', `${product.title || product.name} has been added to your cart.`);
+  const handleAddToCart = async (product) => {
+    await addToCart(product, 1);
+    openCartDrawer();
+    showSuccess('Added to Bag', `${product.title || product.name} has been added to your bag.`);
   };
 
   if (likes.length === 0) {
     return (
-      <section className="py-20 bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen">
-        <div className="container mx-auto px-4">
-          <div className="max-w-2xl mx-auto text-center">
-            <div className="bg-white rounded-2xl shadow-xl p-12">
-              <div className="w-32 h-32 mx-auto mb-6 bg-red-50 rounded-full flex items-center justify-center">
-                <FaHeart className="text-6xl text-red-500 animate-pulse" />
-              </div>
-              <h2 className="text-3xl font-bold text-gray-800 mb-4">Your Wishlist is Empty</h2>
-              <p className="text-gray-600 mb-8">
-                Explore our catalog and click the heart icon on any product to save your favorite items!
-              </p>
-              <Link
-                to="/product"
-                className="inline-flex items-center gap-2 bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white px-8 py-4 rounded-xl font-semibold transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
-              >
-                <BiArrowBack className="text-xl" />
-                Explore Products
-              </Link>
+      <section className="py-20 bg-[#fbf9f6] min-h-[75vh] flex items-center">
+        <div className="container mx-auto px-6">
+          <div className="max-w-lg mx-auto text-center bg-white rounded-3xl border border-gray-100 shadow-sm p-10 sm:p-12">
+            <div className="w-24 h-24 mx-auto mb-6 bg-rose-50 rounded-full flex items-center justify-center text-rose-500">
+              <Heart className="w-10 h-10" />
             </div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-[#14261c] font-serif mb-3">
+              Your Wishlist is Empty
+            </h1>
+            <p className="text-xs sm:text-sm text-gray-500 mb-8 leading-relaxed">
+              Tap the heart icon on any product you love to save it here for quick ordering anytime.
+            </p>
+            <Link
+              to="/product"
+              className="inline-flex items-center gap-2 bg-[#134e35] hover:bg-[#0e3a27] text-white px-7 py-3.5 rounded-full text-xs sm:text-sm font-bold transition-all shadow-sm"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>Explore Products</span>
+            </Link>
           </div>
         </div>
       </section>
@@ -42,98 +45,97 @@ function Wishlist() {
   }
 
   return (
-    <section className="py-10 bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen">
-      <div className="container mx-auto px-4 max-w-6xl">
-        {/* Header */}
-        <div className="mb-8 flex items-center justify-between border-b border-gray-200 pb-4">
+    <section className="py-10 sm:py-14 bg-[#fbf9f6] min-h-screen">
+      <div className="container mx-auto px-6 sm:px-8 lg:px-16 max-w-6xl">
+        <div className="mb-8 flex flex-wrap items-end justify-between gap-4 border-b border-gray-200/80 pb-5">
           <div>
-            <h1 className="text-3xl font-black text-gray-900 flex items-center gap-3">
-              <FaHeart className="text-red-500 text-2xl" />
-              My Liked Items
+            <div className="text-[11px] font-bold text-gray-400 tracking-[0.2em] uppercase mb-1">
+              SAVED FINDS
+            </div>
+            <h1 className="text-3xl sm:text-4xl font-bold text-[#14261c] font-serif flex items-center gap-3">
+              <span>My Wishlist.</span>
             </h1>
-            <p className="text-gray-500 text-sm mt-1">
+            <p className="text-xs sm:text-sm text-gray-500 mt-1">
               You have {likes.length} saved {likes.length === 1 ? 'item' : 'items'}
             </p>
           </div>
           <Link
             to="/product"
-            className="inline-flex items-center gap-2 text-orange-600 font-semibold text-sm hover:underline"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#134e35] hover:underline"
           >
-            <BiArrowBack />
-            Back to Products
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span>Back to Products</span>
           </Link>
         </div>
 
-        {/* Wishlist Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {likes.map((product) => (
-            <div
-              key={product.id}
-              className="bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 overflow-hidden flex flex-col justify-between group"
-            >
-              <div className="relative">
-                {/* Product Image */}
-                <div className="w-full h-48 bg-gray-50 overflow-hidden relative">
-                  <ImageLoader
-                    src={product.image_url || product.image || (product.gallery && product.gallery[0])}
-                    alt={product.title || product.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                  {product.offer && (
-                    <span className="absolute top-3 left-3 bg-red-500 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow-md">
-                      {product.offer}
+          {likes.map((product) => {
+            const price = product.offerPrice || product.price || 0;
+            return (
+              <div
+                key={product.id}
+                className="bg-white rounded-2xl shadow-2xs hover:shadow-lg transition-all duration-300 border border-gray-100 overflow-hidden flex flex-col justify-between group"
+              >
+                <div>
+                  <div className="aspect-square bg-[#f5f6f5] overflow-hidden relative p-4">
+                    <Link to={`/product-view/${product.id}`} className="w-full h-full block">
+                      <ImageLoader
+                        src={product.image_url || product.image || (product.gallery && product.gallery[0])}
+                        alt={product.title || product.name}
+                        className="w-full h-full object-contain mix-blend-multiply group-hover:scale-105 transition-transform duration-300"
+                      />
+                    </Link>
+
+                    <button
+                      onClick={() => toggleLike(product)}
+                      className="absolute top-3 right-3 w-8 h-8 bg-white/95 rounded-full flex items-center justify-center text-rose-500 hover:bg-rose-50 transition-all shadow-2xs cursor-pointer"
+                      title="Remove from Wishlist"
+                    >
+                      <Heart className="w-4 h-4 fill-rose-500" />
+                    </button>
+                  </div>
+
+                  <div className="p-4">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#134e35] bg-[#edf6f1] px-2 py-0.5 rounded">
+                      {product.category || 'Product'}
                     </span>
-                  )}
-
-                  {/* Remove Like Button */}
-                  <button
-                    onClick={() => toggleLike(product)}
-                    className="absolute top-3 right-3 w-9 h-9 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center text-red-500 hover:bg-red-50 transition-all shadow-md"
-                    title="Remove from Liked"
-                  >
-                    <FaHeart className="text-base" />
-                  </button>
-                </div>
-
-                {/* Info */}
-                <div className="p-5">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-orange-600 bg-orange-50 px-2 py-1 rounded">
-                    {product.category || 'Product'}
-                  </span>
-                  <Link to={`/product-view/${product.id}`}>
-                    <h3 className="font-bold text-gray-900 mt-2 line-clamp-1 hover:text-orange-600 transition-colors text-base">
-                      {product.title || product.name}
-                    </h3>
-                  </Link>
-                  <p className="text-gray-500 text-xs mt-1 line-clamp-2">
-                    {product.description || product.content}
-                  </p>
-
-                  <div className="mt-4 flex items-baseline gap-2">
-                    <span className="text-xl font-extrabold text-gray-900">
-                      ₹{product.offerPrice || product.price}
-                    </span>
-                    {product.oldPrice && (
-                      <span className="text-xs text-gray-400 line-through">
-                        ₹{product.oldPrice}
+                    <Link to={`/product-view/${product.id}`}>
+                      <h3 className="font-bold text-gray-900 mt-2 line-clamp-1 hover:text-[#134e35] transition-colors text-sm">
+                        {product.title || product.name}
+                      </h3>
+                    </Link>
+                    <div className="mt-2 flex items-baseline gap-2">
+                      <span className="text-lg font-black text-gray-900">
+                        ₹{Math.round(Number(price)).toLocaleString('en-IN')}
                       </span>
-                    )}
+                      {product.oldPrice && (
+                        <span className="text-xs text-gray-400 line-through">
+                          ₹{Math.round(Number(product.oldPrice)).toLocaleString('en-IN')}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Action Buttons */}
-              <div className="p-5 pt-0 grid grid-cols-1 gap-2">
-                <button
-                  onClick={() => handleAddToCart(product)}
-                  className="w-full bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white font-bold py-2.5 px-4 rounded-xl transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 text-sm"
-                >
-                  <FaShoppingCart />
-                  Move to Cart
-                </button>
+                <div className="p-4 pt-0 grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => handleAddToCart(product)}
+                    className="py-2.5 px-3 rounded-xl border border-gray-200 hover:border-[#134e35] hover:bg-[#edf6f1] text-gray-800 hover:text-[#134e35] font-bold text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <ShoppingBag className="w-3.5 h-3.5" />
+                    <span>Add</span>
+                  </button>
+                  <button
+                    onClick={() => requireLogin(() => navigate('/checkout', { state: { product, quantity: 1 } }))}
+                    className="py-2.5 px-3 rounded-xl bg-[#134e35] hover:bg-[#0e3a27] text-white font-bold text-xs transition-all flex items-center justify-center gap-1 cursor-pointer"
+                  >
+                    <span>Buy Now</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </section>

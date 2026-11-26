@@ -4,42 +4,37 @@
         xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9
                             http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">
 
-  <!-- Homepage -->
   <url>
-    <loc>https://www.eacyclic.com/</loc>
-    <lastmod>2026-09-14</lastmod>
+    <loc>https://eacyclic.com/</loc>
+    <lastmod>2026-11-26</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.00</priority>
   </url>
 
-  <!-- Products Store Listing -->
   <url>
-    <loc>https://www.eacyclic.com/product</loc>
-    <lastmod>2026-09-14</lastmod>
+    <loc>https://eacyclic.com/product</loc>
+    <lastmod>2026-11-26</lastmod>
     <changefreq>daily</changefreq>
-    <priority>0.90</priority>
+    <priority>0.95</priority>
   </url>
 
-  <!-- About Us -->
   <url>
-    <loc>https://www.eacyclic.com/about</loc>
-    <lastmod>2026-09-14</lastmod>
+    <loc>https://eacyclic.com/about</loc>
+    <lastmod>2026-11-26</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.70</priority>
   </url>
 
-  <!-- Contact Us -->
   <url>
-    <loc>https://www.eacyclic.com/contact</loc>
-    <lastmod>2026-09-14</lastmod>
+    <loc>https://eacyclic.com/contact</loc>
+    <lastmod>2026-11-26</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.70</priority>
   </url>
 
-  <!-- Frequently Asked Questions (FAQ) -->
   <url>
-    <loc>https://www.eacyclic.com/faq</loc>
-    <lastmod>2026-09-14</lastmod>
+    <loc>https://eacyclic.com/faq</loc>
+    <lastmod>2026-11-26</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.60</priority>
   </url>

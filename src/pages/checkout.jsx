@@ -17,17 +17,37 @@ import { COUNTRIES, getStatesForCountry, getDistrictsForState } from '../data/lo
 export default function Checkout() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, isAuthenticated, saveUserAddress, deleteUserAddress } = useUser();
-  const { clearCart } = useCart();
+  const { user, isAuthenticated, saveUserAddress, deleteUserAddress, openAuthModal } = useUser();
+  const { cart, clearCart, recordLocalOrder } = useCart();
   const [isOtpModalOpen, setIsOtpModalOpen] = useState(false);
   
-  // Extract product, quantity or cart items from navigation state
+  // Extract product, quantity or cart items from navigation state, with sessionStorage & Cart fallback
   const { product, quantity = 1, cartItems } = location.state || {};
   const [items, setItems] = useState(() => {
     if (cartItems && cartItems.length > 0) return cartItems;
     if (product) return [{ ...product, quantity }];
+    try {
+      const cached = sessionStorage.getItem('eacyclic_checkout_items');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {
+      // Ignore storage read errors
+    }
+    if (cart && cart.length > 0) return cart;
     return [];
   });
+
+  useEffect(() => {
+    if (items && items.length > 0) {
+      try {
+        sessionStorage.setItem('eacyclic_checkout_items', JSON.stringify(items));
+      } catch {
+        // Ignore storage write errors
+      }
+    }
+  }, [items]);
 
   // Saved Addresses from user profile
   const savedAddresses = Array.isArray(user?.saved_addresses) ? user.saved_addresses : [];
@@ -87,23 +107,30 @@ export default function Checkout() {
   }, [activeMenuId]);
 
   // Form data for when user enters a custom address without saved addresses
-  const [formData, setFormData] = useState({
-    name: user?.name || '',
-    phone: user?.phone || '',
-    houseName: user?.address || '',
-    area: '',
-    city: '',
-    district: '',
-    state: '',
-    country: 'India',
-    pincode: '',
-    type: 'HOME',
-    email: user?.email || '',
-    saveToProfile: true
+  // Pre-fills from user profile OR last guest checkout so repeat buyers can reorder in seconds
+  const [formData, setFormData] = useState(() => {
+    let lastGuest = {};
+    try {
+      const savedGuest = localStorage.getItem('eacyclic_last_shipping');
+      if (savedGuest) lastGuest = JSON.parse(savedGuest) || {};
+    } catch {
+      // Ignore localStorage parse error
+    }
+    return {
+      name: user?.name || lastGuest.name || '',
+      phone: user?.phone || lastGuest.phone || '',
+      houseName: user?.address || lastGuest.houseName || '',
+      area: lastGuest.area || '',
+      city: lastGuest.city || '',
+      district: lastGuest.district || '',
+      state: lastGuest.state || '',
+      country: lastGuest.country || 'India',
+      pincode: lastGuest.pincode || '',
+      type: lastGuest.type || 'HOME',
+      email: user?.email || lastGuest.email || '',
+      saveToProfile: true
+    };
   });
-
-  // Payment method: strictly Cash on Delivery
-  const paymentMethod = 'cod';
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const availableStates = getStatesForCountry(formData.country || 'India');
@@ -127,10 +154,47 @@ export default function Checkout() {
   useEffect(() => {
     if (items.length === 0) {
       navigate('/product', { replace: true });
+    } else if (!isAuthenticated) {
+      openAuthModal();
     }
-  }, [items, navigate]);
+  }, [items, isAuthenticated, navigate]);
 
   if (items.length === 0) return null;
+
+  if (!isAuthenticated) {
+    return (
+      <div className="bg-[#fbf9f6] min-h-[75vh] flex items-center justify-center px-6 py-16">
+        <div className="max-w-md w-full bg-white rounded-3xl border border-gray-100 shadow-sm p-8 sm:p-10 text-center space-y-5">
+          <div className="w-16 h-16 mx-auto rounded-full bg-[#edf6f1] text-[#134e35] flex items-center justify-center">
+            <Lock className="w-7 h-7" />
+          </div>
+          <div className="space-y-2">
+            <h1 className="text-2xl font-bold text-[#14261c] font-serif">
+              Sign in to place your order
+            </h1>
+            <p className="text-xs sm:text-sm text-gray-500 leading-relaxed">
+              Quickly verify your email with a 6-digit OTP to continue to checkout and receive your order confirmation & tracking link.
+            </p>
+          </div>
+          <div className="space-y-2.5 pt-2">
+            <button
+              type="button"
+              onClick={() => openAuthModal()}
+              className="w-full py-3.5 px-6 rounded-full bg-[#134e35] hover:bg-[#0e3a27] text-white text-xs sm:text-sm font-bold transition-colors cursor-pointer"
+            >
+              Sign in with Email OTP
+            </button>
+            <Link
+              to="/product"
+              className="block w-full py-3 px-6 rounded-full border border-gray-200 text-gray-700 hover:bg-gray-50 text-xs font-semibold transition-colors"
+            >
+              Back to Shopping
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const handleQuantityChange = (index, delta) => {
     setItems(prev => {
@@ -251,6 +315,10 @@ export default function Checkout() {
   // Submit Order
   const handleSubmit = async (e) => {
     if (e) e.preventDefault();
+    if (!isAuthenticated) {
+      openAuthModal();
+      return;
+    }
     setIsSubmitting(true);
 
     const generateOrderId = () => {
@@ -353,8 +421,28 @@ export default function Checkout() {
     };
 
     try {
+      // Persist shipping details locally so repeat buyers don't have to re-type on next order
+      try {
+        localStorage.setItem('eacyclic_last_shipping', JSON.stringify({
+          ...activeAddress,
+          phone: cleanPhone,
+          pincode: cleanPincode,
+          email: orderPayload.customer_email,
+        }));
+      } catch {
+        // Ignore storage write errors
+      }
+
       const response = await ordersAPI.create(orderPayload);
       const savedOrder = response?.data || orderPayload;
+
+      // Record in local order history for "Buy It Again" strip
+      recordLocalOrder(savedOrder);
+      try {
+        sessionStorage.removeItem('eacyclic_checkout_items');
+      } catch {
+        // Ignore storage remove errors
+      }
 
       // Clear cart if items came from the shopping cart
       if (cartItems && cartItems.length > 0 && typeof clearCart === 'function') {
@@ -365,7 +453,11 @@ export default function Checkout() {
         }
       }
 
-      showSuccess('Order Placed!', `Your order #${savedOrder.id || generatedId} has been placed successfully.`).then(() => {
+      const emailNotice = orderPayload.customer_email
+        ? ` A confirmation email has been sent to ${orderPayload.customer_email}.`
+        : '';
+
+      showSuccess('Order Placed!', `Your order #${savedOrder.id || generatedId} has been placed successfully.${emailNotice}`).then(() => {
         navigate(`/order-status/${savedOrder.id || generatedId}`, {
           state: { order: savedOrder, isNewOrder: true },
           replace: true
@@ -555,14 +647,14 @@ export default function Checkout() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-xs font-medium text-gray-700 mb-1.5">
-                          Email address <span className="text-gray-400 font-normal">(Optional)</span>
+                          Email address <span className="text-[#134e35] font-normal">(for Order Receipt & Tracking)</span>
                         </label>
                         <input
                           type="email"
                           name="email"
                           value={formData.email}
                           onChange={handleInputChange}
-                          placeholder="e.g. name@example.com (optional)"
+                          placeholder="e.g. name@example.com"
                           className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-[#134e35] focus:ring-1 focus:ring-[#134e35] text-xs sm:text-sm text-gray-900 outline-none transition-all placeholder-gray-400"
                         />
                       </div>
@@ -1298,11 +1390,14 @@ export default function Checkout() {
         </div>
       )}
 
-      {/* Mandatory OTP Login Modal for Order Confirmation */}
+      {/* Optional OTP Login Modal for Saved Addresses */}
       <OTPLoginModal
         isOpen={isOtpModalOpen}
         onClose={() => setIsOtpModalOpen(false)}
-        onSuccess={() => handleSubmit()}
+        onSuccess={() => {
+          setIsOtpModalOpen(false);
+          showSuccess('Signed In!', 'Your account is connected. Complete your delivery details below.');
+        }}
       />
     </div>
   );

@@ -11,9 +11,10 @@ import '../src/assets/style/public.css';
 
 import { AdminProvider } from './context/AdminContext';
 import { CartProvider } from './context/CartContext';
-import { UserProvider } from './context/UserContext';
+import { UserProvider, useUser } from './context/UserContext';
 import { ProductProvider } from './context/ProductContext';
 import GoogleAnalytics from './component/GoogleAnalytics';
+import OTPLoginModal from './component/OTPLoginModal';
 
 // Lazy loaded public pages
 const Home = lazy(() => import('./pages'));
@@ -44,9 +45,11 @@ const OrderDetails = lazy(() => import('./pages/admin/OrderDetails'));
 
 import AskCyWidget from './component/AskCyWidget';
 import FloatingWhatsApp from './component/FloatingWhatsApp';
+import CartDrawer from './component/CartDrawer';
 
 // Layout wrapper for public pages
 function PublicLayout({ children }) {
+  const { authModalOpen, closeAuthModal, handleAuthModalSuccess } = useUser();
   return (
     <>
       <Header />
@@ -54,8 +57,14 @@ function PublicLayout({ children }) {
         {children}
       </Suspense>
       <Footer />
+      <CartDrawer />
       <AskCyWidget />
       <FloatingWhatsApp />
+      <OTPLoginModal
+        isOpen={authModalOpen}
+        onClose={closeAuthModal}
+        onSuccess={handleAuthModalSuccess}
+      />
     </>
   );
 }

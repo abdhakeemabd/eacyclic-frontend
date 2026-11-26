@@ -3,6 +3,7 @@ import { useParams, useLocation, useNavigate, Link } from 'react-router-dom';
 import { ShoppingBag, ArrowRight, Truck, RotateCcw, ShieldCheck, Minus, Plus, Heart, Share2, Check, Sparkles } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useProducts } from '../context/ProductContext';
+import { useUser } from '../context/UserContext';
 import ImageLoader from './image-loader';
 import { 
   getColorHex, 
@@ -15,7 +16,6 @@ import {
 } from '../utils/variantUtils';
 import { Fancybox as NativeFancybox } from "@fancyapps/ui";
 import "@fancyapps/ui/dist/fancybox/fancybox.css";
-import { FaWhatsapp } from 'react-icons/fa';
 
 export default function ProductDetails() {
   const { id } = useParams();
@@ -28,9 +28,9 @@ export default function ProductDetails() {
   const [selectedSize, setSelectedSize] = useState('');
   const [selectedColor, setSelectedColor] = useState('');
   const [isAdded, setIsAdded] = useState(false);
-  const [activeTab, setActiveTab] = useState('details');
 
   const { addToCart, toggleLike, isLiked } = useCart();
+  const { requireLogin } = useUser();
 
   useEffect(() => {
     const passedProduct = location.state?.product;
@@ -76,9 +76,6 @@ export default function ProductDetails() {
   const rawProductOldPrice = product.oldPrice !== undefined && product.oldPrice !== null && product.oldPrice !== ''
     ? parseFloat(product.oldPrice)
     : (product.old_price !== undefined && product.old_price !== null && product.old_price !== '' ? parseFloat(product.old_price) : null);
-  const oldPrice = rawProductOldPrice !== null && !isNaN(rawProductOldPrice) && rawProductOldPrice > 0
-    ? rawProductOldPrice
-    : (product.discount > 0 ? Math.round((price * 100) / (100 - parseFloat(product.discount))) : (price > 0 ? Math.round(price * 1.2) : null));
   const title = product.name || product.title || 'Product';
   const category = product.category || 'Store Collection';
   const liked = isLiked(product.id);
@@ -104,24 +101,27 @@ export default function ProductDetails() {
     };
     await addToCart(productWithVariantPrice, quantity, { selectedSize, selectedColor });
     setIsAdded(true);
-    setTimeout(() => setIsAdded(false), 2200);
+    setTimeout(() => setIsAdded(false), 6000);
   };
 
   const handleBuyNow = () => {
-    navigate('/checkout', {
-      state: {
-        product: { 
-          ...product, 
-          title: currentTitle,
-          name: currentTitle,
-          price: currentPrice,
-          offerPrice: currentPrice,
-          oldPrice: currentOldPrice,
-          selectedSize, 
-          selectedColor 
-        },
-        quantity
-      }
+    const productPayload = {
+      ...product,
+      title: currentTitle,
+      name: currentTitle,
+      price: currentPrice,
+      offerPrice: currentPrice,
+      oldPrice: currentOldPrice,
+      selectedSize,
+      selectedColor
+    };
+    requireLogin(() => {
+      navigate('/checkout', {
+        state: {
+          product: productPayload,
+          quantity
+        }
+      });
     });
   };
 
@@ -132,7 +132,7 @@ export default function ProductDetails() {
           title,
           url: window.location.href,
         });
-      } catch (err) {
+      } catch {
         // Ignored
       }
     } else {
@@ -430,16 +430,30 @@ export default function ProductDetails() {
                   </button>
                 </div>
 
-                {/* WhatsApp Direct Order Button */}
-                <a
-                  href={`https://wa.me/919846007257?text=${encodeURIComponent(`Hi Eacyclic! I would like to order "${currentTitle}" (₹${currentPrice}) with Cash on Delivery. Please confirm delivery.`)}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full py-3 px-4 rounded-full font-semibold text-xs sm:text-sm bg-[#25D366] hover:bg-[#20bd5a] text-white flex items-center justify-center gap-2 transition-all duration-200 cursor-pointer shadow-xs active:scale-95"
-                >
-                  <FaWhatsapp className="w-4 h-4 text-white" />
-                  <span>Order via WhatsApp (Cash on Delivery)</span>
-                </a>
+                {/* Instant Post-Add Conversion Bar */}
+                {isAdded && (
+                  <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-3 flex flex-wrap items-center justify-between gap-2 text-xs animate-fadeIn">
+                    <span className="font-semibold text-emerald-900 flex items-center gap-1.5">
+                      <Check className="w-4 h-4 text-emerald-600" />
+                      Added to your bag!
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <Link
+                        to="/cart"
+                        className="px-3 py-1.5 bg-white border border-emerald-300 text-emerald-800 font-bold rounded-full hover:bg-emerald-100 transition-colors"
+                      >
+                        View Bag
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={handleBuyNow}
+                        className="px-3.5 py-1.5 bg-[#134e35] text-white font-bold rounded-full hover:bg-[#0e3a27] transition-colors cursor-pointer"
+                      >
+                        Checkout Now →
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Delivery, Returns, & Guarantees (Conditionally set properly!) */}
@@ -496,18 +510,17 @@ export default function ProductDetails() {
           <span className="text-base font-extrabold text-gray-900">₹{currentPrice.toLocaleString('en-IN')}</span>
         </div>
         <div className="flex items-center gap-2">
-          <a
-            href={`https://wa.me/919846007257?text=${encodeURIComponent(`Hi Eacyclic! I would like to order "${currentTitle}" (₹${currentPrice}) with Cash on Delivery.`)}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="p-2.5 bg-[#25D366] text-white rounded-xl shadow-xs active:scale-95"
-            aria-label="Order on WhatsApp"
+          <button
+            onClick={handleAddToCart}
+            className="px-3.5 py-2.5 bg-[#134e35] text-white font-bold text-xs rounded-xl shadow-xs active:scale-95 flex items-center gap-1.5 cursor-pointer"
+            aria-label="Add to bag"
           >
-            <FaWhatsapp className="w-5 h-5" />
-          </a>
+            {isAdded ? <Check className="w-4 h-4" /> : <ShoppingBag className="w-4 h-4" />}
+            <span>{isAdded ? 'Added' : 'Add'}</span>
+          </button>
           <button
             onClick={handleBuyNow}
-            className="px-5 py-2.5 bg-[#14261c] text-white font-bold text-xs rounded-xl shadow-sm active:scale-95 flex items-center gap-1.5"
+            className="px-5 py-2.5 bg-[#14261c] text-white font-bold text-xs rounded-xl shadow-sm active:scale-95 flex items-center gap-1.5 cursor-pointer"
           >
             <span>Buy Now (COD)</span>
             <ArrowRight className="w-3.5 h-3.5" />

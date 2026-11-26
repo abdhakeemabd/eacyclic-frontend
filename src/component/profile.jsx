@@ -52,7 +52,8 @@ function Profile() {
     clearCart,
     likes = [],
     toggleLike,
-    addToCart
+    addToCart,
+    reorderOrder
   } = useCart();
 
   const navigate = useNavigate();
@@ -851,6 +852,18 @@ function Profile() {
                             </div>
 
                             <div className="flex sm:flex-col items-center sm:items-end gap-2 shrink-0">
+                              <button
+                                onClick={async () => {
+                                  const { items: reorderItems } = await reorderOrder(ord);
+                                  if (reorderItems.length > 0) {
+                                    navigate('/checkout', { state: { cartItems: reorderItems } });
+                                  }
+                                }}
+                                className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-xl text-xs font-bold transition-colors shadow-2xs flex items-center gap-1.5 cursor-pointer"
+                              >
+                                <RefreshCw className="w-3.5 h-3.5" />
+                                Buy Again
+                              </button>
                               <Link
                                 to={`/order-status/${ord.id}`}
                                 className="px-4 py-2 bg-[#134e35] hover:bg-[#0e3a27] text-white rounded-xl text-xs font-bold transition-colors shadow-2xs"
@@ -918,9 +931,11 @@ function Profile() {
                 ) : (
                   <div className="space-y-6">
                     <div className="space-y-4">
-                      {cart.map((item) => (
+                      {cart.map((item) => {
+                        const itemKey = item.cart_item_key || item.id;
+                        return (
                         <div
-                          key={item.id}
+                          key={itemKey}
                           className="flex flex-col sm:flex-row items-center justify-between p-4 bg-slate-50/70 border border-slate-100 rounded-xl gap-4 hover:border-orange-200 transition-colors"
                         >
                           <div className="flex items-center gap-4 w-full sm:w-auto">
@@ -942,7 +957,7 @@ function Profile() {
                           <div className="flex items-center justify-between sm:justify-end gap-6 w-full sm:w-auto border-t sm:border-t-0 pt-3 sm:pt-0">
                             <div className="flex items-center border border-slate-200 rounded-lg bg-white overflow-hidden">
                               <button
-                                onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                                onClick={() => updateQuantity(itemKey, item.quantity - 1)}
                                 disabled={item.quantity <= 1}
                                 className="p-1.5 hover:bg-slate-100 text-slate-600 disabled:opacity-30"
                               >
@@ -950,7 +965,7 @@ function Profile() {
                               </button>
                               <span className="px-3 text-xs font-bold text-slate-800">{item.quantity}</span>
                               <button
-                                onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                                onClick={() => updateQuantity(itemKey, item.quantity + 1)}
                                 className="p-1.5 hover:bg-slate-100 text-slate-600"
                               >
                                 <Plus className="w-3.5 h-3.5" />
@@ -964,7 +979,7 @@ function Profile() {
                             </div>
 
                             <button
-                              onClick={() => removeFromCart(item.id)}
+                              onClick={() => removeFromCart(itemKey)}
                               className="p-1.5 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition-colors"
                               title="Remove item"
                             >
@@ -972,7 +987,8 @@ function Profile() {
                             </button>
                           </div>
                         </div>
-                      ))}
+                        );
+                      })}
                     </div>
 
                     <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100 space-y-4">
@@ -1097,4 +1113,4 @@ function Profile() {
   );
 }
 
-export default Profile;
+export default Profile;

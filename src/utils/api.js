@@ -3,17 +3,36 @@ import axios from 'axios';
 const rawBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
 const API_BASE_URL = rawBaseUrl.split(',')[0].trim();
 
-// Create axios instance
+// Create axios instance with sensible timeout so cold starts don't hang silently forever
 const api = axios.create({
   baseURL: API_BASE_URL,
+  timeout: 25000,
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
+let warmupPromise = null;
+
+/**
+ * Quietly wakes up the backend server when a visitor lands on the storefront
+ * so OTP login and order placement respond rapidly when needed.
+ */
+export const warmupBackend = () => {
+  if (!warmupPromise) {
+    warmupPromise = api.get('/health', { timeout: 45000 }).catch(() => null);
+  }
+  return warmupPromise;
+};
+
 // Add a request interceptor to attach the auth token
 api.interceptors.request.use((config) => {
-  const isAuthEndpoint = config.url.includes('/login') || config.url.includes('/register') || config.url.includes('/send-otp') || config.url.includes('/verify-otp');
+  const isAuthEndpoint =
+    config.url.includes('/login') ||
+    config.url.includes('/register') ||
+    config.url.includes('/send-otp') ||
+    config.url.includes('/verify-otp') ||
+    config.url.includes('/health');
   if (!isAuthEndpoint) {
     // Prioritize adminToken when accessing admin routes or endpoints to prevent customer token collision
     const isAdminRoute = (typeof window !== 'undefined' && window.location.pathname.startsWith('/admin')) || config.url.includes('/admin/');
@@ -56,7 +75,7 @@ api.interceptors.response.use(
 
 // Products API
 export const productsAPI = {
-  getAll: () => api.get('/products'),
+  getAll: (params = {}) => api.get('/products', { params }),
   getById: (id) => api.get(`/products/${id}`),
   create: (data) => api.post('/products', data),
   update: (id, data) => api.patch(`/products/${id}`, data),
@@ -70,7 +89,8 @@ export const ordersAPI = {
   getMyOrders: () => api.get('/orders/my_orders'),
   trackOrder: (id) => api.get(`/orders/${id}/track`),
   cancelOrder: (id, reason = '') => api.post(`/orders/${id}/cancel`, { reason }),
-  create: (data) => api.post('/orders', data),
+  reorder: (id) => api.post(`/orders/${id}/reorder`, {}),
+  create: (data) => api.post('/orders', data, { timeout: 45000 }),
   update: (id, data) => api.put(`/orders/${id}`, data),
   updateStatus: (id, status) => api.patch(`/orders/${id}/status`, { status }),
   delete: (id) => api.delete(`/orders/${id}`),
@@ -93,13 +113,12 @@ export const deliveryAPI = {
   updateStatus: (id, status) => api.patch(`/deliveries/${id}/status`, { status }),
 };
 
-
 // Analytics/Reports API
 export const analyticsAPI = {
   getDailyStats: () => api.get('/analytics/daily'),
   getMonthlyStats: () => api.get('/analytics/monthly'),
   getYearlyStats: () => api.get('/analytics/yearly'),
-  getSalesReport: (period) => api.get(`/analytics/sales/${period}`), // period: 'day', 'month', 'year'
+  getSalesReport: (period) => api.get(`/analytics/sales/${period}`),
   getDashboardStats: () => api.get('/analytics/dashboard'),
 };
 
@@ -108,8 +127,10 @@ export const cartAPI = {
   getCart: () => api.get('/cart'),
   addToCart: (productId, quantity = 1, selected_size = '', selected_color = '') => 
     api.post('/cart/add', { product_id: productId, quantity, selected_size, selected_color }),
-  updateCartItem: (productId, quantity) => api.put(`/cart/${productId}`, { quantity }),
-  removeFromCart: (productId) => api.delete(`/cart/${productId}`),
+  updateCartItem: (productId, quantity, selected_size = '', selected_color = '') =>
+    api.put(`/cart/${productId}`, { quantity, selected_size, selected_color }),
+  removeFromCart: (productId, selected_size = '', selected_color = '') =>
+    api.delete(`/cart/${productId}`, { params: { selected_size, selected_color } }),
   clearCart: () => api.delete('/cart/clear'),
 };
 
@@ -119,12 +140,11 @@ export const userAPI = {
   updateProfile: (data) => api.put('/user/profile', data),
   login: (credentials) => api.post('/auth/login', credentials),
   register: (userData) => api.post('/auth/register', userData),
-  sendOTP: (email) => api.post('/auth/send-otp', { email }),
-  verifyOTP: (email, otp) => api.post('/auth/verify-otp', { email, otp }),
+  sendOTP: (email) => api.post('/auth/send-otp', { email }, { timeout: 45000 }),
+  verifyOTP: (email, otp) => api.post('/auth/verify-otp', { email, otp }, { timeout: 45000 }),
   logout: () => api.post('/auth/logout'),
   logoutAll: () => api.post('/auth/logout-all'),
 };
-
 
 // Admin Auth API
 export const adminAPI = {

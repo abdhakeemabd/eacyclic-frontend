@@ -8,8 +8,8 @@ export default function HomeBanner() {
     {
       id: 1,
       icon: <Truck className="w-5 h-5 text-gray-700" />,
-      title: 'Delivered to your door',
-      desc: 'Across Kerala & India'
+      title: 'Cash on Delivery',
+      desc: 'Pay at doorstep • Free delivery'
     },
     {
       id: 2,
@@ -40,6 +40,8 @@ export default function HomeBanner() {
           <img
             src={bannerImg}
             alt="Eacyclic banner"
+            fetchPriority="high"
+            decoding="async"
             className="w-full h-full object-cover object-[center_right] md:object-right"
           />
           {/* Subtle gradient overlay to keep text ultra-readable on the left */}

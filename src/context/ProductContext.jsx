@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { productsAPI } from '../utils/api';
 import { products as initialProducts } from '../data/products';
 
@@ -40,7 +40,6 @@ export const ProductProvider = ({ children }) => {
   const [products, setProducts] = useState(() => initialSortedProducts);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const isSeedingRef = useRef(false);
 
   // Helper for LIFO sorting (Newest ID First)
   const getSortedProducts = (productList) => {
@@ -122,10 +121,11 @@ export const ProductProvider = ({ children }) => {
     });
   };
 
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async () => {
     try {
       setError(null);
-      const response = await productsAPI.getAll();
+      const isAdminRoute = typeof window !== 'undefined' && window.location.pathname.startsWith('/admin');
+      const response = await productsAPI.getAll(isAdminRoute ? { include_inactive: 1 } : {});
       let fetchedProducts = response.data || [];
 
       if (fetchedProducts.length > 0) {
@@ -153,11 +153,11 @@ export const ProductProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchProducts();
-  }, []);
+  }, [fetchProducts]);
 
   const addProduct = async (productData) => {
     try {
